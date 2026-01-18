@@ -10,7 +10,7 @@ node_modules
 dist
 build
 .expo
-
+ 
 # Mobile specific
 ios
 android
