@@ -1,0 +1,3 @@
+db
+
+CREATE USER qaraj_app WITH PASSWORD 'qaraj_app7162381637';
