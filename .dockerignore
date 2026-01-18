@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+*/node_modules
+
+# Build output
+dist
+build
+.expo
+
+# Mobile specific
+ios
+android
+*.ipa
+*.apk
+
+# Env
+.env*
+!*example
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
