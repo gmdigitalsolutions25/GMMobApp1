@@ -17,6 +17,7 @@ export const upsertUserProcedure = publicProcedure
   )
   .mutation(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       const [user] = await db
         .insert(users)
         .values({

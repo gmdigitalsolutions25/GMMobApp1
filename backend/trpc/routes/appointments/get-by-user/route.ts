@@ -8,6 +8,7 @@ export const getAppointmentsByUserProcedure = publicProcedure
   .input(z.object({ phone: z.string() }))
   .query(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       const user = await db.query.users.findFirst({
         where: eq(users.phone, input.phone),
       });

@@ -9,10 +9,9 @@ const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
     return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   }
-
-  throw new Error(
-    "No base url found, please set EXPO_PUBLIC_RORK_API_BASE_URL"
-  );
+  // Fallback: use localhost for development / offline mode
+  // Replace this with your actual backend URL when deploying
+  return "http://localhost:3000";
 };
 
 export const trpcClient = trpc.createClient({

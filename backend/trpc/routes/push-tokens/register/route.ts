@@ -21,6 +21,7 @@ export const registerPushTokenProcedure = publicProcedure
   )
   .mutation(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       // Find user
       const user = await db.query.users.findFirst({
         where: eq(users.phone, input.phone),

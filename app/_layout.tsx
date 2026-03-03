@@ -6,51 +6,80 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppProvider } from "@/providers/AppProvider";
 import { trpc, trpcClient } from "@/lib/trpc";
 import { configureNotifications, setupAndroidChannels } from "@/lib/notifications";
-import * as Notifications from "expo-notifications";
 import '@/constants/i18n';
 
-SplashScreen.preventAutoHideAsync();
+// Prevent the splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Configure notification display behavior at module load
-configureNotifications();
+try {
+  configureNotifications();
+} catch (e) {
+  console.warn('[Layout] configureNotifications failed:', e);
+}
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+});
 
 function RootLayoutNav() {
   const router = useRouter();
-  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
-  const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const notificationListenerRef = useRef<any>(null);
+  const responseListenerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Set up Android notification channels
-    setupAndroidChannels();
-
-    // Listen for incoming notifications while app is foregrounded
-    notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        console.log('[Notifications] Received:', notification.request.content.title);
-      }
+    // Set up Android notification channels (non-blocking)
+    setupAndroidChannels().catch((e) =>
+      console.warn('[Layout] setupAndroidChannels failed:', e)
     );
 
-    // Handle notification tap — navigate to relevant screen
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = response.notification.request.content.data as Record<string, unknown>;
-        const type = data?.type as string | undefined;
+    // Dynamically import Notifications to avoid startup crash
+    let Notifications: any;
+    try {
+      Notifications = require('expo-notifications');
+    } catch {
+      return;
+    }
 
-        if (type === 'appointment_reminder_24h' || type === 'appointment_reminder_1h') {
-          router.push('/(tabs)/appointments');
-        } else if (type === 'service_due' || type === 'service_due_urgent') {
-          router.push('/(tabs)/vehicles');
-        } else {
-          router.push('/notifications');
+    try {
+      notificationListenerRef.current = Notifications.addNotificationReceivedListener(
+        (notification: any) => {
+          console.log('[Notifications] Received:', notification?.request?.content?.title);
         }
-      }
-    );
+      );
+
+      responseListenerRef.current = Notifications.addNotificationResponseReceivedListener(
+        (response: any) => {
+          try {
+            const data = response?.notification?.request?.content?.data as Record<string, unknown>;
+            const type = data?.type as string | undefined;
+
+            if (type === 'appointment_reminder_24h' || type === 'appointment_reminder_1h') {
+              router.push('/(tabs)/appointments');
+            } else if (type === 'service_due' || type === 'service_due_urgent') {
+              router.push('/(tabs)/vehicles');
+            } else {
+              router.push('/notifications');
+            }
+          } catch (e) {
+            console.warn('[Notifications] Response handler error:', e);
+          }
+        }
+      );
+    } catch (e) {
+      console.warn('[Layout] Notification listener setup failed:', e);
+    }
 
     return () => {
-      notificationListener.current?.remove();
-      responseListener.current?.remove();
+      try {
+        notificationListenerRef.current?.remove();
+        responseListenerRef.current?.remove();
+      } catch {}
     };
   }, []);
 
@@ -69,7 +98,7 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   useEffect(() => {
-    SplashScreen.hideAsync();
+    SplashScreen.hideAsync().catch(() => {});
   }, []);
 
   return (

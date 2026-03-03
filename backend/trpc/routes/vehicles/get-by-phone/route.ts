@@ -9,6 +9,7 @@ export const getVehiclesByPhoneProcedure = publicProcedure
   .query(async ({ input }) => {
     try {
       // Look up user by phone
+      if (!db) return { vehicles: [] };
       const user = await db.query.users.findFirst({
         where: eq(users.phone, input.phone),
       });

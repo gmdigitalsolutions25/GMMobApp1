@@ -26,6 +26,7 @@ export const setPinProcedure = publicProcedure
   )
   .mutation(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       // Hash the PIN with bcrypt (12 rounds ≈ ~300ms, good for PINs)
       const pinHash = await bcrypt.hash(input.pin, BCRYPT_ROUNDS);
 

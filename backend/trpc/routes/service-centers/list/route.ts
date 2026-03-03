@@ -75,6 +75,7 @@ const FALLBACK_CENTERS = [
 export const listServiceCentersProcedure = publicProcedure
   .query(async () => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       const centers = await db.query.serviceCenters.findMany({
         orderBy: [asc(serviceCenters.name)],
       });

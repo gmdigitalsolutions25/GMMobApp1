@@ -27,6 +27,7 @@ export const createVehicleProcedure = publicProcedure
   )
   .mutation(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       // Find or auto-create user
       let user = await db.query.users.findFirst({
         where: eq(users.phone, input.phone),

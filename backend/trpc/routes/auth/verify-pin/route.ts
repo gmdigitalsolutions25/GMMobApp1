@@ -32,6 +32,7 @@ export const verifyPinProcedure = publicProcedure
   )
   .mutation(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       // Check lockout
       const tracker = pinAttempts.get(input.phone);
       if (tracker && tracker.lockedUntil > Date.now()) {

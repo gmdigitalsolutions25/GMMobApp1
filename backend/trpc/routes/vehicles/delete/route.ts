@@ -8,6 +8,7 @@ export const deleteVehicleProcedure = publicProcedure
   .input(z.object({ vehicleId: z.string().uuid() }))
   .mutation(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       const result = await db
         .delete(vehicles)
         .where(eq(vehicles.id, input.vehicleId))

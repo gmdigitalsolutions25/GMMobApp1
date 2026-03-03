@@ -30,6 +30,7 @@ export const changePinProcedure = publicProcedure
   )
   .mutation(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       if (input.currentPin === input.newPin) {
         return {
           success: false,

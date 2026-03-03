@@ -14,6 +14,7 @@ export const updateAppointmentStatusProcedure = publicProcedure
   )
   .mutation(async ({ input }) => {
     try {
+      if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
       const [updated] = await db
         .update(appointments)
         .set({
