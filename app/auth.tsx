@@ -60,7 +60,7 @@ export default function AuthScreen() {
     }
   };
 
-  const handleOtpChange = (value: string, index: number) => {
+  const handleOtpChange = async (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;
     
     const newOtp = [...otp];
@@ -112,7 +112,7 @@ export default function AuthScreen() {
     }
   };
 
-  const handlePinChange = (value: string, index: number) => {
+  const handlePinChange = async (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;
     
     const newPin = [...pin];
