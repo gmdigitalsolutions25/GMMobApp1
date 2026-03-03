@@ -45,6 +45,7 @@ jobs:
       # ── 7. Create required assets ────────────────────────────────────────────
       - name: Create app icon assets
         run: |
+          pip install pillow --quiet
           mkdir -p assets/images assets/sounds
           python3 - << 'EOF'
           from PIL import Image, ImageDraw, ImageFont
