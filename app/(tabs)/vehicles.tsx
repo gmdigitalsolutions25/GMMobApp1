@@ -14,6 +14,7 @@ import {
   Trash2,
   Calculator,
   X,
+  Edit2,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useApp } from '@/providers/AppProvider';
@@ -265,9 +266,14 @@ export default function VehiclesScreen() {
                     {t('vehicles.vehicleInformation')}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={handleDeleteVehicle}>
-                  <Trash2 size={20} color={colors.primary} />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  <TouchableOpacity onPress={() => router.push(`/edit-vehicle?vehicleId=${selectedVehicle?.id}`)}>
+                    <Edit2 size={20} color={colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleDeleteVehicle}>
+                    <Trash2 size={20} color={colors.primary} />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.vehicleContent}>
@@ -278,7 +284,9 @@ export default function VehiclesScreen() {
                   <Image
                     source={{
                       uri:
+                        selectedVehicle?.photos?.find(p => p.isPrimary)?.uri ||
                         selectedVehicle?.photos?.[0]?.uri ||
+                        (selectedVehicle as any)?.libraryImageUri ||
                         'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&q=80',
                     }}
                     style={styles.vehicleImage}

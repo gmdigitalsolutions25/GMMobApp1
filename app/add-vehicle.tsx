@@ -26,9 +26,9 @@ type PickerModalProps = {
   options: { value: string; label: string }[];
   onSelect: (value: string) => void;
   selectedValue: string;
+  colors: typeof Colors.dark;
 };
-
-function PickerModal({ visible, onClose, title, options, onSelect, selectedValue }: PickerModalProps) {
+function PickerModal({ visible, onClose, title, options, onSelect, selectedValue, colors }: PickerModalProps) {
   return (
     <Modal
       visible={visible}
@@ -41,11 +41,11 @@ function PickerModal({ visible, onClose, title, options, onSelect, selectedValue
         activeOpacity={1}
         onPress={onClose}
       >
-        <View style={[styles.modalContent, { backgroundColor: Colors.dark.surface }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: Colors.dark.text }]}>{title}</Text>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <X size={24} color={Colors.dark.textSecondary} />
+              <X size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           <ScrollView style={styles.modalScroll}>
@@ -54,7 +54,8 @@ function PickerModal({ visible, onClose, title, options, onSelect, selectedValue
                 key={option.value}
                 style={[
                   styles.modalOption,
-                  selectedValue === option.value && { backgroundColor: `${Colors.dark.primary}20` },
+                  { borderBottomColor: colors.border },
+                  selectedValue === option.value && { backgroundColor: `${colors.primary}20` },
                 ]}
                 onPress={() => {
                   onSelect(option.value);
@@ -64,7 +65,7 @@ function PickerModal({ visible, onClose, title, options, onSelect, selectedValue
                 <Text
                   style={[
                     styles.modalOptionText,
-                    { color: selectedValue === option.value ? Colors.dark.primary : Colors.dark.text },
+                    { color: selectedValue === option.value ? colors.primary : colors.text },
                   ]}
                 >
                   {option.label}
@@ -351,7 +352,6 @@ export default function AddVehicleScreen() {
           <Text style={styles.addButtonText}>{t('addVehicle.addCar')}</Text>
         </TouchableOpacity>
       </View>
-
       <PickerModal
         visible={showBrandPicker}
         onClose={() => setShowBrandPicker(false)}
@@ -359,8 +359,8 @@ export default function AddVehicleScreen() {
         options={carBrands}
         onSelect={handleSelectBrand}
         selectedValue={brand}
+        colors={colors}
       />
-
       <PickerModal
         visible={showModelPicker}
         onClose={() => setShowModelPicker(false)}
@@ -368,8 +368,8 @@ export default function AddVehicleScreen() {
         options={availableModels}
         onSelect={handleSelectModel}
         selectedValue={model}
+        colors={colors}
       />
-
       <PickerModal
         visible={showYearPicker}
         onClose={() => setShowYearPicker(false)}
@@ -377,6 +377,7 @@ export default function AddVehicleScreen() {
         options={carYears}
         onSelect={setYear}
         selectedValue={year}
+        colors={colors}
       />
     </View>
   );

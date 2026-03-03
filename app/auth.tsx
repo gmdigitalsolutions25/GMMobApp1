@@ -166,7 +166,7 @@ export default function AuthScreen() {
     const unformatted = unformatPhoneNumber(phone);
     const user: UserType = {
       id: Date.now().toString(),
-      username: unformatted,
+      username: '', // User will set display name in profile
       phone: unformatted,
       language: 'en',
       theme: 'dark',

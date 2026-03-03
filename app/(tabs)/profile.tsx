@@ -202,7 +202,7 @@ export default function ProfileScreen() {
             ) : (
               <View style={styles.nameRow}>
                 <Text style={[styles.username, { color: colors.text }]}>
-                  {user?.username || 'User'}
+                  {user?.username && user.username.trim() ? user.username : t('profile.tapToSetName')}
                 </Text>
                 <TouchableOpacity onPress={() => setIsEditingName(true)}>
                   <Edit2 size={18} color={colors.primary} />

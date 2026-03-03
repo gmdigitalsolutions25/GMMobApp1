@@ -8,6 +8,8 @@ import {
   Dimensions,
   Animated,
   Modal,
+  Linking,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useRef, useState } from 'react';
@@ -763,7 +765,7 @@ export default function HomeScreen() {
                   <View style={styles.serviceCenterDetailRow}>
                     <Phone size={16} color={colors.textSecondary} />
                     <Text style={[styles.serviceCenterDetailText, { color: colors.textSecondary }]}>
-                      {center.phone}
+                      {center.phoneDisplay || center.phone}
                     </Text>
                   </View>
                 </View>
@@ -802,6 +804,7 @@ export default function HomeScreen() {
                       styles.serviceCenterButton,
                       { backgroundColor: colors.primary },
                     ]}
+                    onPress={() => Linking.openURL(`tel:${center.phone}`)}
                   >
                     <Phone size={18} color="#000000" />
                     <Text style={[styles.serviceCenterButtonText, { color: '#000000' }]}>
@@ -813,6 +816,14 @@ export default function HomeScreen() {
                       styles.serviceCenterButtonSecondary,
                       { borderColor: colors.border, backgroundColor: colors.background },
                     ]}
+                    onPress={() => {
+                      const url = Platform.select({
+                        ios: `maps:?q=${encodeURIComponent(center.address)}&ll=${center.lat},${center.lng}`,
+                        android: `geo:${center.lat},${center.lng}?q=${encodeURIComponent(center.address)}`,
+                        default: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(center.address)}`,
+                      });
+                      Linking.openURL(url!);
+                    }}
                   >
                     <MapPin size={18} color={colors.primary} />
                     <Text style={[styles.serviceCenterButtonTextSecondary, { color: colors.primary }]}>
