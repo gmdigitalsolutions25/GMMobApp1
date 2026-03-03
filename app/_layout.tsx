@@ -3,12 +3,12 @@ import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AppProvider } from "@/providers/AppProvider";
+import { AppProvider, useApp } from "@/providers/AppProvider";
 import { trpc, trpcClient } from "@/lib/trpc";
 import { configureNotifications, setupAndroidChannels } from "@/lib/notifications";
 import '@/constants/i18n';
 
-// Prevent the splash screen from auto-hiding
+// Prevent the splash screen from auto-hiding before app is ready
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Configure notification display behavior at module load
@@ -29,16 +29,42 @@ const queryClient = new QueryClient({
 
 function RootLayoutNav() {
   const router = useRouter();
+  const { isLoading, hasCompletedOnboarding, user, defaultStartScreen } = useApp();
   const notificationListenerRef = useRef<any>(null);
   const responseListenerRef = useRef<any>(null);
+  const hasNavigated = useRef(false);
 
+  // Hide splash screen and navigate once app state is loaded
   useEffect(() => {
-    // Set up Android notification channels (non-blocking)
+    if (isLoading) return;
+    if (hasNavigated.current) return;
+    hasNavigated.current = true;
+
+    // Hide splash screen first
+    SplashScreen.hideAsync().catch(() => {});
+
+    // Then navigate to the correct screen
+    const navigate = () => {
+      if (!hasCompletedOnboarding) {
+        router.replace('/welcome');
+      } else if (!user) {
+        router.replace('/auth');
+      } else {
+        router.replace(`/(tabs)/${defaultStartScreen}`);
+      }
+    };
+
+    // Small delay to ensure router is ready
+    const timer = setTimeout(navigate, 100);
+    return () => clearTimeout(timer);
+  }, [isLoading, hasCompletedOnboarding, user, defaultStartScreen, router]);
+
+  // Set up notification listeners
+  useEffect(() => {
     setupAndroidChannels().catch((e) =>
       console.warn('[Layout] setupAndroidChannels failed:', e)
     );
 
-    // Dynamically import Notifications to avoid startup crash
     let Notifications: any;
     try {
       Notifications = require('expo-notifications');
@@ -97,10 +123,6 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
-  }, []);
-
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>

@@ -1,29 +1,12 @@
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
 
+// This screen is shown briefly while AppProvider loads state from AsyncStorage.
+// Navigation to the correct screen is handled in _layout.tsx (RootLayoutNav)
+// once isLoading becomes false.
 export default function IndexScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { isLoading, hasCompletedOnboarding, user, defaultStartScreen } = useApp();
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (!hasCompletedOnboarding) {
-      router.replace('/welcome');
-    } else if (!user) {
-      router.replace('/auth');
-    } else {
-      router.replace(`/(tabs)/${defaultStartScreen}`);
-    }
-  }, [isLoading, hasCompletedOnboarding, user, defaultStartScreen, router]);
-
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <ActivityIndicator size="large" color={Colors.dark.primary} />
     </View>
   );
