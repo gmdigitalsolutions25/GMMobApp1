@@ -5,7 +5,17 @@ import React, { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppProvider, useApp } from "@/providers/AppProvider";
 import { trpc, trpcClient } from "@/lib/trpc";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { installGlobalErrorHandlers } from "@/lib/errorHandler";
 import '@/constants/i18n';
+
+// Install global error handlers FIRST — before anything else runs
+// This ensures all crashes are captured and shown on screen
+try {
+  installGlobalErrorHandlers();
+} catch (e) {
+  // Silently ignore if handler installation fails
+}
 
 // Prevent the splash screen from auto-hiding before app is ready
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -57,6 +67,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="add-vehicle" options={{ presentation: 'modal' }} />
       <Stack.Screen name="notifications" />
+      <Stack.Screen name="error-log" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
@@ -64,14 +75,18 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <AppProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <RootLayoutNav />
-          </GestureHandlerRootView>
-        </AppProvider>
-      </QueryClientProvider>
-    </trpc.Provider>
+    <ErrorBoundary>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <AppProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <ErrorBoundary>
+                <RootLayoutNav />
+              </ErrorBoundary>
+            </GestureHandlerRootView>
+          </AppProvider>
+        </QueryClientProvider>
+      </trpc.Provider>
+    </ErrorBoundary>
   );
 }
