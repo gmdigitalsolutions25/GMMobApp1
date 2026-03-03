@@ -20,7 +20,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       # ── 3. Java 17 ───────────────────────────────────────────────────────────
       - name: Set up Java 17
@@ -49,7 +48,7 @@ jobs:
           mkdir -p assets/images assets/sounds
           python3 - << 'EOF'
           from PIL import Image, ImageDraw, ImageFont
-          import struct, os
+          import struct
 
           def create_icon(path, size, bg=(245,197,24), text="Q"):
               img = Image.new("RGBA", (size, size), bg)
@@ -75,7 +74,6 @@ jobs:
           create_icon(f"{base}/splash-icon.png", 200, bg=(255,255,255))
           create_icon(f"{base}/favicon.png", 32)
 
-          # Silent WAV
           data = b'RIFF' + struct.pack('<I',36) + b'WAVE' + b'fmt ' + struct.pack('<IHHIIHH',16,1,1,44100,88200,2,16) + b'data' + struct.pack('<I',0)
           open('assets/sounds/notification.wav','wb').write(data)
           print("All assets created")
@@ -83,8 +81,7 @@ jobs:
 
       # ── 8. Expo Prebuild ─────────────────────────────────────────────────────
       - name: Run Expo Prebuild (Android)
-        run: |
-          echo "y" | npx expo prebuild --platform android --clean
+        run: echo "y" | npx expo prebuild --platform android --clean
         env:
           EXPO_NO_TELEMETRY: 1
 
@@ -112,9 +109,6 @@ jobs:
             -x test \
             --stacktrace \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }}
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
       # ── 12. Find and rename APK ──────────────────────────────────────────────
       - name: Locate and rename APK
@@ -135,6 +129,5 @@ jobs:
       # ── 14. Print download instructions ──────────────────────────────────────
       - name: Build complete
         run: |
-          echo "✅ APK build successful!"
-          echo "📦 Download the APK from the Actions tab → this workflow run → Artifacts section"
+          echo "APK build successful!"
           ls -lh Qaraj-GM-debug.apk
