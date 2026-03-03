@@ -36,8 +36,7 @@
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "POST_NOTIFICATIONS"
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -64,7 +63,7 @@
           "color": "#F5C518",
           "defaultChannel": "qaraj-default",
           "sounds": ["./assets/sounds/notification.wav"],
-          "enableBackgroundRemoteNotifications": true
+          "enableBackgroundRemoteNotifications": false
         }
       ]
     ],
