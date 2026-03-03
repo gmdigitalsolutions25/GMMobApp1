@@ -86,11 +86,23 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: 1
 
-      # ── 9. Make gradlew executable ───────────────────────────────────────────
+      # ── 9. Force JS bundle into debug APK ──────────────────────────────────────
+      # expo prebuild --clean regenerates build.gradle from scratch every time.
+      # By default, debug builds skip JS bundling and expect a Metro dev server
+      # running on localhost:8081 — which doesn't exist on the device.
+      # Setting debuggableVariants=[] forces the JS bundle to be compiled and
+      # embedded into the APK so it works standalone without any dev server.
+      - name: Patch build.gradle — bundle JS in debug builds
+        run: |
+          sed -i 's|// debuggableVariants = \["liteDebug", "prodDebug"\]|debuggableVariants = []|' android/app/build.gradle
+          echo "=== Verifying patch ==="
+          grep -n "debuggableVariants" android/app/build.gradle
+
+      # ── 10. Make gradlew executable ──────────────────────────────────────────────
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      # ── 10. Cache Gradle ─────────────────────────────────────────────────────
+      # ── 11. Cache Gradle ─────────────────────────────────────────────────────
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -101,7 +113,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # ── 11. Build APK ────────────────────────────────────────────────────────
+      # ── 12. Build APK ────────────────────────────────────────────────────────
       - name: Build Debug APK
         run: |
           cd android
@@ -111,7 +123,7 @@ jobs:
             --stacktrace \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
 
-      # ── 12. Find and rename APK ──────────────────────────────────────────────
+      # ── 13. Find and rename APK ──────────────────────────────────────────────
       - name: Locate and rename APK
         run: |
           APK=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
@@ -119,7 +131,7 @@ jobs:
           cp "$APK" Qaraj-GM-debug.apk
           ls -lh Qaraj-GM-debug.apk
 
-      # ── 13. Upload APK as artifact ───────────────────────────────────────────
+      # ── 14. Upload APK as artifact ───────────────────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -127,7 +139,7 @@ jobs:
           path: Qaraj-GM-debug.apk
           retention-days: 30
 
-      # ── 14. Print download instructions ──────────────────────────────────────
+      # ── 15. Print download instructions ──────────────────────────────────────
       - name: Build complete
         run: |
           echo "APK build successful!"
