@@ -1,19 +1,18 @@
 /**
  * Global Error Boundary for Qaraj
- *
- * Catches all unhandled JS errors and renders them on screen
- * instead of showing a black screen. This allows diagnosing
- * crashes without USB or external tools.
+ * Catches all unhandled JS errors and renders them on screen.
+ * Also logs to the boot log so the DOS-style screen shows the crash.
  */
 import React from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Clipboard,
+  Platform,
 } from 'react-native';
+import { bootLog, getBootEntries } from '@/lib/bootLog';
+import { BootLog } from '@/components/BootLog';
 
 interface State {
   hasError: boolean;
@@ -36,49 +35,34 @@ export class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     this.setState({ errorInfo });
-    console.error('[ErrorBoundary] Caught error:', error.message);
-    console.error('[ErrorBoundary] Stack:', error.stack);
-    console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack);
+    try {
+      bootLog('CRASH: ' + error?.message, 'fail');
+      bootLog('Stack: ' + (error?.stack?.split('\n')[1] ?? 'none'), 'fail');
+    } catch {}
   }
 
   render() {
     if (this.state.hasError) {
       const { error, errorInfo } = this.state;
-      const errorText = [
-        `ERROR: ${error?.message ?? 'Unknown error'}`,
-        '',
-        `STACK:`,
-        error?.stack ?? 'No stack trace',
-        '',
-        `COMPONENT STACK:`,
-        errorInfo?.componentStack ?? 'No component stack',
-      ].join('\n');
+      const entries = getBootEntries();
+      // Add the crash to entries
+      const crashEntries = [
+        ...entries,
+        { text: '━━━ CRASH CAUGHT BY ERROR BOUNDARY ━━━', status: 'fail' as const },
+        { text: 'Error: ' + (error?.message ?? 'Unknown'), status: 'fail' as const },
+        { text: error?.stack?.split('\n')[1]?.trim() ?? '', status: 'fail' as const },
+        { text: error?.stack?.split('\n')[2]?.trim() ?? '', status: 'fail' as const },
+        { text: '━━━ COMPONENT STACK ━━━', status: 'warn' as const },
+        ...(errorInfo?.componentStack?.split('\n').slice(1, 6).map(l => ({
+          text: l.trim(),
+          status: 'warn' as const,
+        })) ?? []),
+      ];
 
       return (
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>App Crash Detected</Text>
-            <Text style={styles.subtitle}>
-              Screenshot this screen and send it to the developer.
-            </Text>
-          </View>
-
-          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-            <Text style={styles.errorText} selectable>{errorText}</Text>
-          </ScrollView>
-
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
+          <BootLog entries={crashEntries} done={false} />
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.copyButton}
-              onPress={() => {
-                try {
-                  Clipboard.setString(errorText);
-                } catch {}
-              }}
-            >
-              <Text style={styles.copyButtonText}>Copy Error to Clipboard</Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.retryButton}
               onPress={() => this.setState({ hasError: false, error: null, errorInfo: null })}
@@ -89,66 +73,18 @@ export class ErrorBoundary extends React.Component<
         </View>
       );
     }
-
     return this.props.children;
   }
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-    paddingTop: 60,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ff4444',
-  },
-  title: {
-    color: '#ff4444',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: '#aaa',
-    fontSize: 13,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  errorText: {
-    color: '#f0f0f0',
-    fontSize: 11,
-    fontFamily: 'monospace',
-    lineHeight: 18,
-  },
   footer: {
-    flexDirection: 'row',
     padding: 16,
-    gap: 12,
     borderTopWidth: 1,
     borderTopColor: '#333',
-  },
-  copyButton: {
-    flex: 1,
-    backgroundColor: '#333',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  copyButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    backgroundColor: '#000',
   },
   retryButton: {
-    flex: 1,
     backgroundColor: '#F5C518',
     padding: 14,
     borderRadius: 8,
@@ -158,5 +94,6 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: Platform.OS === 'android' ? 'monospace' : 'Courier New',
   },
 });

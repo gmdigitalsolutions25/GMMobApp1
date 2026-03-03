@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User, Vehicle, ServiceRecord, Appointment, Language, Theme } from '@/constants/types';
+import { bootLog } from '@/lib/bootLog';
+bootLog('AppProvider module loaded', 'ok');
 
 type DefaultStartScreen = 'home' | 'vehicles';
 
@@ -63,6 +65,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
   });
 
   const loadDataCallback = useCallback(async () => {
+    bootLog('AsyncStorage: loading data...', 'info');
     try {
       const [user, vehicles, serviceRecords, appointments, language, theme, onboarding, defaultStartScreen] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER),
@@ -89,8 +92,10 @@ export const [AppProvider, useApp] = createContextHook(() => {
         defaultStartScreen: (defaultStartScreen as DefaultStartScreen) || 'home',
       });
       
+      bootLog('AsyncStorage: data loaded OK', 'ok');
       i18n.changeLanguage(selectedLanguage);
-    } catch (error) {
+    } catch (error: any) {
+      bootLog('AsyncStorage: FAILED: ' + error?.message, 'fail');
       console.error('Failed to load data:', error);
       setState(prev => ({ ...prev, isLoading: false }));
     }

@@ -1,61 +1,130 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack, useRouter } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect, useRef } from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AppProvider, useApp } from "@/providers/AppProvider";
-import { trpc, trpcClient } from "@/lib/trpc";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { installGlobalErrorHandlers } from "@/lib/errorHandler";
-import '@/constants/i18n';
+/**
+ * Root layout with DOS-style boot log.
+ * Every initialization step is logged to screen in real time.
+ * If the app freezes, the last visible line shows exactly where it crashed.
+ */
 
-// Install global error handlers FIRST — before anything else runs
-// This ensures all crashes are captured and shown on screen
+// ── STEP 1: Boot log infrastructure (no dependencies, always works) ──────────
+import { bootLog, getBootEntries, subscribeBootLog } from '@/lib/bootLog';
+bootLog('Boot log initialized', 'ok');
+
+// ── STEP 2: React (core, must work) ──────────────────────────────────────────
+import React, { useEffect, useRef, useState } from 'react';
+bootLog('React loaded', 'ok');
+
+// ── STEP 3: React Native core ─────────────────────────────────────────────────
+import { View } from 'react-native';
+bootLog('React Native core loaded', 'ok');
+
+// ── STEP 4: BootLog UI component ─────────────────────────────────────────────
+import { BootLog } from '@/components/BootLog';
+bootLog('BootLog UI component loaded', 'ok');
+
+// ── STEP 5: expo-splash-screen ────────────────────────────────────────────────
+import * as SplashScreen from 'expo-splash-screen';
+bootLog('expo-splash-screen loaded', 'ok');
+
 try {
-  installGlobalErrorHandlers();
-} catch (e) {
-  // Silently ignore if handler installation fails
+  SplashScreen.preventAutoHideAsync();
+  bootLog('SplashScreen.preventAutoHideAsync() called', 'ok');
+} catch (e: any) {
+  bootLog('SplashScreen.preventAutoHideAsync() failed: ' + e?.message, 'warn');
 }
 
-// Prevent the splash screen from auto-hiding before app is ready
-SplashScreen.preventAutoHideAsync().catch(() => {});
+// ── STEP 6: expo-router ───────────────────────────────────────────────────────
+import { Stack, useRouter } from 'expo-router';
+bootLog('expo-router loaded', 'ok');
 
+// ── STEP 7: react-native-gesture-handler ─────────────────────────────────────
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+bootLog('react-native-gesture-handler loaded', 'ok');
+
+// ── STEP 8: TanStack Query ────────────────────────────────────────────────────
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+bootLog('@tanstack/react-query loaded', 'ok');
+
+// ── STEP 9: tRPC client ───────────────────────────────────────────────────────
+import { trpc, trpcClient } from '@/lib/trpc';
+bootLog('tRPC client loaded', 'ok');
+
+// ── STEP 10: Error boundary ───────────────────────────────────────────────────
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+bootLog('ErrorBoundary loaded', 'ok');
+
+// ── STEP 11: i18n ─────────────────────────────────────────────────────────────
+try {
+  require('@/constants/i18n');
+  bootLog('i18n loaded', 'ok');
+} catch (e: any) {
+  bootLog('i18n FAILED: ' + e?.message, 'fail');
+}
+
+// ── STEP 12: AppProvider ──────────────────────────────────────────────────────
+import { AppProvider, useApp } from '@/providers/AppProvider';
+bootLog('AppProvider loaded', 'ok');
+
+// ── STEP 13: QueryClient instance ─────────────────────────────────────────────
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: false,
-      staleTime: 1000 * 60 * 5,
-    },
+    queries: { retry: false, staleTime: 1000 * 60 * 5 },
   },
 });
+bootLog('QueryClient created', 'ok');
 
+// ── Boot log display component ────────────────────────────────────────────────
+function BootLogScreen() {
+  const [entries, setEntries] = useState(getBootEntries());
+
+  useEffect(() => {
+    const unsub = subscribeBootLog(() => {
+      setEntries([...getBootEntries()]);
+    });
+    // Show boot log by hiding splash screen
+    SplashScreen.hideAsync().catch(() => {});
+    return unsub;
+  }, []);
+
+  return (
+    <View style={{ flex: 1 }}>
+      <BootLog entries={entries} done={false} />
+    </View>
+  );
+}
+
+// ── Navigation component (runs after all providers are ready) ─────────────────
 function RootLayoutNav() {
   const router = useRouter();
   const { isLoading, hasCompletedOnboarding, user, defaultStartScreen } = useApp();
   const hasNavigated = useRef(false);
 
-  // Hide splash screen and navigate once app state is loaded
+  bootLog('RootLayoutNav rendered, isLoading=' + isLoading, 'info');
+
   useEffect(() => {
     if (isLoading) return;
     if (hasNavigated.current) return;
     hasNavigated.current = true;
 
-    // Hide splash screen first
+    bootLog('App state loaded, navigating...', 'ok');
     SplashScreen.hideAsync().catch(() => {});
 
-    // Then navigate to the correct screen
     const navigate = () => {
-      if (!hasCompletedOnboarding) {
-        router.replace('/welcome');
-      } else if (!user) {
-        router.replace('/auth');
-      } else {
-        router.replace(`/(tabs)/${defaultStartScreen}`);
+      try {
+        if (!hasCompletedOnboarding) {
+          bootLog('Navigating to /welcome', 'info');
+          router.replace('/welcome');
+        } else if (!user) {
+          bootLog('Navigating to /auth', 'info');
+          router.replace('/auth');
+        } else {
+          bootLog('Navigating to /(tabs)/' + defaultStartScreen, 'info');
+          router.replace(`/(tabs)/${defaultStartScreen}`);
+        }
+      } catch (e: any) {
+        bootLog('Navigation failed: ' + e?.message, 'fail');
       }
     };
 
-    // Small delay to ensure router is ready
-    const timer = setTimeout(navigate, 150);
+    const timer = setTimeout(navigate, 300);
     return () => clearTimeout(timer);
   }, [isLoading, hasCompletedOnboarding, user, defaultStartScreen, router]);
 
@@ -73,7 +142,10 @@ function RootLayoutNav() {
   );
 }
 
+// ── Root layout ───────────────────────────────────────────────────────────────
 export default function RootLayout() {
+  bootLog('RootLayout rendering...', 'info');
+
   return (
     <ErrorBoundary>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
