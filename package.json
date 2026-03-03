@@ -70,5 +70,23 @@
     "postgres": "^3.4.5",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "autolinking": {
+      "exclude": [
+        "expo-notifications",
+        "expo-location",
+        "expo-device",
+        "expo-file-system",
+        "expo-application",
+        "expo-keep-awake",
+        "expo-symbols",
+        "react-native-maps",
+        "@blazejkustra/react-native-alert",
+        "@teovilla/react-native-web-maps",
+        "posthog-react-native",
+        "@rork-ai/toolkit-sdk"
+      ]
+    }
+  }
 }
