@@ -3,8 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User, Vehicle, ServiceRecord, Appointment, Language, Theme } from '@/constants/types';
-import { bootLog } from '@/lib/bootLog';
-bootLog('AppProvider module loaded', 'ok');
 
 type DefaultStartScreen = 'home' | 'vehicles';
 
@@ -65,7 +63,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
   });
 
   const loadDataCallback = useCallback(async () => {
-    bootLog('AsyncStorage: loading data...', 'info');
     try {
       const [user, vehicles, serviceRecords, appointments, language, theme, onboarding, defaultStartScreen] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER),
@@ -79,7 +76,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       ]);
 
       const selectedLanguage = (language as Language) || 'en';
-      
+
       setState({
         user: user ? JSON.parse(user) : null,
         vehicles: vehicles ? JSON.parse(vehicles) : [],
@@ -91,11 +88,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
         hasCompletedOnboarding: onboarding === 'true',
         defaultStartScreen: (defaultStartScreen as DefaultStartScreen) || 'home',
       });
-      
-      bootLog('AsyncStorage: data loaded OK', 'ok');
+
       i18n.changeLanguage(selectedLanguage);
-    } catch (error: any) {
-      bootLog('AsyncStorage: FAILED: ' + error?.message, 'fail');
+    } catch (error) {
       console.error('Failed to load data:', error);
       setState(prev => ({ ...prev, isLoading: false }));
     }
@@ -104,8 +99,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
   useEffect(() => {
     loadDataCallback();
   }, [loadDataCallback]);
-
-
 
   const signIn = useCallback(async (user: User) => {
     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
@@ -218,39 +211,17 @@ export const [AppProvider, useApp] = createContextHook(() => {
   }, []);
 
   const actions: AppActions = useMemo(() => ({
-    signIn,
-    signOut,
-    updateUser,
-    addVehicle,
-    updateVehicle,
-    deleteVehicle,
-    addServiceRecord,
-    updateServiceRecord,
-    deleteServiceRecord,
-    addAppointment,
-    updateAppointment,
-    deleteAppointment,
-    setLanguage,
-    setTheme,
-    completeOnboarding,
-    setDefaultStartScreen,
+    signIn, signOut, updateUser,
+    addVehicle, updateVehicle, deleteVehicle,
+    addServiceRecord, updateServiceRecord, deleteServiceRecord,
+    addAppointment, updateAppointment, deleteAppointment,
+    setLanguage, setTheme, completeOnboarding, setDefaultStartScreen,
   }), [
-    signIn,
-    signOut,
-    updateUser,
-    addVehicle,
-    updateVehicle,
-    deleteVehicle,
-    addServiceRecord,
-    updateServiceRecord,
-    deleteServiceRecord,
-    addAppointment,
-    updateAppointment,
-    deleteAppointment,
-    setLanguage,
-    setTheme,
-    completeOnboarding,
-    setDefaultStartScreen,
+    signIn, signOut, updateUser,
+    addVehicle, updateVehicle, deleteVehicle,
+    addServiceRecord, updateServiceRecord, deleteServiceRecord,
+    addAppointment, updateAppointment, deleteAppointment,
+    setLanguage, setTheme, completeOnboarding, setDefaultStartScreen,
   ]);
 
   return useMemo(() => ({ ...state, ...actions }), [state, actions]);

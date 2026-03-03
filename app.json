@@ -18,8 +18,7 @@
       "bundleIdentifier": "az.qaraj.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow Qaraj to access your photos to add vehicle images.",
-        "NSCameraUsageDescription": "Allow Qaraj to access your camera to take vehicle photos.",
-        "NSMicrophoneUsageDescription": "Allow Qaraj to access your microphone."
+        "NSCameraUsageDescription": "Allow Qaraj to access your camera to take vehicle photos."
       }
     },
     "android": {
@@ -30,9 +29,7 @@
       "package": "az.qaraj.app",
       "permissions": [
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "VIBRATE"
+        "READ_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -40,8 +37,6 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font",
-      "expo-web-browser",
       [
         "expo-image-picker",
         {

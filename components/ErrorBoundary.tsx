@@ -1,23 +1,9 @@
-/**
- * Global Error Boundary for Qaraj
- * Catches all unhandled JS errors and renders them on screen.
- * Also logs to the boot log so the DOS-style screen shows the crash.
- */
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-} from 'react-native';
-import { bootLog, getBootEntries } from '@/lib/bootLog';
-import { BootLog } from '@/components/BootLog';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
 }
 
 export class ErrorBoundary extends React.Component<
@@ -26,7 +12,7 @@ export class ErrorBoundary extends React.Component<
 > {
   constructor(props: { children: React.ReactNode }) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -34,42 +20,28 @@ export class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    this.setState({ errorInfo });
-    try {
-      bootLog('CRASH: ' + error?.message, 'fail');
-      bootLog('Stack: ' + (error?.stack?.split('\n')[1] ?? 'none'), 'fail');
-    } catch {}
+    console.error('ErrorBoundary caught:', error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
-      const { error, errorInfo } = this.state;
-      const entries = getBootEntries();
-      // Add the crash to entries
-      const crashEntries = [
-        ...entries,
-        { text: '━━━ CRASH CAUGHT BY ERROR BOUNDARY ━━━', status: 'fail' as const },
-        { text: 'Error: ' + (error?.message ?? 'Unknown'), status: 'fail' as const },
-        { text: error?.stack?.split('\n')[1]?.trim() ?? '', status: 'fail' as const },
-        { text: error?.stack?.split('\n')[2]?.trim() ?? '', status: 'fail' as const },
-        { text: '━━━ COMPONENT STACK ━━━', status: 'warn' as const },
-        ...(errorInfo?.componentStack?.split('\n').slice(1, 6).map(l => ({
-          text: l.trim(),
-          status: 'warn' as const,
-        })) ?? []),
-      ];
-
       return (
-        <View style={{ flex: 1, backgroundColor: '#000' }}>
-          <BootLog entries={crashEntries} done={false} />
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => this.setState({ hasError: false, error: null, errorInfo: null })}
-            >
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.container}>
+          <Text style={styles.title}>Something went wrong</Text>
+          <ScrollView style={styles.scrollView}>
+            <Text style={styles.errorText}>
+              {this.state.error?.message || 'Unknown error'}
+            </Text>
+            <Text style={styles.stackText}>
+              {this.state.error?.stack || ''}
+            </Text>
+          </ScrollView>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => this.setState({ hasError: false, error: null })}
+          >
+            <Text style={styles.buttonText}>Try Again</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -78,22 +50,43 @@ export class ErrorBoundary extends React.Component<
 }
 
 const styles = StyleSheet.create({
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-    backgroundColor: '#000',
+  container: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    padding: 20,
+    justifyContent: 'center',
   },
-  retryButton: {
-    backgroundColor: '#F5C518',
-    padding: 14,
+  title: {
+    color: '#ff4444',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  scrollView: {
+    maxHeight: 300,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: '#ffaa00',
+    fontSize: 14,
+    fontFamily: 'monospace',
+    marginBottom: 8,
+  },
+  stackText: {
+    color: '#888',
+    fontSize: 11,
+    fontFamily: 'monospace',
+  },
+  button: {
+    backgroundColor: '#D4A843',
+    paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
-  retryButtonText: {
-    color: '#000',
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: Platform.OS === 'android' ? 'monospace' : 'Courier New',
+  buttonText: {
+    color: '#1a1a1a',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

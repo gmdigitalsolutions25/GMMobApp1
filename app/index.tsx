@@ -1,28 +1,19 @@
-/**
- * Loading screen shown while AppProvider initializes state from AsyncStorage.
- * Shows the DOS-style boot log so we can see exactly what's happening.
- */
-import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
-import { BootLog } from '@/components/BootLog';
-import { getBootEntries, subscribeBootLog, bootLog } from '@/lib/bootLog';
-
-bootLog('index.tsx loaded', 'ok');
+import React from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 export default function IndexScreen() {
-  const [entries, setEntries] = useState(getBootEntries());
-
-  useEffect(() => {
-    bootLog('IndexScreen mounted', 'ok');
-    const unsub = subscribeBootLog(() => {
-      setEntries([...getBootEntries()]);
-    });
-    return unsub;
-  }, []);
-
   return (
-    <View style={{ flex: 1 }}>
-      <BootLog entries={entries} done={false} />
+    <View style={styles.container}>
+      <ActivityIndicator size="large" color="#D4A843" />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+  },
+});
