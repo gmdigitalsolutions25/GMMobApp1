@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   View,
   Text,
@@ -7,7 +8,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Image } from 'expo-image';
-import { ArrowLeft, Clock, CheckCircle2, Calendar } from 'lucide-react-native';
+import { ArrowLeft, Clock, CheckCircle2, Calendar, Star, Shield, Wrench, DollarSign } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import { useTranslation } from 'react-i18next';
 import Colors from '@/constants/colors';
@@ -17,7 +18,7 @@ export default function ServiceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
-  const { theme } = useApp();
+  const { theme, vehicles } = useApp();
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
   const serviceTypes = getTranslatedServices(t);
 
@@ -33,349 +34,206 @@ export default function ServiceDetailsScreen() {
     );
   }
 
+  const highlights = [
+    { icon: <Clock size={18} color={colors.primary} />, label: 'Duration', value: service.duration },
+    { icon: <DollarSign size={18} color={colors.primary} />, label: 'Starting from', value: `₼${service.price}` },
+    { icon: <Shield size={18} color={colors.primary} />, label: 'Warranty', value: '6 months' },
+    { icon: <Star size={18} color={colors.primary} />, label: 'Rating', value: '4.8 / 5.0' },
+  ];
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Hero Image */}
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: service.imageUri }}
             style={styles.serviceImage}
             contentFit="cover"
           />
-          <View style={[styles.imageOverlay, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
-          
+          <View style={[styles.imageOverlay, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
           <TouchableOpacity
             style={[styles.backButton, { backgroundColor: colors.surface }]}
             onPress={() => router.back()}
           >
             <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>
+          <View style={styles.imageContent}>
+            <View style={[styles.categoryBadge, { backgroundColor: colors.primary }]}>
+              <Wrench size={14} color="#000" />
+              <Text style={styles.categoryBadgeText}>Service</Text>
+            </View>
+            <Text style={styles.imageTitle}>{service.name}</Text>
+          </View>
         </View>
 
         <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={[styles.serviceName, { color: colors.text }]}>
-              {service.name}
-            </Text>
-            <Text style={[styles.serviceDescription, { color: colors.textSecondary }]}>
-              {service.description}
-            </Text>
+          {/* Highlights */}
+          <View style={[styles.highlightsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {highlights.map((h, i) => (
+              <View key={i} style={[styles.highlightItem, i < highlights.length - 1 && { borderRightWidth: 1, borderRightColor: colors.border }]}>
+                {h.icon}
+                <Text style={[styles.highlightValue, { color: colors.text }]}>{h.value}</Text>
+                <Text style={[styles.highlightLabel, { color: colors.textSecondary }]}>{h.label}</Text>
+              </View>
+            ))}
           </View>
 
-          <View style={styles.infoCards}>
-            <View
-              style={[
-                styles.infoCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <View
-                style={[
-                  styles.infoIcon,
-                  { backgroundColor: `${colors.primary}20` },
-                ]}
-              >
-                <Clock size={24} color={colors.primary} />
-              </View>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
-                {t('serviceDetails.duration')}
-              </Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>
-                {service.duration}
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.infoCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <View
-                style={[
-                  styles.infoIcon,
-                  { backgroundColor: `${colors.primary}20` },
-                ]}
-              >
-                <CheckCircle2 size={24} color={colors.primary} />
-              </View>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
-                {t('serviceDetails.serviceType')}
-              </Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>
-                {t('serviceDetails.professional')}
-              </Text>
-            </View>
-          </View>
-
+          {/* Description */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {t('serviceDetails.aboutThisService')}
-            </Text>
-            <Text style={[styles.fullDescription, { color: colors.textSecondary }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>About This Service</Text>
+            <Text style={[styles.description, { color: colors.textSecondary }]}>
               {service.fullDescription}
             </Text>
           </View>
 
+          {/* What's Included */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {t('serviceDetails.whatsIncluded')}
-            </Text>
-            <View style={styles.includesList}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>What's Included</Text>
+            <View style={[styles.includesCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {service.includes.map((item, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.includeItem,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.checkIcon,
-                      { backgroundColor: `${colors.primary}20` },
-                    ]}
-                  >
-                    <CheckCircle2 size={18} color={colors.primary} />
-                  </View>
-                  <Text style={[styles.includeText, { color: colors.text }]}>
-                    {item}
-                  </Text>
+                <View key={index} style={styles.includeItem}>
+                  <CheckCircle2 size={18} color={colors.primary} />
+                  <Text style={[styles.includeText, { color: colors.text }]}>{item}</Text>
                 </View>
               ))}
             </View>
           </View>
 
-          <View
-            style={[
-              styles.expertiseCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Text style={[styles.expertiseTitle, { color: colors.text }]}>
-              {t('serviceDetails.expertTechnicians')}
-            </Text>
-            <Text style={[styles.expertiseDescription, { color: colors.textSecondary }]}>
-              {t('serviceDetails.expertDescription')}
-            </Text>
+          {/* Why Choose Qaraj */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Why Choose Qaraj?</Text>
+            <View style={[styles.whyCard, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }]}>
+              {[
+                'Certified technicians with 10+ years experience',
+                'Genuine OEM and premium aftermarket parts',
+                'Transparent pricing — no hidden fees',
+                '6-month service warranty on all work',
+                'Real-time status updates via the app',
+              ].map((reason, idx) => (
+                <View key={idx} style={styles.whyItem}>
+                  <View style={[styles.whyDot, { backgroundColor: colors.primary }]} />
+                  <Text style={[styles.whyText, { color: colors.text }]}>{reason}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-
-          <View style={styles.bottomSpacing} />
         </View>
       </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          { backgroundColor: colors.surface, borderTopColor: colors.border },
-        ]}
-      >
-        <View style={styles.footerContent}>
-          <View style={styles.priceInfo}>
-            <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>
-              {t('serviceDetails.servicePrice')}
-            </Text>
-            <Text style={[styles.footerPrice, { color: colors.primary }]}>
-              ₼{service.price}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.bookButton, { backgroundColor: colors.primary }]}
-            onPress={() => router.push('/appointments')}
-          >
-            <Calendar size={20} color="#000000" />
-            <Text style={[styles.bookButtonText, { color: '#000000' }]}>
-              {t('serviceDetails.bookService')}
-            </Text>
-          </TouchableOpacity>
+      {/* Sticky Book Button */}
+      <View style={[styles.bookingBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+        <View>
+          <Text style={[styles.bookingPrice, { color: colors.primary }]}>from ₼{service.price}</Text>
+          <Text style={[styles.bookingDuration, { color: colors.textSecondary }]}>{service.duration}</Text>
         </View>
+        <TouchableOpacity
+          style={[styles.bookButton, { backgroundColor: colors.primary }]}
+          onPress={() =>
+            router.push({
+              pathname: '/(tabs)/appointments',
+              params: { serviceTypes: JSON.stringify([service.name]) },
+            })
+          }
+        >
+          <Calendar size={18} color="#000" />
+          <Text style={styles.bookButtonText}>Book Now</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  imageContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 320,
-  },
-  serviceImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
+  container: { flex: 1 },
+  errorText: { fontSize: 16, textAlign: 'center', marginTop: 40 },
+  scrollView: { flex: 1 },
+  imageContainer: { height: 280, position: 'relative' },
+  serviceImage: { width: '100%', height: '100%' },
+  imageOverlay: { ...StyleSheet.absoluteFillObject },
   backButton: {
     position: 'absolute',
-    top: 50,
+    top: 52,
     left: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-
-  content: {
-    paddingHorizontal: 20,
-  },
-  header: {
-    paddingTop: 24,
-    paddingBottom: 20,
-  },
-  serviceName: {
-    fontSize: 32,
-    fontWeight: '800' as const,
-    marginBottom: 8,
-    lineHeight: 40,
-  },
-  serviceDescription: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  infoCards: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
-  },
-  infoCard: {
-    flex: 1,
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  infoIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoLabel: {
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-  },
-  section: {
-    marginBottom: 28,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700' as const,
-    marginBottom: 16,
-  },
-  fullDescription: {
-    fontSize: 15,
-    lineHeight: 24,
-  },
-  includesList: {
-    gap: 12,
-  },
-  includeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
+    width: 40,
+    height: 40,
     borderRadius: 12,
-    borderWidth: 1,
-    gap: 12,
-  },
-  checkIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  includeText: {
-    fontSize: 15,
-    flex: 1,
-    fontWeight: '500' as const,
+  imageContent: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
   },
-  expertiseCard: {
-    padding: 24,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 20,
-  },
-  expertiseTitle: {
-    fontSize: 20,
-    fontWeight: '700' as const,
-    marginBottom: 12,
-  },
-  expertiseDescription: {
-    fontSize: 15,
-    lineHeight: 24,
-  },
-  bottomSpacing: {
-    height: 100,
-  },
-  footer: {
-    borderTopWidth: 1,
-    paddingTop: 16,
-    paddingBottom: 32,
-    paddingHorizontal: 20,
-  },
-  footerContent: {
+  categoryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
   },
-  priceInfo: {
+  categoryBadgeText: { color: '#000', fontSize: 12, fontWeight: '700' },
+  imageTitle: { color: '#fff', fontSize: 28, fontWeight: '800', lineHeight: 34 },
+  content: { padding: 20 },
+  highlightsCard: {
+    flexDirection: 'row',
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  highlightItem: {
     flex: 1,
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 4,
   },
-  priceLabel: {
-    fontSize: 13,
-    marginBottom: 4,
+  highlightValue: { fontSize: 14, fontWeight: '700' },
+  highlightLabel: { fontSize: 11 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  description: { fontSize: 14, lineHeight: 22 },
+  includesCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
   },
-  footerPrice: {
-    fontSize: 28,
-    fontWeight: '800' as const,
+  includeItem: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  includeText: { fontSize: 14, flex: 1 },
+  whyCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    gap: 10,
   },
+  whyItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  whyDot: { width: 6, height: 6, borderRadius: 3, marginTop: 6 },
+  whyText: { fontSize: 14, flex: 1, lineHeight: 20 },
+  bookingBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+  },
+  bookingPrice: { fontSize: 20, fontWeight: '800' },
+  bookingDuration: { fontSize: 12, marginTop: 2 },
   bookButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    borderRadius: 16,
     gap: 8,
-    minWidth: 160,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
-  bookButtonText: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 100,
-  },
+  bookButtonText: { color: '#000', fontSize: 16, fontWeight: '700' },
 });

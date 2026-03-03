@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import type { Appointment } from '@/constants/types';
 import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
+import { trpc } from '@/lib/trpc';
+import { scheduleAppointmentReminders } from '@/lib/notifications';
 
 export default function AppointmentsScreen() {
   const params = useLocalSearchParams<{ serviceTypes?: string; date?: string; vehicleId?: string }>();
@@ -199,6 +201,15 @@ export default function AppointmentsScreen() {
         time: selectedTime,
         serviceCenter: selectedServiceCenter,
         notes: additionalNotes || undefined,
+      });
+
+      // Schedule push notification reminders
+      await scheduleAppointmentReminders({
+        id: Date.now().toString(),
+        serviceType: selectedServiceTypes.join(', '),
+        serviceCenter: selectedServiceCenter,
+        date: selectedDate.toISOString().split('T')[0],
+        time: selectedTime,
       });
 
       setShowSuccessModal(true);

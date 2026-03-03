@@ -26,11 +26,13 @@ import {
   Phone,
   MapPin,
   Star,
+  Bell,
 } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import { useTranslation } from 'react-i18next';
 import Colors from '@/constants/colors';
 import { getTranslatedServices, carsForSale, serviceCenters } from '@/constants/mockData';
+import { trpc } from '@/lib/trpc';
 
 
 const { width } = Dimensions.get('window');
@@ -50,6 +52,12 @@ export default function HomeScreen() {
   const [selectedSparePartsVehicleId, setSelectedSparePartsVehicleId] = useState<string | null>(null);
   const [activeSparePartsTab, setActiveSparePartsTab] = useState<'garage' | 'vin' | 'ai'>('garage');
   const [activeCarsTab, setActiveCarsTab] = useState<'new' | 'preowned'>('new');
+  const [aiQuery, setAiQuery] = useState('');
+  const [vinQuery, setVinQuery] = useState('');
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [vinResult, setVinResult] = useState<any>(null);
+  const sparePartsMutation = trpc.ai.spareParts.useMutation();
+  const { language } = useApp();
 
   const selectedSparePartsVehicle = selectedSparePartsVehicleId
     ? vehicles.find((v) => v.id === selectedSparePartsVehicleId)
@@ -162,7 +170,15 @@ export default function HomeScreen() {
             </View>
             <Text style={[styles.logoText, { color: colors.text }]}>Qaraj</Text>
           </View>
-
+          <TouchableOpacity
+            onPress={() => router.push('/notifications')}
+            style={[styles.notifButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <Bell size={20} color={colors.primary} />
+            <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
+              <Text style={styles.notifBadgeText}>2</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -508,13 +524,84 @@ export default function HomeScreen() {
                     ]}
                     placeholder={t('home.askAboutPartsPlaceholder')}
                     placeholderTextColor={colors.textTertiary}
+                    value={aiQuery}
+                    onChangeText={setAiQuery}
+                    multiline={false}
+                    returnKeyType="send"
+                    onSubmitEditing={() => {
+                      if (!aiQuery.trim() || sparePartsMutation.isPending) return;
+                      const vehicle = selectedSparePartsVehicle;
+                      sparePartsMutation.mutate(
+                        {
+                          query: aiQuery.trim(),
+                          vehicleBrand: vehicle?.brand,
+                          vehicleModel: vehicle?.model,
+                          vehicleYear: vehicle?.year,
+                          vin: vehicle?.vin || undefined,
+                          language: (language as 'en' | 'az' | 'ru') || 'en',
+                        },
+                        {
+                          onSuccess: (data) => setAiResult(data.result),
+                        }
+                      );
+                    }}
                   />
                   <TouchableOpacity
-                    style={[styles.aiSendButton, { backgroundColor: colors.primary }]}
+                    style={[styles.aiSendButton, { backgroundColor: sparePartsMutation.isPending ? colors.border : colors.primary }]}
+                    disabled={sparePartsMutation.isPending}
+                    onPress={() => {
+                      if (!aiQuery.trim() || sparePartsMutation.isPending) return;
+                      const vehicle = selectedSparePartsVehicle;
+                      sparePartsMutation.mutate(
+                        {
+                          query: aiQuery.trim(),
+                          vehicleBrand: vehicle?.brand,
+                          vehicleModel: vehicle?.model,
+                          vehicleYear: vehicle?.year,
+                          vin: vehicle?.vin || undefined,
+                          language: (language as 'en' | 'az' | 'ru') || 'en',
+                        },
+                        {
+                          onSuccess: (data) => setAiResult(data.result),
+                        }
+                      );
+                    }}
                   >
-                    <Send size={20} color="#000000" />
+                    <Send size={20} color={sparePartsMutation.isPending ? colors.textTertiary : '#000000'} />
                   </TouchableOpacity>
                 </View>
+
+                {sparePartsMutation.isPending && (
+                  <View style={{ marginTop: 12, alignItems: 'center' }}>
+                    <Text style={{ color: colors.primary, fontSize: 14 }}>🔍 Searching parts...</Text>
+                  </View>
+                )}
+
+                {aiResult && !sparePartsMutation.isPending && (
+                  <View style={{ marginTop: 16 }}>
+                    <Text style={{ color: colors.text, fontWeight: '600', fontSize: 15, marginBottom: 8 }}>
+                      {aiResult.summary}
+                    </Text>
+                    {aiResult.parts?.map((part: any, idx: number) => (
+                      <View key={idx} style={[{ backgroundColor: colors.background, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border }]}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14, flex: 1 }}>{part.name}</Text>
+                          <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 14 }}>{part.estimatedPrice}</Text>
+                        </View>
+                        <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>Part #: {part.partNumber} · {part.category}</Text>
+                        <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{part.notes}</Text>
+                      </View>
+                    ))}
+                    {aiResult.maintenanceTips?.length > 0 && (
+                      <View style={{ marginTop: 8 }}>
+                        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13, marginBottom: 6 }}>💡 Maintenance Tips</Text>
+                        {aiResult.maintenanceTips.map((tip: string, idx: number) => (
+                          <Text key={idx} style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 4 }}>• {tip}</Text>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             </View>
           )}
@@ -849,6 +936,30 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 24,
+    fontWeight: '700' as const,
+  },
+  notifButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notifBadgeText: {
+    color: '#000000',
+    fontSize: 10,
     fontWeight: '700' as const,
   },
   headerActions: {

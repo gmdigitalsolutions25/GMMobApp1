@@ -19,6 +19,7 @@ function RootLayoutNav() {
       <Stack.Screen name="auth" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="add-vehicle" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="notifications" />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
