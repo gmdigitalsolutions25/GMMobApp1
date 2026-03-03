@@ -1,12 +1,17 @@
-import { publicProcedure } from "../../../create-context";
-import { db } from "../../../../../db";
-import { serviceCenters } from "../../../../../db/schema";
-import { asc } from "drizzle-orm";
+/**
+ * Qaraj Database Seed Script
+ *
+ * Populates the database with initial service center data.
+ * Run with: bun run db/seed.ts
+ *
+ * This is idempotent — it uses upsert logic to avoid duplicates.
+ */
 
-// Fallback in-memory data if DB is not yet seeded or unreachable
-const FALLBACK_CENTERS = [
+import { db, serviceCenters } from './index';
+import { sql } from 'drizzle-orm';
+
+const SERVICE_CENTERS_SEED = [
   {
-    id: 'sc-1',
     name: 'Qaraj Premium Service Center',
     address: 'Nizami küçəsi 45, Nərimanov rayonu',
     city: 'Baku',
@@ -19,7 +24,6 @@ const FALLBACK_CENTERS = [
     lng: 49.8671,
   },
   {
-    id: 'sc-2',
     name: 'AutoMaster Baku',
     address: 'Hüsü Hacıyev küçəsi 12, Xətai rayonu',
     city: 'Baku',
@@ -32,7 +36,6 @@ const FALLBACK_CENTERS = [
     lng: 49.8920,
   },
   {
-    id: 'sc-3',
     name: 'SpeedFix Auto',
     address: 'Əliağa Vahid küçəsi 88, Binəqədi rayonu',
     city: 'Baku',
@@ -45,7 +48,6 @@ const FALLBACK_CENTERS = [
     lng: 49.8290,
   },
   {
-    id: 'sc-4',
     name: 'TechCar Service',
     address: 'Əhməd Cavad küçəsi 23, Yasamal rayonu',
     city: 'Baku',
@@ -58,7 +60,6 @@ const FALLBACK_CENTERS = [
     lng: 49.8560,
   },
   {
-    id: 'sc-5',
     name: 'GarageElite Sumqayıt',
     address: 'Heydər Əliyev prospekti 101',
     city: 'Sumgait',
@@ -72,35 +73,30 @@ const FALLBACK_CENTERS = [
   },
 ];
 
-export const listServiceCentersProcedure = publicProcedure
-  .query(async () => {
-    try {
-      const centers = await db.query.serviceCenters.findMany({
-        orderBy: [asc(serviceCenters.name)],
-      });
+async function seed() {
+  console.log('🌱 Seeding database...');
 
-      if (centers.length === 0) {
-        // DB not yet seeded — return fallback
-        return { serviceCenters: FALLBACK_CENTERS };
-      }
-
-      return {
-        serviceCenters: centers.map((c) => ({
-          id: c.id,
-          name: c.name,
-          address: c.address,
-          city: c.city,
-          phone: c.phone,
-          rating: c.rating,
-          reviewCount: c.reviewCount,
-          services: c.services,
-          openHours: c.openHours,
-          lat: c.lat ?? undefined,
-          lng: c.lng ?? undefined,
-        })),
-      };
-    } catch (error) {
-      console.error('[serviceCenters.list] DB error, using fallback:', error);
-      return { serviceCenters: FALLBACK_CENTERS };
+  try {
+    // Seed service centers (upsert by name to be idempotent)
+    for (const center of SERVICE_CENTERS_SEED) {
+      await db
+        .insert(serviceCenters)
+        .values(center)
+        .onConflictDoNothing();
     }
-  });
+
+    console.log(`✅ Seeded ${SERVICE_CENTERS_SEED.length} service centers`);
+
+    // Verify
+    const count = await db.execute(sql`SELECT COUNT(*) FROM service_centers`);
+    console.log(`📊 Total service centers in DB: ${(count as any)[0]?.count ?? 'unknown'}`);
+
+    console.log('✅ Database seeding complete!');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Seeding failed:', error);
+    process.exit(1);
+  }
+}
+
+seed();

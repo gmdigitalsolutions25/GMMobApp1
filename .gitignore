@@ -31,6 +31,18 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+
+# Credentials & secrets
+google-play-service-account.json
+google-services.json
+GoogleService-Info.plist
+*.p8
+*.p12
+*.mobileprovision
+
+# Database migrations (generated, not committed)
+db/migrations/meta/
 
 # typescript
 *.tsbuildinfo

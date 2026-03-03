@@ -1,6 +1,8 @@
 import { publicProcedure } from "../../../create-context";
 import { z } from "zod";
-import { vehicleStore, userStore } from "@/backend/store";
+import { db } from "../../../../../db";
+import { users, vehicles, vehiclePhotos } from "../../../../../db/schema";
+import { eq } from "drizzle-orm";
 
 const vehiclePhotoSchema = z.object({
   id: z.string(),
@@ -24,29 +26,63 @@ export const createVehicleProcedure = publicProcedure
     })
   )
   .mutation(async ({ input }) => {
-    // Ensure user exists (auto-create if not)
-    let user = userStore.getByPhone(input.phone);
-    if (!user) {
-      user = userStore.upsert({
-        phone: input.phone,
-        username: input.phone,
-        language: "en",
-        theme: "dark",
+    try {
+      // Find or auto-create user
+      let user = await db.query.users.findFirst({
+        where: eq(users.phone, input.phone),
       });
+
+      if (!user) {
+        const [newUser] = await db
+          .insert(users)
+          .values({ phone: input.phone, username: input.phone })
+          .returning();
+        user = newUser;
+      }
+
+      // Create vehicle
+      const [vehicle] = await db
+        .insert(vehicles)
+        .values({
+          userId: user.id,
+          brand: input.brand,
+          model: input.model,
+          year: input.year,
+          vin: input.vin ?? '',
+          licensePlate: input.licensePlate ?? '',
+          mileage: input.mileage,
+          color: input.color,
+          primaryPhotoId: input.primaryPhotoId ?? null,
+        })
+        .returning();
+
+      // Insert photos
+      if (input.photos.length > 0) {
+        await db.insert(vehiclePhotos).values(
+          input.photos.map((p) => ({
+            vehicleId: vehicle.id,
+            uri: p.uri,
+            isPrimary: p.isPrimary,
+          }))
+        );
+      }
+
+      return {
+        success: true,
+        vehicle: {
+          id: vehicle.id,
+          brand: vehicle.brand,
+          model: vehicle.model,
+          year: vehicle.year,
+          vin: vehicle.vin ?? '',
+          licensePlate: vehicle.licensePlate ?? '',
+          mileage: vehicle.mileage ?? undefined,
+          color: vehicle.color ?? undefined,
+          createdAt: vehicle.createdAt.toISOString(),
+        },
+      };
+    } catch (error) {
+      console.error('[vehicles.create] DB error:', error);
+      throw new Error('Failed to create vehicle. Please try again.');
     }
-
-    const vehicle = vehicleStore.create({
-      userId: user.id,
-      brand: input.brand,
-      model: input.model,
-      year: input.year,
-      vin: input.vin,
-      licensePlate: input.licensePlate,
-      photos: input.photos,
-      primaryPhotoId: input.primaryPhotoId,
-      mileage: input.mileage,
-      color: input.color,
-    });
-
-    return { success: true, vehicle };
   });

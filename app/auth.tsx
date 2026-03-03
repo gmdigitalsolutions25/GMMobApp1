@@ -33,6 +33,8 @@ export default function AuthScreen() {
   const float2 = useRef(new Animated.Value(0)).current;
   const sendOtpMutation = trpc.auth.sendOtp.useMutation();
   const verifyOtpMutation = trpc.auth.verifyOtp.useMutation();
+  const setPinMutation = trpc.auth.setPin.useMutation();
+  const verifyPinMutation = trpc.auth.verifyPin.useMutation();
   const getUserQuery = trpc.users.getByPhone.useQuery(
     { phone },
     { enabled: false }
@@ -78,6 +80,11 @@ export default function AuthScreen() {
         });
         if (result.success) {
           setOtpError(null);
+          // Determine if new or returning user
+          try {
+            const userResult = await getUserQuery.refetch();
+            setIsNewUser(!userResult.data?.user?.id);
+          } catch { setIsNewUser(true); }
           setTimeout(() => setStep('pin'), 300);
         } else {
           setOtpError(result.message || 'Invalid OTP');
@@ -88,6 +95,7 @@ export default function AuthScreen() {
         // Fallback for offline/dev mode
         if (code === (devOtp || '123456')) {
           setOtpError(null);
+          setIsNewUser(true);
           setTimeout(() => setStep('pin'), 300);
         } else {
           setOtpError('Invalid OTP. Dev code: ' + (devOtp || '123456'));
@@ -116,9 +124,35 @@ export default function AuthScreen() {
     }
 
     if (newPin.every(digit => digit !== '')) {
-      // In production: verify PIN hash from server
-      // For now: accept any 4-digit PIN (first-time setup) or match stored PIN
-      handleAuthentication(newPin.join(''));
+      const pinCode = newPin.join('');
+      const unformatted = unformatPhoneNumber(phone);
+      try {
+        if (isNewUser) {
+          const result = await setPinMutation.mutateAsync({ phone: unformatted, pin: pinCode });
+          if (result.success) {
+            setPinError(null);
+            handleAuthentication(pinCode);
+          } else {
+            setPinError('Failed to set PIN. Please try again.');
+            setPin(['', '', '', '']);
+            pinRefs.current[0]?.focus();
+          }
+        } else {
+          const result = await verifyPinMutation.mutateAsync({ phone: unformatted, pin: pinCode });
+          if (result.success) {
+            setPinError(null);
+            handleAuthentication(pinCode);
+          } else {
+            setPinError((result as any).message || 'Incorrect PIN.');
+            setPin(['', '', '', '']);
+            pinRefs.current[0]?.focus();
+          }
+        }
+      } catch (e) {
+        // Offline/dev fallback
+        setPinError(null);
+        handleAuthentication(pinCode);
+      }
     }
   };
 

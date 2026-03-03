@@ -12,6 +12,10 @@ import { listServiceCentersProcedure } from "./routes/service-centers/list/route
 import { sparePartsSearchProcedure } from "./routes/ai/spare-parts/route";
 import { sendOtpProcedure } from "./routes/auth/send-otp/route";
 import { verifyOtpProcedure } from "./routes/auth/verify-otp/route";
+import { setPinProcedure } from "./routes/auth/set-pin/route";
+import { verifyPinProcedure } from "./routes/auth/verify-pin/route";
+import { changePinProcedure } from "./routes/auth/change-pin/route";
+import { registerPushTokenProcedure } from "./routes/push-tokens/register/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -40,6 +44,12 @@ export const appRouter = createTRPCRouter({
   auth: createTRPCRouter({
     sendOtp: sendOtpProcedure,
     verifyOtp: verifyOtpProcedure,
+    setPin: setPinProcedure,
+    verifyPin: verifyPinProcedure,
+    changePin: changePinProcedure,
+  }),
+  pushTokens: createTRPCRouter({
+    register: registerPushTokenProcedure,
   }),
 });
 

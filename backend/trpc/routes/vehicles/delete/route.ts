@@ -1,10 +1,21 @@
 import { publicProcedure } from "../../../create-context";
 import { z } from "zod";
-import { vehicleStore } from "@/backend/store";
+import { db } from "../../../../../db";
+import { vehicles } from "../../../../../db/schema";
+import { eq } from "drizzle-orm";
 
 export const deleteVehicleProcedure = publicProcedure
-  .input(z.object({ vehicleId: z.string() }))
+  .input(z.object({ vehicleId: z.string().uuid() }))
   .mutation(async ({ input }) => {
-    const deleted = vehicleStore.delete(input.vehicleId);
-    return { success: deleted };
+    try {
+      const result = await db
+        .delete(vehicles)
+        .where(eq(vehicles.id, input.vehicleId))
+        .returning({ id: vehicles.id });
+
+      return { success: result.length > 0 };
+    } catch (error) {
+      console.error('[vehicles.delete] DB error:', error);
+      throw new Error('Failed to delete vehicle. Please try again.');
+    }
   });
