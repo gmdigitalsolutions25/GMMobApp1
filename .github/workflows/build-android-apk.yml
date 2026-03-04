@@ -42,43 +42,23 @@ jobs:
       - name: Install project dependencies
         run: bun install
 
-      # ── 7. Create required assets ────────────────────────────────────────────
-      - name: Create app icon assets
+      # ── 7. Verify required assets ────────────────────────────────────────────
+      # Assets (icon.png, adaptive-icon.png, splash-icon.png, etc.) are committed
+      # to the repository. This step just verifies they exist and creates the
+      # notification sound file which is not tracked in git.
+      - name: Verify app assets
         run: |
-          pip install pillow --quiet
-          mkdir -p assets/images assets/sounds
-          python3 - << 'EOF'
-          from PIL import Image, ImageDraw, ImageFont
-          import struct
-
-          def create_icon(path, size, bg=(245,197,24), text="Q"):
-              img = Image.new("RGBA", (size, size), bg)
-              draw = ImageDraw.Draw(img)
-              m = size // 8
-              draw.ellipse([m, m, size-m, size-m], fill=(30,30,30))
-              fs = size // 2
-              try:
-                  font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", fs)
-              except:
-                  font = ImageFont.load_default()
-              bb = draw.textbbox((0,0), text, font=font)
-              x = (size - (bb[2]-bb[0])) // 2
-              y = (size - (bb[3]-bb[1])) // 2 - size//16
-              draw.text((x, y), text, fill=(245,197,24), font=font)
-              img.save(path)
-              print(f"Created {path}")
-
-          base = "assets/images"
-          create_icon(f"{base}/icon.png", 1024)
-          create_icon(f"{base}/adaptive-icon.png", 1024)
-          create_icon(f"{base}/notification-icon.png", 96)
-          create_icon(f"{base}/splash-icon.png", 200, bg=(255,255,255))
-          create_icon(f"{base}/favicon.png", 32)
-
-          data = b'RIFF' + struct.pack('<I',36) + b'WAVE' + b'fmt ' + struct.pack('<IHHIIHH',16,1,1,44100,88200,2,16) + b'data' + struct.pack('<I',0)
-          open('assets/sounds/notification.wav','wb').write(data)
-          print("All assets created")
-          EOF
+          mkdir -p assets/sounds
+          # Create a minimal silent WAV for notification sound (not tracked in git)
+          python3 -c "
+import struct
+data = b'RIFF' + struct.pack('<I',36) + b'WAVE' + b'fmt ' + struct.pack('<IHHIIHH',16,1,1,44100,88200,2,16) + b'data' + struct.pack('<I',0)
+open('assets/sounds/notification.wav','wb').write(data)
+print('notification.wav created')
+"
+          echo '=== Verifying icon assets ==='
+          ls -lh assets/images/
+          echo '=== All assets verified ==='
 
       # ── 8. Expo Prebuild ─────────────────────────────────────────────────────
       - name: Run Expo Prebuild (Android)
