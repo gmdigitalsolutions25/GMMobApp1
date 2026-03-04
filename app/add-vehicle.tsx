@@ -6,11 +6,14 @@ import {
   TextInput,
   ScrollView,
   Modal,
+  FlatList,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { X, ChevronDown, Image as ImageIcon } from 'lucide-react-native';
+import { X, ChevronDown, Image as ImageIcon, BookImage } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { useApp } from '@/providers/AppProvider';
@@ -18,6 +21,14 @@ import { useTranslation } from 'react-i18next';
 import Colors from '@/constants/colors';
 import { carBrands, carModels, carYears } from '@/constants/mockData';
 import type { VehiclePhoto } from '@/constants/types';
+import {
+  getBrandImages,
+  FALLBACK_CAR_IMAGE,
+  type CarImageEntry,
+} from '@/constants/carImages';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const THUMB_SIZE = (SCREEN_WIDTH - 40 - 20 * 2 - 12) / 3; // 3 columns inside modal with padding
 
 type PickerModalProps = {
   visible: boolean;
@@ -79,6 +90,97 @@ function PickerModal({ visible, onClose, title, options, onSelect, selectedValue
   );
 }
 
+// Library image picker modal — shows a 3-column grid of brand images
+type LibraryModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  brand: string;
+  onSelect: (uri: string) => void;
+  selectedUri: string | null;
+  colors: typeof Colors.dark;
+  t: (key: string) => string;
+};
+function LibraryModal({ visible, onClose, brand, onSelect, selectedUri, colors, t }: LibraryModalProps) {
+  const images = brand ? getBrandImages(brand) : [];
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.libraryOverlay}>
+        <View style={[styles.librarySheet, { backgroundColor: colors.background }]}>
+          {/* Header */}
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              {brand ? `${brand} — ${t('vehiclePhoto.library')}` : t('vehiclePhoto.library')}
+            </Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <X size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {images.length === 0 ? (
+            <View style={styles.libraryEmpty}>
+              <BookImage size={48} color={colors.textSecondary} />
+              <Text style={[styles.libraryEmptyTitle, { color: colors.text }]}>
+                {t('vehiclePhoto.noLibraryImages')}
+              </Text>
+              <Text style={[styles.libraryEmptyDesc, { color: colors.textSecondary }]}>
+                {brand
+                  ? t('vehiclePhoto.noLibraryImagesDesc')
+                  : t('addVehicle.selectBrandFirst')}
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={images}
+              keyExtractor={(item) => item.model}
+              numColumns={3}
+              contentContainerStyle={styles.libraryGrid}
+              renderItem={({ item }) => {
+                const isSelected = selectedUri === item.uri;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.libraryThumb,
+                      { borderColor: isSelected ? colors.primary : colors.border },
+                    ]}
+                    onPress={() => {
+                      onSelect(item.uri);
+                      onClose();
+                    }}
+                    activeOpacity={0.75}
+                  >
+                    <Image
+                      source={{ uri: item.uri }}
+                      style={styles.libraryThumbImage}
+                      contentFit="cover"
+                      placeholder={{ uri: FALLBACK_CAR_IMAGE }}
+                    />
+                    {isSelected && (
+                      <View style={styles.libraryThumbCheck}>
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>✓</Text>
+                      </View>
+                    )}
+                    <View style={[styles.libraryThumbLabel, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
+                      <Text style={styles.libraryThumbLabelText} numberOfLines={1}>
+                        {item.model}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function AddVehicleScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -94,7 +196,6 @@ export default function AddVehicleScreen() {
 
   const formatLicensePlate = (value: string) => {
     const cleaned = value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
-    
     if (cleaned.length <= 2) {
       return cleaned;
     } else if (cleaned.length <= 4) {
@@ -108,12 +209,12 @@ export default function AddVehicleScreen() {
     const formatted = formatLicensePlate(text);
     setLicensePlate(formatted);
   };
-  const [carImage, setCarImage] = useState<string | null>(null);
 
+  const [carImage, setCarImage] = useState<string | null>(null);
   const [showBrandPicker, setShowBrandPicker] = useState<boolean>(false);
   const [showModelPicker, setShowModelPicker] = useState<boolean>(false);
   const [showYearPicker, setShowYearPicker] = useState<boolean>(false);
-
+  const [showLibrary, setShowLibrary] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const availableModels = brand ? carModels[brand] || [] : [];
@@ -135,19 +236,16 @@ export default function AddVehicleScreen() {
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
     if (!permissionResult.granted) {
       alert(t('vehiclePhoto.permissionGallery'));
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images' as any,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
-
     if (!result.canceled && result.assets[0]) {
       setCarImage(result.assets[0].uri);
     }
@@ -155,14 +253,12 @@ export default function AddVehicleScreen() {
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
     if (!brand) {
       newErrors.brand = t('addVehicle.brandRequired');
     }
     if (!model) {
       newErrors.model = t('addVehicle.modelRequired');
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -171,7 +267,6 @@ export default function AddVehicleScreen() {
     if (!validateForm()) {
       return;
     }
-
     const photos: VehiclePhoto[] = carImage
       ? [
           {
@@ -181,7 +276,6 @@ export default function AddVehicleScreen() {
           },
         ]
       : [];
-
     await addVehicle({
       brand,
       model,
@@ -191,7 +285,6 @@ export default function AddVehicleScreen() {
       photos,
       primaryPhotoId: photos[0]?.id,
     });
-
     router.back();
   };
 
@@ -308,33 +401,64 @@ export default function AddVehicleScreen() {
           </Text>
         </View>
 
+        {/* Car Image section */}
         <View style={styles.formGroup}>
           <Text style={[styles.label, { color: colors.text }]}>{t('addVehicle.carImageOptional')}</Text>
-          <TouchableOpacity
-            style={[
-              styles.imagePickerButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-            onPress={pickImage}
-          >
-            {carImage ? (
-              <View style={styles.imagePreviewContainer}>
-                <Image source={{ uri: carImage }} style={styles.imagePreview} contentFit="cover" />
-                <View style={styles.changeImageOverlay}>
-                  <ImageIcon size={24} color="#FFFFFF" />
-                  <Text style={styles.changeImageText}>{t('addVehicle.changeImage')}</Text>
-                </View>
+
+          {/* Image preview */}
+          {carImage ? (
+            <View style={styles.imagePreviewContainer}>
+              <Image source={{ uri: carImage }} style={styles.imagePreview} contentFit="cover" />
+              <View style={styles.changeImageOverlay}>
+                <ImageIcon size={24} color="#FFFFFF" />
+                <Text style={styles.changeImageText}>{t('addVehicle.changeImage')}</Text>
               </View>
-            ) : (
-              <>
-                <ImageIcon size={24} color={colors.textSecondary} />
-                <Text style={[styles.imagePickerText, { color: colors.text }]}>{t('addVehicle.chooseFile')}</Text>
-                <Text style={[styles.imagePickerSubtext, { color: colors.textSecondary }]}>
-                  {t('addVehicle.noFileChosen')}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {/* Two buttons side by side */}
+          <View style={styles.imageButtonRow}>
+            {/* Upload from gallery */}
+            <TouchableOpacity
+              style={[
+                styles.imageButton,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+              onPress={pickImage}
+            >
+              <ImageIcon size={22} color={colors.primary} />
+              <Text style={[styles.imageButtonText, { color: colors.text }]}>
+                {t('addVehicle.chooseFile')}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Choose from library */}
+            <TouchableOpacity
+              style={[
+                styles.imageButton,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                !brand && { opacity: 0.45 },
+              ]}
+              onPress={() => {
+                if (!brand) {
+                  alert(t('addVehicle.selectBrandFirst'));
+                  return;
+                }
+                setShowLibrary(true);
+              }}
+            >
+              <BookImage size={22} color={colors.primary} />
+              <Text style={[styles.imageButtonText, { color: colors.text }]}>
+                {t('vehiclePhoto.chooseFromLibrary')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {!brand && (
+            <Text style={[styles.hint, { color: colors.textSecondary }]}>
+              {t('addVehicle.selectBrandFirst')}
+            </Text>
+          )}
         </View>
       </ScrollView>
 
@@ -352,6 +476,7 @@ export default function AddVehicleScreen() {
           <Text style={styles.addButtonText}>{t('addVehicle.addCar')}</Text>
         </TouchableOpacity>
       </View>
+
       <PickerModal
         visible={showBrandPicker}
         onClose={() => setShowBrandPicker(false)}
@@ -378,6 +503,15 @@ export default function AddVehicleScreen() {
         onSelect={setYear}
         selectedValue={year}
         colors={colors}
+      />
+      <LibraryModal
+        visible={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        brand={brand}
+        onSelect={(uri) => setCarImage(uri)}
+        selectedUri={carImage}
+        colors={colors}
+        t={t}
       />
     </View>
   );
@@ -440,20 +574,13 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     marginTop: 8,
   },
-  imagePickerButton: {
-    borderRadius: 12,
-    borderWidth: 2,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 120,
-  },
   imagePreviewContainer: {
     width: '100%',
-    height: 200,
-    borderRadius: 8,
+    height: 180,
+    borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
+    marginBottom: 12,
   },
   imagePreview: {
     width: '100%',
@@ -475,14 +602,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600' as const,
   },
-  imagePickerText: {
-    fontSize: 15,
-    fontWeight: '500' as const,
-    marginTop: 12,
+  // Two-button row for image selection
+  imageButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  imagePickerSubtext: {
+  imageButton: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 18,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 2,
+    minHeight: 90,
+  },
+  imageButtonText: {
     fontSize: 13,
-    marginTop: 4,
+    fontWeight: '500' as const,
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',
@@ -516,6 +656,7 @@ const styles = StyleSheet.create({
     fontWeight: '700' as const,
     color: '#000000',
   },
+  // Picker modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -536,7 +677,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   modalTitle: {
     fontSize: 18,
@@ -548,9 +688,78 @@ const styles = StyleSheet.create({
   modalOption: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   modalOptionText: {
     fontSize: 16,
+  },
+  // Library modal styles
+  libraryOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  librarySheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+    overflow: 'hidden',
+  },
+  libraryGrid: {
+    padding: 12,
+    gap: 6,
+  },
+  libraryThumb: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE * 0.7,
+    margin: 3,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 2,
+    position: 'relative',
+  },
+  libraryThumbImage: {
+    width: '100%',
+    height: '100%',
+  },
+  libraryThumbCheck: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#22C55E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  libraryThumbLabel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 3,
+  },
+  libraryThumbLabelText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600' as const,
+    textAlign: 'center',
+  },
+  libraryEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 48,
+    gap: 12,
+  },
+  libraryEmptyTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    textAlign: 'center',
+  },
+  libraryEmptyDesc: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
