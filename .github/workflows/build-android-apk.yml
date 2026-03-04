@@ -48,17 +48,10 @@ jobs:
       # notification sound file which is not tracked in git.
       - name: Verify app assets
         run: |
-          mkdir -p assets/sounds
-          # Create a minimal silent WAV for notification sound (not tracked in git)
-          python3 -c "
-import struct
-data = b'RIFF' + struct.pack('<I',36) + b'WAVE' + b'fmt ' + struct.pack('<IHHIIHH',16,1,1,44100,88200,2,16) + b'data' + struct.pack('<I',0)
-open('assets/sounds/notification.wav','wb').write(data)
-print('notification.wav created')
-"
-          echo '=== Verifying icon assets ==='
+          python3 scripts/create_notification_wav.py
+          echo "=== Verifying icon assets ==="
           ls -lh assets/images/
-          echo '=== All assets verified ==='
+          echo "=== All assets verified ==="
 
       # ── 8. Expo Prebuild ─────────────────────────────────────────────────────
       - name: Run Expo Prebuild (Android)
