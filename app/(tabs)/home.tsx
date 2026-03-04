@@ -29,6 +29,13 @@ import {
   MapPin,
   Star,
   Bell,
+  X,
+  Home,
+  User,
+  Settings,
+  ShoppingBag,
+  Building2,
+  ChevronRight,
 } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +57,9 @@ export default function HomeScreen() {
   const sparePartsSectionRef = useRef<View>(null);
   const carsSectionRef = useRef<View>(null);
   const serviceCentersSectionRef = useRef<View>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuSlideAnim = useRef(new Animated.Value(-width * 0.8)).current;
+  const menuOverlayAnim = useRef(new Animated.Value(0)).current;
   const [isSparePartsDropdownOpen, setIsSparePartsDropdownOpen] = useState(false);
   const [selectedSparePartsVehicleId, setSelectedSparePartsVehicleId] = useState<string | null>(null);
   const [activeSparePartsTab, setActiveSparePartsTab] = useState<'garage' | 'vin' | 'ai'>('garage');
@@ -68,6 +78,77 @@ export default function HomeScreen() {
   const float1 = useRef(new Animated.Value(0)).current;
   const float2 = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(1)).current;
+
+  const openMenu = () => {
+    setIsMenuOpen(true);
+    Animated.parallel([
+      Animated.timing(menuSlideAnim, {
+        toValue: 0,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+      Animated.timing(menuOverlayAnim, {
+        toValue: 1,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeMenu = () => {
+    Animated.parallel([
+      Animated.timing(menuSlideAnim, {
+        toValue: -width * 0.8,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(menuOverlayAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsMenuOpen(false);
+    });
+  };
+
+  const menuItems = [
+    { key: 'home', icon: Home, label: t('menu.home'), action: () => { closeMenu(); } },
+    { key: 'myGarage', icon: Car, label: t('menu.myGarage'), action: () => { closeMenu(); router.push('/vehicles'); } },
+    { key: 'appointments', icon: Calendar, label: t('menu.appointments'), action: () => { closeMenu(); router.push('/appointments'); } },
+    { key: 'spareParts', icon: Wrench, label: t('menu.spareParts'), action: () => {
+      closeMenu();
+      setTimeout(() => {
+        sparePartsSectionRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (_x: number, y: number) => { scrollViewRef.current?.scrollTo({ y, animated: true }); },
+          () => {}
+        );
+      }, 300);
+    }},
+    { key: 'carsForSale', icon: ShoppingBag, label: t('menu.carsForSale'), action: () => {
+      closeMenu();
+      setTimeout(() => {
+        carsSectionRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (_x: number, y: number) => { scrollViewRef.current?.scrollTo({ y, animated: true }); },
+          () => {}
+        );
+      }, 300);
+    }},
+    { key: 'serviceCenters', icon: Building2, label: t('menu.serviceCenters'), action: () => {
+      closeMenu();
+      setTimeout(() => {
+        serviceCentersSectionRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (_x: number, y: number) => { scrollViewRef.current?.scrollTo({ y, animated: true }); },
+          () => {}
+        );
+      }, 300);
+    }},
+    { key: 'notifications', icon: Bell, label: t('menu.notifications'), action: () => { closeMenu(); router.push('/notifications'); } },
+    { key: 'profile', icon: User, label: t('menu.profile'), action: () => { closeMenu(); router.push('/profile'); } },
+  ];
 
   useEffect(() => {
     const floatAnimation1 = Animated.loop(
@@ -166,12 +247,12 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.headerTop}>
-          <View style={styles.logoContainer}>
+          <TouchableOpacity style={styles.logoContainer} onPress={openMenu} activeOpacity={0.7}>
             <View style={[styles.logoIcon, { backgroundColor: colors.primary }]}>
               <Wrench size={20} color={colors.background} />
             </View>
             <Text style={[styles.logoText, { color: colors.text }]}>Qaraj</Text>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push('/notifications')}
             style={[styles.notifButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -916,6 +997,69 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Side Menu Drawer */}
+      {isMenuOpen && (
+        <View style={styles.menuOverlayContainer}>
+          <Animated.View
+            style={[
+              styles.menuOverlay,
+              { opacity: menuOverlayAnim },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.menuOverlayTouchable}
+              activeOpacity={1}
+              onPress={closeMenu}
+            />
+          </Animated.View>
+          <Animated.View
+            style={[
+              styles.menuDrawer,
+              {
+                backgroundColor: colors.surface,
+                transform: [{ translateX: menuSlideAnim }],
+                paddingTop: insets.top,
+              },
+            ]}
+          >
+            <View style={styles.menuHeader}>
+              <View style={styles.menuLogoRow}>
+                <View style={[styles.menuLogoIcon, { backgroundColor: colors.primary }]}>
+                  <Wrench size={22} color={colors.background} />
+                </View>
+                <Text style={[styles.menuLogoText, { color: colors.text }]}>Qaraj</Text>
+              </View>
+              <TouchableOpacity onPress={closeMenu} style={[styles.menuCloseButton, { backgroundColor: colors.background }]}>
+                <X size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+            <ScrollView style={styles.menuItemsList} showsVerticalScrollIndicator={false}>
+              {menuItems.map((item) => {
+                const IconComponent = item.icon;
+                return (
+                  <TouchableOpacity
+                    key={item.key}
+                    style={styles.menuItem}
+                    onPress={item.action}
+                    activeOpacity={0.6}
+                  >
+                    <View style={[styles.menuItemIconContainer, { backgroundColor: `${colors.primary}15` }]}>
+                      <IconComponent size={20} color={colors.primary} />
+                    </View>
+                    <Text style={[styles.menuItemLabel, { color: colors.text }]}>{item.label}</Text>
+                    <ChevronRight size={18} color={colors.textTertiary} />
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <View style={[styles.menuFooter, { borderTopColor: colors.border }]}>
+              <Text style={[styles.menuFooterText, { color: colors.textTertiary }]}>Qaraj v1.6</Text>
+            </View>
+          </Animated.View>
+        </View>
+      )}
     </View>
   );
 }
@@ -1569,5 +1713,102 @@ const styles = StyleSheet.create({
   serviceCenterButtonTextSecondary: {
     fontSize: 14,
     fontWeight: '700' as const,
+  },
+  menuOverlayContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  menuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  menuOverlayTouchable: {
+    flex: 1,
+  },
+  menuDrawer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: width * 0.8,
+    shadowColor: '#000',
+    shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  menuLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  menuLogoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuLogoText: {
+    fontSize: 26,
+    fontWeight: '700' as const,
+  },
+  menuCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuDivider: {
+    height: 1,
+    marginHorizontal: 20,
+  },
+  menuItemsList: {
+    flex: 1,
+    paddingTop: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    gap: 14,
+  },
+  menuItemIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuItemLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600' as const,
+  },
+  menuFooter: {
+    borderTopWidth: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  menuFooterText: {
+    fontSize: 12,
   },
 });
