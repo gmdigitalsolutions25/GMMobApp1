@@ -6,15 +6,21 @@ import {
   TextInput,
   ScrollView,
   Modal,
+  Alert,
+  Platform,
 } from 'react-native';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { X, ChevronDown } from 'lucide-react-native';
+import { X, ChevronDown, Camera, Trash2, Upload, Images } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '@/providers/AppProvider';
 import { useTranslation } from 'react-i18next';
 import Colors from '@/constants/colors';
 import { carBrands, carModels, carYears } from '@/constants/mockData';
+import { getCarModelImage, FALLBACK_CAR_IMAGE } from '@/constants/carImages';
+import type { VehiclePhoto } from '@/constants/types';
 
 type PickerModalProps = {
   visible: boolean;
@@ -93,6 +99,7 @@ export default function EditVehicleScreen() {
   const [vin, setVin] = useState<string>(vehicle?.vin || '');
   const [licensePlate, setLicensePlate] = useState<string>(vehicle?.licensePlate || '');
   const [mileage, setMileage] = useState<string>(vehicle?.mileage?.toString() || '');
+  const [photos, setPhotos] = useState<VehiclePhoto[]>(vehicle?.photos || []);
 
   const [showBrandPicker, setShowBrandPicker] = useState<boolean>(false);
   const [showModelPicker, setShowModelPicker] = useState<boolean>(false);
@@ -101,6 +108,11 @@ export default function EditVehicleScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const availableModels = brand ? carModels[brand] || [] : [];
+
+  // Determine the primary photo URI to display
+  const primaryPhoto = photos.find(p => p.isPrimary) || photos[0];
+  const libraryImage = getCarModelImage(brand || vehicle?.brand || '', model || vehicle?.model || '');
+  const displayPhotoUri = primaryPhoto?.uri || libraryImage?.uri || FALLBACK_CAR_IMAGE;
 
   const formatLicensePlate = (value: string) => {
     const cleaned = value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
@@ -124,6 +136,57 @@ export default function EditVehicleScreen() {
     if (errors.model) setErrors(prev => ({ ...prev, model: '' }));
   };
 
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      if (Platform.OS === 'web') {
+        alert(t('editVehicle.permissionGallery'));
+      } else {
+        Alert.alert(t('editVehicle.permissionRequired'), t('editVehicle.permissionGallery'));
+      }
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 10],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const newPhoto: VehiclePhoto = {
+        id: Date.now().toString(),
+        uri: result.assets[0].uri,
+        isPrimary: true,
+      };
+      // Replace all existing photos with the new one as primary
+      const updatedPhotos = [newPhoto, ...photos.map(p => ({ ...p, isPrimary: false }))];
+      setPhotos(updatedPhotos);
+    }
+  };
+
+  const deletePhoto = (photoId: string) => {
+    const confirmDelete = () => {
+      const updatedPhotos = photos.filter(p => p.id !== photoId);
+      if (updatedPhotos.length > 0 && !updatedPhotos.find(p => p.isPrimary)) {
+        updatedPhotos[0].isPrimary = true;
+      }
+      setPhotos(updatedPhotos);
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm(t('editVehicle.deletePhotoConfirm'))) confirmDelete();
+    } else {
+      Alert.alert(
+        t('editVehicle.deletePhoto'),
+        t('editVehicle.deletePhotoConfirm'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.delete'), style: 'destructive', onPress: confirmDelete },
+        ],
+        { cancelable: true }
+      );
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!brand) newErrors.brand = t('addVehicle.brandRequired');
@@ -142,6 +205,8 @@ export default function EditVehicleScreen() {
       vin: vin || '',
       licensePlate: licensePlate || '',
       mileage: mileage ? parseInt(mileage, 10) : vehicle?.mileage,
+      photos,
+      primaryPhotoId: photos.find(p => p.isPrimary)?.id || vehicle?.primaryPhotoId,
     });
     router.back();
   };
@@ -170,6 +235,68 @@ export default function EditVehicleScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Vehicle Photo Section */}
+        <View style={styles.formGroup}>
+          <Text style={[styles.label, { color: colors.text }]}>{t('editVehicle.vehiclePhoto')}</Text>
+          <View style={[styles.photoSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {/* Photo Preview */}
+            <View style={styles.photoPreviewContainer}>
+              <Image
+                source={{ uri: displayPhotoUri }}
+                style={styles.photoPreview}
+                contentFit="cover"
+                placeholder={{ uri: FALLBACK_CAR_IMAGE }}
+              />
+              {primaryPhoto && (
+                <TouchableOpacity
+                  style={[styles.deletePhotoButton, { backgroundColor: colors.error }]}
+                  onPress={() => deletePhoto(primaryPhoto.id)}
+                >
+                  <Trash2 size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Photo Action Buttons */}
+            <View style={styles.photoButtonRow}>
+              <TouchableOpacity
+                style={[styles.photoActionButton, { backgroundColor: colors.primary }]}
+                onPress={pickImage}
+              >
+                <Upload size={18} color="#000000" />
+                <Text style={[styles.photoActionButtonText, { color: '#000000' }]}>
+                  {primaryPhoto ? t('editVehicle.changePhoto') : t('editVehicle.addPhoto')}
+                </Text>
+              </TouchableOpacity>
+
+              {primaryPhoto && (
+                <TouchableOpacity
+                  style={[styles.photoActionButtonSecondary, { borderColor: colors.error }]}
+                  onPress={() => deletePhoto(primaryPhoto.id)}
+                >
+                  <Trash2 size={18} color={colors.error} />
+                  <Text style={[styles.photoActionButtonText, { color: colors.error }]}>
+                    {t('editVehicle.deletePhoto')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Additional photos count indicator */}
+            {photos.length > 1 && (
+              <TouchableOpacity
+                style={[styles.morePhotosRow, { borderTopColor: colors.border }]}
+                onPress={() => router.push({ pathname: '/vehicle-photo', params: { vehicleId } })}
+              >
+                <Images size={16} color={colors.primary} />
+                <Text style={[styles.morePhotosText, { color: colors.primary }]}>
+                  {photos.length} {t('vehiclePhoto.photos')} — {t('vehiclePhoto.myPhotos')}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         {/* Brand */}
         <View style={styles.formGroup}>
           <Text style={[styles.label, { color: colors.text }]}>{t('addVehicle.brand')}</Text>
@@ -336,6 +463,70 @@ const styles = StyleSheet.create({
   inputText: { fontSize: 15 },
   hint: { fontSize: 12, marginTop: 8 },
   errorText: { fontSize: 12, color: '#EF4444', marginTop: 8 },
+  // Photo section
+  photoSection: {
+    borderRadius: 16,
+    borderWidth: 2,
+    overflow: 'hidden',
+  },
+  photoPreviewContainer: {
+    position: 'relative',
+  },
+  photoPreview: {
+    width: '100%',
+    height: 200,
+  },
+  deletePhotoButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+  },
+  photoActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  photoActionButtonSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
+  photoActionButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  morePhotosRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  morePhotosText: {
+    fontSize: 13,
+    fontWeight: '500' as const,
+  },
+  // Footer
   footer: {
     flexDirection: 'row',
     gap: 12,
@@ -360,6 +551,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   saveButtonText: { fontSize: 16, fontWeight: '700' as const, color: '#000000' },
+  // Picker modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
