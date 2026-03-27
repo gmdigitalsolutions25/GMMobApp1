@@ -36,7 +36,8 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-web": "^0.21.0",
-    "superjson": "^2.2.5"
+    "superjson": "^2.2.5",
+    "@rork-ai/toolkit-sdk": "latest"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -44,7 +45,8 @@
     "@types/react": "~19.1.10",
     "eslint": "9.31.0",
     "eslint-config-expo": "9.2.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "@expo/ngrok": "^4.1.0"
   },
   "private": true,
   "expo": {
