@@ -181,6 +181,7 @@ const resources = {
         clearAll: 'Clear All',
         selectTimeTitle: 'Select Time',
         servicesSelected: 'service(s) selected',
+        workingHours: 'Working hours: 09:00 – 17:00',
       },
       profile: {
         profile: 'Profile',
@@ -562,6 +563,7 @@ const resources = {
         clearAll: 'Hamısını Təmizlə',
         selectTimeTitle: 'Vaxt Seçin',
         servicesSelected: 'xidmət seçildi',
+        workingHours: 'İş saatları: 09:00 – 17:00',
       },
       profile: {
         profile: 'Profil',
@@ -942,6 +944,7 @@ const resources = {
         clearAll: 'Очистить Все',
         selectTimeTitle: 'Выберите Время',
         servicesSelected: 'услуг(и) выбрано',
+        workingHours: 'Рабочие часы: 09:00 – 17:00',
       },
       profile: {
         profile: 'Профиль',

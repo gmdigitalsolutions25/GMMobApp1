@@ -112,11 +112,18 @@ export default function AppointmentsScreen() {
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
+  // Working hours: 09:00 – 17:00 (last slot 17:00, no 17:30 since closing is 17:00)
+  const WORK_START_HOUR = 9;
+  const WORK_END_HOUR = 17; // inclusive: last slot is 17:00
+
   const generateTimeSlots = () => {
     const slots: string[] = [];
-    for (let hour = 8; hour < 18; hour++) {
+    for (let hour = WORK_START_HOUR; hour <= WORK_END_HOUR; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      // Don't add :30 for the last hour (17:30 is outside working hours)
+      if (hour < WORK_END_HOUR) {
+        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
     }
     return slots;
   };
@@ -815,6 +822,9 @@ export default function AppointmentsScreen() {
         >
           <View style={[styles.dropdownModal, { backgroundColor: colors.surface }]}>
             <Text style={[styles.dropdownTitle, { color: colors.text }]}>Select Time</Text>
+            <Text style={[styles.workingHoursNote, { color: colors.textSecondary }]}>
+              {t('appointments.workingHours')}
+            </Text>
             <ScrollView style={styles.dropdownList} showsVerticalScrollIndicator={false}>
               {timeSlots.map((time) => (
                 <TouchableOpacity
@@ -1096,6 +1106,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700' as const,
     marginBottom: 16,
+  },
+  workingHoursNote: {
+    fontSize: 12,
+    textAlign: 'center' as const,
+    marginTop: -8,
+    marginBottom: 12,
   },
   dropdownList: {
     maxHeight: 400,
