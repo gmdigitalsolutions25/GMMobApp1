@@ -1,0 +1,123 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: expo
+
+jobs:
+  build:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js ───────────────────────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── 3. Java 17 ───────────────────────────────────────────────────────────
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # ── 4. Android SDK ───────────────────────────────────────────────────────
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ── 5. Install Bun ───────────────────────────────────────────────────────
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # ── 6. Install dependencies ──────────────────────────────────────────────
+      - name: Install project dependencies
+        run: bun install
+
+      # ── 7. Verify required assets ────────────────────────────────────────────
+      # Assets (icon.png, adaptive-icon.png, splash-icon.png, etc.) are committed
+      # to the repository. This step just verifies they exist and creates the
+      # notification sound file which is not tracked in git.
+      - name: Verify app assets
+        run: |
+          python3 scripts/create_notification_wav.py
+          echo "=== Verifying icon assets ==="
+          ls -lh assets/images/
+          echo "=== All assets verified ==="
+
+      # ── 8. Expo Prebuild ─────────────────────────────────────────────────────
+      - name: Run Expo Prebuild (Android)
+        run: echo "y" | npx expo prebuild --platform android --clean
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      # ── 9. Force JS bundle into debug APK ──────────────────────────────────────
+      # expo prebuild --clean regenerates build.gradle from scratch every time.
+      # By default, debug builds skip JS bundling and expect a Metro dev server
+      # running on localhost:8081 — which doesn't exist on the device.
+      # Setting debuggableVariants=[] forces the JS bundle to be compiled and
+      # embedded into the APK so it works standalone without any dev server.
+      - name: Patch build.gradle — bundle JS in debug builds
+        run: |
+          sed -i 's|// debuggableVariants = \["liteDebug", "prodDebug"\]|debuggableVariants = []|' android/app/build.gradle
+          echo "=== Verifying patch ==="
+          grep -n "debuggableVariants" android/app/build.gradle
+
+      # ── 10. Make gradlew executable ──────────────────────────────────────────────
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      # ── 11. Cache Gradle ─────────────────────────────────────────────────────
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('expo/**/*.gradle*', 'expo/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # ── 12. Build APK ────────────────────────────────────────────────────────
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug \
+            --no-daemon \
+            -x test \
+            --stacktrace \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
+
+      # ── 13. Find and rename APK ──────────────────────────────────────────────
+      - name: Locate and rename APK
+        run: |
+          APK=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
+          echo "Found APK: $APK"
+          cp "$APK" Qaraj-GM-debug.apk
+          ls -lh Qaraj-GM-debug.apk
+
+      # ── 14. Upload APK as artifact ───────────────────────────────────────────
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Qaraj-GM-APK
+          path: expo/Qaraj-GM-debug.apk
+          retention-days: 30
+
+      # ── 15. Print download instructions ──────────────────────────────────────
+      - name: Build complete
+        run: |
+          echo "APK build successful!"
+          ls -lh Qaraj-GM-debug.apk

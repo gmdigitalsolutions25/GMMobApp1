@@ -1,0 +1,222 @@
+name: Build Android AAB (Production)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# This workflow builds a SIGNED release AAB (Android App Bundle) suitable for
+# submission to Google Play Store.
+#
+# PREREQUISITES — set these in GitHub → Settings → Secrets and variables → Actions:
+#
+#   KEYSTORE_BASE64        Base64-encoded .jks keystore file
+#                          Generate: keytool -genkey -v -keystore qaraj-release.jks
+#                                    -alias qaraj -keyalg RSA -keysize 2048
+#                                    -validity 10000
+#                          Encode:   base64 -w 0 qaraj-release.jks > keystore.b64
+#                          Then paste the content of keystore.b64 as the secret
+#
+#   KEYSTORE_PASSWORD      Password for the keystore file
+#   KEY_ALIAS              Key alias (e.g., "qaraj")
+#   KEY_PASSWORD           Password for the key alias
+#
+# TRIGGER: Manually via workflow_dispatch, or push a tag like v1.0.19
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version name (e.g., 1.0.19)'
+        required: false
+        default: '1.0.19'
+      version_code:
+        description: 'Version code (integer, must be higher than last upload)'
+        required: false
+        default: '19'
+  push:
+    branches: [main]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+defaults:
+  run:
+    working-directory: expo
+
+jobs:
+  build-aab:
+    name: Build Signed Release AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js ───────────────────────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── 3. Java 17 ───────────────────────────────────────────────────────────
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # ── 4. Android SDK ───────────────────────────────────────────────────────
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ── 5. Install Bun ───────────────────────────────────────────────────────
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # ── 6. Install dependencies ──────────────────────────────────────────────
+      - name: Install project dependencies
+        run: bun install
+
+      # ── 7. Update version in app.json ────────────────────────────────────────
+      - name: Update version in app.json
+        run: |
+          VERSION_NAME="${{ github.event.inputs.version_name || '1.0.19' }}"
+          VERSION_CODE="${{ github.event.inputs.version_code || '19' }}"
+          # Extract from tag if triggered by tag push
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION_NAME="${{ github.ref_name }}"
+            VERSION_NAME="${VERSION_NAME#v}"
+          fi
+          echo "Setting version: $VERSION_NAME ($VERSION_CODE)"
+          python3 -c "
+          import json
+          with open('app.json', 'r') as f:
+              config = json.load(f)
+          config['expo']['version'] = '$VERSION_NAME'
+          config['expo']['android']['versionCode'] = int('$VERSION_CODE')
+          with open('app.json', 'w') as f:
+              json.dump(config, f, indent=2)
+          print('app.json updated')
+          "
+          cat app.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'Version: {d[\"expo\"][\"version\"]} ({d[\"expo\"][\"android\"][\"versionCode\"]})')"
+
+      # ── 8. Verify assets ─────────────────────────────────────────────────────
+      - name: Verify app assets
+        run: |
+          python3 scripts/create_notification_wav.py
+          echo "=== Icon assets ==="
+          ls -lh assets/images/
+
+      # ── 9. Expo Prebuild ─────────────────────────────────────────────────────
+      - name: Run Expo Prebuild (Android)
+        run: echo "y" | npx expo prebuild --platform android --clean
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      # ── 10. Decode and place keystore ─────────────────────────────────────────
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/qaraj-release.jks
+          echo "Keystore decoded successfully"
+          ls -lh android/app/qaraj-release.jks
+
+      # ── 11. Configure signing in build.gradle ─────────────────────────────────
+      - name: Configure release signing
+        run: |
+          # Inject signingConfigs into android/app/build.gradle
+          python3 << 'PYEOF'
+          import re
+
+          with open('android/app/build.gradle', 'r') as f:
+              content = f.read()
+
+          # Add signingConfigs block after android { line
+          signing_config = '''
+              signingConfigs {
+                  release {
+                      storeFile file("qaraj-release.jks")
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+          '''
+
+          # Insert signingConfigs before buildTypes
+          if 'signingConfigs' not in content:
+              content = content.replace(
+                  '    buildTypes {',
+                  signing_config + '    buildTypes {'
+              )
+
+          # Configure release buildType to use signingConfig
+          content = re.sub(
+              r'(release \{[^}]*?)(minifyEnabled)',
+              r'\1signingConfig signingConfigs.release\n            \2',
+              content,
+              flags=re.DOTALL
+          )
+
+          with open('android/app/build.gradle', 'w') as f:
+              f.write(content)
+
+          print("build.gradle signing configured")
+          PYEOF
+
+      # ── 12. Make gradlew executable ───────────────────────────────────────────
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      # ── 13. Cache Gradle ──────────────────────────────────────────────────────
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-aab-${{ hashFiles('expo/**/*.gradle*', 'expo/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-aab-
+
+      # ── 14. Build Release AAB ─────────────────────────────────────────────────
+      - name: Build Release AAB
+        run: |
+          cd android
+          ./gradlew bundleRelease \
+            --no-daemon \
+            -x test \
+            --stacktrace \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      # ── 15. Locate and rename AAB ─────────────────────────────────────────────
+      - name: Locate and rename AAB
+        run: |
+          AAB=$(find android/app/build/outputs/bundle -name "*.aab" | head -1)
+          echo "Found AAB: $AAB"
+          VERSION="${{ github.event.inputs.version_name || '1.0.19' }}"
+          cp "$AAB" "Qaraj-GM-v${VERSION}-release.aab"
+          ls -lh "Qaraj-GM-v${VERSION}-release.aab"
+
+      # ── 16. Upload AAB artifact ───────────────────────────────────────────────
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Qaraj-GM-AAB-Release
+          path: expo/Qaraj-GM-v*-release.aab
+          retention-days: 90
+
+      # ── 17. Build summary ─────────────────────────────────────────────────────
+      - name: Build complete
+        run: |
+          echo "✅ AAB build successful!"
+          ls -lh Qaraj-GM-v*-release.aab
+          echo ""
+          echo "Next steps:"
+          echo "  1. Download the AAB from GitHub Actions artifacts"
+          echo "  2. Upload to Google Play Console → Internal Testing track"
+          echo "  3. Complete store listing, privacy policy, and content rating"
+          echo "  4. Promote to Production when ready"
