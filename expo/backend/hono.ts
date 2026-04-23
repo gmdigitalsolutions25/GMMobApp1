@@ -9,7 +9,7 @@ const app = new Hono();
 app.use("*", cors());
 
 app.use(
-  "/trpc/*",
+  "/api/trpc/*",
   trpcServer({
     endpoint: "/api/trpc",
     router: appRouter,
@@ -18,7 +18,7 @@ app.use(
 );
 
 app.get("/", (c) => {
-  return c.json({ status: "ok", message: "API is running" });
+  return c.json({ status: "ok", message: "Qaraj GM Backend API v1.0.0" });
 });
 
 export default app;
