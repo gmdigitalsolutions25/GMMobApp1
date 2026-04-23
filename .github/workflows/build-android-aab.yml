@@ -130,37 +130,55 @@ jobs:
           with open('android/app/build.gradle', 'r') as f:
               content = f.read()
 
-          # Add signingConfigs block after android { line
-          signing_config = '''
-              signingConfigs {
-                  release {
-                      storeFile file("qaraj-release.jks")
-                      storePassword System.getenv("KEYSTORE_PASSWORD")
-                      keyAlias System.getenv("KEY_ALIAS")
-                      keyPassword System.getenv("KEY_PASSWORD")
-                  }
-              }
-          '''
+          print("=== Original buildTypes section ===")
+          # Show what we're working with for debugging
+          bt_match = re.search(r'buildTypes\s*\{.*?\n    \}', content, re.DOTALL)
+          if bt_match:
+              print(bt_match.group()[:500])
 
-          # Insert signingConfigs before buildTypes
+          # Step 1: Add signingConfigs block before buildTypes
+          signing_block = '''    signingConfigs {
+        release {
+            storeFile file("qaraj-release.jks")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
+'''
           if 'signingConfigs' not in content:
               content = content.replace(
                   '    buildTypes {',
-                  signing_config + '    buildTypes {'
+                  signing_block + '    buildTypes {'
               )
+              print("Inserted signingConfigs block")
 
-          # Configure release buildType to use signingConfig
+          # Step 2: Add signingConfig to release buildType
+          # Match 'release {' inside buildTypes and add signingConfig line after it
           content = re.sub(
-              r'(release \{[^}]*?)(minifyEnabled)',
-              r'\1signingConfig signingConfigs.release\n            \2',
+              r'(release\s*\{)',
+              r'\1\n            signingConfig signingConfigs.release',
               content,
-              flags=re.DOTALL
+              count=1
           )
+          print("Added signingConfig to release buildType")
+
+          # Step 3: Also set debuggableVariants = [] to bundle JS
+          content = content.replace(
+              '// debuggableVariants = ["liteDebug", "prodDebug"]',
+              'debuggableVariants = []'
+          )
+          print("Set debuggableVariants = []")
 
           with open('android/app/build.gradle', 'w') as f:
               f.write(content)
 
-          print("build.gradle signing configured")
+          # Verify the result
+          print("\n=== Modified buildTypes section ===")
+          bt_match = re.search(r'signingConfigs\s*\{.*?buildTypes\s*\{.*?\n    \}', content, re.DOTALL)
+          if bt_match:
+              print(bt_match.group()[:800])
+          print("\nbuild.gradle signing configured successfully")
           PYEOF
 
       # ── 12. Make gradlew executable ───────────────────────────────────────────
