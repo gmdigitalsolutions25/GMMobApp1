@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Phone, ArrowLeft, Check, Car, Wrench } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
+import { useTranslation } from 'react-i18next';
 import { formatPhoneNumber, unformatPhoneNumber, PHONE_PLACEHOLDER } from '@/constants/phoneUtils';
 
 import type { User as UserType } from '@/constants/types';
@@ -19,6 +20,7 @@ export default function AuthScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signIn } = useApp();
+  const { t } = useTranslation();
   const [step, setStep] = useState<AuthStep>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -43,7 +45,7 @@ export default function AuthScreen() {
   const handlePhoneSubmit = async () => {
     const unformatted = unformatPhoneNumber(phone);
     if (unformatted.length < 12) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+      Alert.alert(t('common.error'), t('auth.invalidPhone'));
       return;
     }
     try {
@@ -87,7 +89,7 @@ export default function AuthScreen() {
           } catch { setIsNewUser(true); }
           setTimeout(() => setStep('pin'), 300);
         } else {
-          setOtpError(result.message || 'Invalid OTP');
+          setOtpError(result.message || t('auth.invalidOtp'));
           setOtp(['', '', '', '', '', '']);
           otpRefs.current[0]?.focus();
         }
@@ -98,7 +100,7 @@ export default function AuthScreen() {
           setIsNewUser(true);
           setTimeout(() => setStep('pin'), 300);
         } else {
-          setOtpError('Invalid OTP. Dev code: ' + (devOtp || '123456'));
+          setOtpError(t('auth.invalidOtp') + '. Dev code: ' + (devOtp || '123456'));
           setOtp(['', '', '', '', '', '']);
           otpRefs.current[0]?.focus();
         }
@@ -133,7 +135,7 @@ export default function AuthScreen() {
             setPinError(null);
             handleAuthentication(pinCode);
           } else {
-            setPinError('Failed to set PIN. Please try again.');
+            setPinError(t('auth.failedSetPin'));
             setPin(['', '', '', '']);
             pinRefs.current[0]?.focus();
           }
@@ -143,7 +145,7 @@ export default function AuthScreen() {
             setPinError(null);
             handleAuthentication(pinCode);
           } else {
-            setPinError((result as any).message || 'Incorrect PIN.');
+            setPinError((result as any).message || t('auth.incorrectPin'));
             setPin(['', '', '', '']);
             pinRefs.current[0]?.focus();
           }
@@ -304,14 +306,14 @@ export default function AuthScreen() {
               </View>
 
               <Text style={styles.title}>
-                {step === 'phone' && 'Enter your phone'}
-                {step === 'otp' && 'Verify OTP'}
-                {step === 'pin' && 'Create PIN'}
+                {step === 'phone' && t('auth.enterPhone')}
+                {step === 'otp' && t('auth.verifyOtp')}
+                {step === 'pin' && t('auth.createPin')}
               </Text>
               <Text style={styles.subtitle}>
-                {step === 'phone' && 'We will send you a verification code'}
-                {step === 'otp' && `Enter the 6-digit code sent to ${phone}`}
-                {step === 'pin' && 'Create a 4-digit PIN for quick access'}
+                {step === 'phone' && t('auth.sendVerificationCode')}
+                {step === 'otp' && `${t('auth.enterOtpCode')} ${phone}`}
+                {step === 'pin' && t('auth.createPinDesc')}
               </Text>
             </View>
 
@@ -341,7 +343,7 @@ export default function AuthScreen() {
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                     >
-                      <Text style={styles.submitText}>Send Code</Text>
+                      <Text style={styles.submitText}>{t('auth.sendCode')}</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                 </>
@@ -366,7 +368,7 @@ export default function AuthScreen() {
                   </View>
 
                   <TouchableOpacity style={styles.resendButton}>
-                    <Text style={styles.resendText}>Did not receive code? Resend</Text>
+                    <Text style={styles.resendText}>{t('auth.resendCode')}</Text>
                   </TouchableOpacity>
 
                   <View style={styles.mockHint}>
@@ -396,7 +398,7 @@ export default function AuthScreen() {
 
                   <View style={styles.pinHint}>
                     <Check size={16} color={Colors.dark.success} />
-                    <Text style={styles.pinHintText}>Use this PIN for quick login</Text>
+                    <Text style={styles.pinHintText}>{t('auth.pinHint')}</Text>
                   </View>
 
                   <View style={styles.mockHint}>

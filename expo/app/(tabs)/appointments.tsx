@@ -74,11 +74,11 @@ export default function AppointmentsScreen() {
   ];
 
   const serviceTypes = [
-    { name: 'Oil Change', duration: '~30-45 min', description: 'Regular maintenance' },
-    { name: 'Full Inspection', duration: '~60-90 min', description: 'Full vehicle check' },
-    { name: 'Brake Service', duration: '~90-120 min', description: 'Brake repair & replacement' },
-    { name: 'Tire Service', duration: '~45-60 min', description: 'Rotation & replacement' },
-    { name: 'Filter Replacement', duration: '~25 min', description: 'Regular maintenance & replacement' },
+    { name: t('home.oilChangeName'), duration: '~30-45 min', description: t('home.oilChangeDesc') },
+    { name: t('home.fullInspectionName'), duration: '~60-90 min', description: t('home.fullInspectionDesc') },
+    { name: t('home.brakeServiceName'), duration: '~90-120 min', description: t('home.brakeServiceDesc') },
+    { name: t('home.tireServiceName'), duration: '~45-60 min', description: t('home.tireServiceDesc') },
+    { name: t('appointments.filterReplacement'), duration: '~25 min', description: t('appointments.filterReplacementDesc') },
   ];
 
   const getStatusColor = (status: Appointment['status']) => {
@@ -170,15 +170,15 @@ export default function AppointmentsScreen() {
 
   const handleCancelAppointment = (appointmentId: string) => {
     Alert.alert(
-      'Cancel Appointment',
-      'Are you sure you want to cancel this appointment?',
+      t('appointments.cancelAppointment'),
+      t('appointments.cancelAppointmentConfirm'),
       [
         {
-          text: 'No',
+          text: t('appointments.no'),
           style: 'cancel',
         },
         {
-          text: 'Yes, Cancel',
+          text: t('appointments.yesCancel'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -186,7 +186,7 @@ export default function AppointmentsScreen() {
               setExpandedAppointmentId(null);
             } catch (error) {
               console.error('Failed to cancel appointment:', error);
-              Alert.alert('Error', 'Failed to cancel appointment. Please try again.');
+              Alert.alert(t('common.error'), t('appointments.failedToCancel'));
             }
           },
         },
@@ -196,7 +196,7 @@ export default function AppointmentsScreen() {
 
   const handleBookAppointment = async () => {
     if (!selectedVehicleId || !selectedDate || !selectedTime || !selectedServiceCenter || selectedServiceTypes.length === 0) {
-      alert('Please fill in all required fields');
+      alert(t('appointments.fillRequiredFields'));
       return;
     }
 
@@ -228,7 +228,7 @@ export default function AppointmentsScreen() {
       setAdditionalNotes('');
     } catch (error) {
       console.error('Failed to book appointment:', error);
-      alert('Failed to book appointment. Please try again.');
+      alert(t('appointments.failedToBook'));
     }
   };
 
@@ -300,7 +300,7 @@ export default function AppointmentsScreen() {
                     {isExpanded && (
                       <View style={[styles.expandedDetails, { borderTopColor: colors.border }]}>
                         <View style={styles.expandedRow}>
-                          <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>Service Center:</Text>
+                          <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>{t('appointments.serviceCenter')}</Text>
                           <Text style={[styles.expandedValue, { color: colors.text }]}>
                             {appointment.serviceCenter}
                           </Text>
@@ -308,7 +308,7 @@ export default function AppointmentsScreen() {
 
                         {vehicle && (
                           <View style={styles.expandedRow}>
-                            <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>Vehicle:</Text>
+                            <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>{t('appointments.vehicle')}</Text>
                             <Text style={[styles.expandedValue, { color: colors.text }]}>
                               {vehicle.brand} {vehicle.model} ({vehicle.year})
                             </Text>
@@ -317,7 +317,7 @@ export default function AppointmentsScreen() {
 
                         {vehicle?.licensePlate && (
                           <View style={styles.expandedRow}>
-                            <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>License Plate:</Text>
+                            <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>{t('appointments.licensePlate')}</Text>
                             <Text style={[styles.expandedValue, { color: colors.text }]}>
                               {vehicle.licensePlate}
                             </Text>
@@ -326,7 +326,7 @@ export default function AppointmentsScreen() {
 
                         {appointment.notes && (
                           <View style={styles.expandedRow}>
-                            <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>Notes:</Text>
+                            <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>{t('appointments.notes')}</Text>
                             <Text style={[styles.expandedValue, { color: colors.text }]}>
                               {appointment.notes}
                             </Text>
@@ -334,7 +334,7 @@ export default function AppointmentsScreen() {
                         )}
 
                         <View style={styles.expandedRow}>
-                          <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>Booked on:</Text>
+                          <Text style={[styles.expandedLabel, { color: colors.textSecondary }]}>{t('appointments.bookedOn')}</Text>
                           <Text style={[styles.expandedValue, { color: colors.text }]}>
                             {new Date(appointment.createdAt).toLocaleString()}
                           </Text>
@@ -346,7 +346,7 @@ export default function AppointmentsScreen() {
                             onPress={() => handleCancelAppointment(appointment.id)}
                           >
                             <Trash2 size={18} color={colors.error} />
-                            <Text style={[styles.cancelButtonText, { color: colors.error }]}>Cancel Visit</Text>
+                            <Text style={[styles.cancelButtonText, { color: colors.error }]}>{t('appointments.cancelVisit')}</Text>
                           </TouchableOpacity>
                         )}
                       </View>
@@ -360,10 +360,10 @@ export default function AppointmentsScreen() {
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Book Your <Text style={{ color: colors.primary }}>Service</Text>
+            {t('appointments.bookYourService')}
           </Text>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Expert automotive service with certified technicians and genuine parts
+            {t('appointments.expertService')}
           </Text>
 
           <View
@@ -373,12 +373,12 @@ export default function AppointmentsScreen() {
             ]}
           >
             <Text style={[styles.bookingCardTitle, { color: colors.text }]}>
-              Schedule Appointment
+              {t('appointments.scheduleAppointment')}
             </Text>
 
             <View style={styles.formGroup}>
               <Text style={[styles.label, { color: colors.text }]}>
-                Select Vehicle
+                {t('appointments.selectVehicle')}
               </Text>
               <TouchableOpacity
                 style={[
@@ -388,7 +388,7 @@ export default function AppointmentsScreen() {
                 onPress={() => setShowVehiclePicker(true)}
               >
                 <Text style={[styles.selectText, { color: selectedVehicle ? colors.text : colors.textSecondary }]}>
-                  {selectedVehicle ? `${selectedVehicle.brand} ${selectedVehicle.model} - ${selectedVehicle.licensePlate}` : 'Select a vehicle'}
+                  {selectedVehicle ? `${selectedVehicle.brand} ${selectedVehicle.model} - ${selectedVehicle.licensePlate}` : t('vehicles.selectAVehicle')}
                 </Text>
                 <ChevronDown size={20} color={colors.textTertiary} />
               </TouchableOpacity>
@@ -402,13 +402,13 @@ export default function AppointmentsScreen() {
                 ]}
               >
                 <Text style={[styles.vehiclePreviewLabel, { color: colors.textSecondary }]}>
-                  Booking for:
+                  {t('appointments.bookingFor')}
                 </Text>
                 <Text style={[styles.vehiclePreviewTitle, { color: colors.text }]}>
                   {selectedVehicle.brand} {selectedVehicle.model} ({selectedVehicle.year})
                 </Text>
                 <Text style={[styles.vehiclePreviewPlate, { color: colors.primary }]}>
-                  Plate: {selectedVehicle.licensePlate}
+                  {t('appointments.plate')} {selectedVehicle.licensePlate}
                 </Text>
               </View>
             )}
@@ -416,7 +416,7 @@ export default function AppointmentsScreen() {
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={[styles.label, { color: colors.text }]}>
-                  <Calendar size={14} color={colors.text} /> Date
+                  <Calendar size={14} color={colors.text} /> {t('appointments.selectDate')}
                 </Text>
                 <TouchableOpacity
                   style={[
@@ -426,13 +426,13 @@ export default function AppointmentsScreen() {
                   onPress={() => setShowDatePicker(true)}
                 >
                   <Text style={[styles.inputText, { color: selectedDate ? colors.text : colors.textSecondary }]}>
-                    {selectedDate ? formatDate(selectedDate) : 'Pick a date'}
+                    {selectedDate ? formatDate(selectedDate) : t('appointments.pickDate')}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={[styles.label, { color: colors.text }]}>Time</Text>
+                <Text style={[styles.label, { color: colors.text }]}>{t('appointments.selectTime')}</Text>
                 <TouchableOpacity
                   style={[
                     styles.input,
@@ -441,7 +441,7 @@ export default function AppointmentsScreen() {
                   onPress={() => setShowTimePicker(true)}
                 >
                   <Text style={[styles.inputText, { color: selectedTime ? colors.text : colors.textSecondary }]}>
-                    {selectedTime || 'Select...'}
+                    {selectedTime || t('appointments.selectDots')}
                   </Text>
                   <ChevronDown size={16} color={colors.textTertiary} />
                 </TouchableOpacity>
@@ -449,7 +449,7 @@ export default function AppointmentsScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>Service Center</Text>
+              <Text style={[styles.label, { color: colors.text }]}>{t('appointments.selectServiceCenterTitle')}</Text>
               <TouchableOpacity
                 style={[
                   styles.select,
@@ -458,14 +458,14 @@ export default function AppointmentsScreen() {
                 onPress={() => setShowServiceCenterPicker(true)}
               >
                 <Text style={[styles.selectText, { color: selectedServiceCenter ? colors.text : colors.textSecondary }]}>
-                  {selectedServiceCenter || 'Choose service center'}
+                  {selectedServiceCenter || t('appointments.chooseServiceCenter')}
                 </Text>
                 <ChevronDown size={20} color={colors.textTertiary} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>Service Type</Text>
+              <Text style={[styles.label, { color: colors.text }]}>{t('services.serviceType')}</Text>
               <TouchableOpacity
                 style={[
                   styles.select,
@@ -475,8 +475,8 @@ export default function AppointmentsScreen() {
               >
                 <Text style={[styles.selectText, { color: selectedServiceTypes.length > 0 ? colors.text : colors.textSecondary }]}>
                   {selectedServiceTypes.length > 0 
-                    ? `${selectedServiceTypes.length} service${selectedServiceTypes.length > 1 ? 's' : ''} selected`
-                    : 'Select services'}
+                    ? `${selectedServiceTypes.length} ${t('appointments.servicesSelected')}`
+                    : t('appointments.selectServices')}
                 </Text>
                 <ChevronDown size={20} color={colors.textTertiary} />
               </TouchableOpacity>
@@ -484,7 +484,7 @@ export default function AppointmentsScreen() {
 
             <View style={styles.formGroup}>
               <Text style={[styles.label, { color: colors.text }]}>
-                Additional Notes
+                {t('appointments.addNotes')}
               </Text>
               <TextInput
                 style={[
@@ -495,7 +495,7 @@ export default function AppointmentsScreen() {
                     color: colors.text,
                   },
                 ]}
-                placeholder="Any specific concerns or requests..."
+                placeholder={t('appointments.anySpecificConcerns')}
                 placeholderTextColor={colors.textTertiary}
                 multiline
                 numberOfLines={4}
@@ -504,7 +504,7 @@ export default function AppointmentsScreen() {
                 maxLength={1000}
               />
               <Text style={[styles.charCount, { color: colors.textTertiary }]}>
-                {additionalNotes.length}/1000 characters
+                {additionalNotes.length}/1000 {t('appointments.characters')}
               </Text>
             </View>
 
@@ -514,7 +514,7 @@ export default function AppointmentsScreen() {
             >
               <Calendar size={20} color="#000000" />
               <Text style={[styles.bookButtonText, { color: '#000000' }]}>
-                Book Appointment
+                {t('appointments.bookAppointment')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -545,7 +545,7 @@ export default function AppointmentsScreen() {
           onPress={() => setShowVehiclePicker(false)}
         >
           <View style={[styles.dropdownModal, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.dropdownTitle, { color: colors.text }]}>Select Vehicle</Text>
+            <Text style={[styles.dropdownTitle, { color: colors.text }]}>{t('appointments.selectVehicle')}</Text>
             <ScrollView style={styles.dropdownList}>
               {vehicles.map((vehicle) => (
                 <TouchableOpacity
@@ -606,7 +606,7 @@ export default function AppointmentsScreen() {
           onPress={() => setShowServiceCenterPicker(false)}
         >
           <View style={[styles.dropdownModal, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.dropdownTitle, { color: colors.text }]}>Select Service Center</Text>
+            <Text style={[styles.dropdownTitle, { color: colors.text }]}>{t('appointments.selectServiceCenterTitle')}</Text>
             <ScrollView style={styles.dropdownList}>
               {serviceCenters.map((center) => (
                 <TouchableOpacity
@@ -657,13 +657,13 @@ export default function AppointmentsScreen() {
         >
           <View style={[styles.dropdownModal, { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.dropdownTitle, { color: colors.text }]}>Select Services</Text>
+              <Text style={[styles.dropdownTitle, { color: colors.text }]}>{t('appointments.selectServicesTitle')}</Text>
               {selectedServiceTypes.length > 0 && (
                 <TouchableOpacity
                   onPress={() => setSelectedServiceTypes([])}
                   style={styles.clearButton}
                 >
-                  <Text style={[styles.clearButtonText, { color: colors.primary }]}>Clear All</Text>
+                  <Text style={[styles.clearButtonText, { color: colors.primary }]}>{t('appointments.clearAll')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -718,7 +718,7 @@ export default function AppointmentsScreen() {
               style={[styles.doneButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowServiceTypePicker(false)}
             >
-              <Text style={[styles.doneButtonText, { color: '#000000' }]}>Done</Text>
+              <Text style={[styles.doneButtonText, { color: '#000000' }]}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -736,7 +736,7 @@ export default function AppointmentsScreen() {
           onPress={() => setShowDatePicker(false)}
         >
           <View style={[styles.calendarModal, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.dropdownTitle, { color: colors.text }]}>Select Date</Text>
+            <Text style={[styles.dropdownTitle, { color: colors.text }]}>{t('appointments.selectDate')}</Text>
             
             <View style={styles.calendarHeader}>
               <TouchableOpacity onPress={handlePreviousMonth} style={styles.monthNavButton}>
@@ -821,7 +821,7 @@ export default function AppointmentsScreen() {
           onPress={() => setShowTimePicker(false)}
         >
           <View style={[styles.dropdownModal, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.dropdownTitle, { color: colors.text }]}>Select Time</Text>
+            <Text style={[styles.dropdownTitle, { color: colors.text }]}>{t('appointments.selectTimeTitle')}</Text>
             <Text style={[styles.workingHoursNote, { color: colors.textSecondary }]}>
               {t('appointments.workingHours')}
             </Text>
@@ -878,18 +878,18 @@ export default function AppointmentsScreen() {
             <View style={[styles.successIcon, { backgroundColor: `${colors.success}20` }]}>
               <CheckCircle size={48} color={colors.success} />
             </View>
-            <Text style={[styles.successTitle, { color: colors.text }]}>Appointment Booked!</Text>
+            <Text style={[styles.successTitle, { color: colors.text }]}>{t('appointments.appointmentBooked')}</Text>
             <Text style={[styles.successMessage, { color: colors.textSecondary }]}>
-              Your service appointment has been successfully scheduled.
+              {t('appointments.appointmentBookedDesc')}
             </Text>
             <Text style={[styles.successDetails, { color: colors.textTertiary }]}>
-              You can view your appointment details below in your appointments list.
+              {t('appointments.appointmentBookedDetails')}
             </Text>
             <TouchableOpacity
               style={[styles.successButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowSuccessModal(false)}
             >
-              <Text style={[styles.successButtonText, { color: '#000000' }]}>Got it</Text>
+              <Text style={[styles.successButtonText, { color: '#000000' }]}>{t('appointments.gotIt')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>

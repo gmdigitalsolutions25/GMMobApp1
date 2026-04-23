@@ -656,7 +656,7 @@ export default function HomeScreen() {
 
                 {sparePartsMutation.isPending && (
                   <View style={{ marginTop: 12, alignItems: 'center' }}>
-                    <Text style={{ color: colors.primary, fontSize: 14 }}>🔍 Searching parts...</Text>
+                    <Text style={{ color: colors.primary, fontSize: 14 }}>🔍 {t('home.searchingParts')}</Text>
                   </View>
                 )}
 
@@ -671,13 +671,13 @@ export default function HomeScreen() {
                           <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14, flex: 1 }}>{part.name}</Text>
                           <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 14 }}>{part.estimatedPrice}</Text>
                         </View>
-                        <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>Part #: {part.partNumber} · {part.category}</Text>
+                        <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('home.partNumber')}: {part.partNumber} · {part.category}</Text>
                         <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{part.notes}</Text>
                       </View>
                     ))}
                     {aiResult.maintenanceTips?.length > 0 && (
                       <View style={{ marginTop: 8 }}>
-                        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13, marginBottom: 6 }}>💡 Maintenance Tips</Text>
+                        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13, marginBottom: 6 }}>💡 {t('home.maintenanceTips')}</Text>
                         {aiResult.maintenanceTips.map((tip: string, idx: number) => (
                           <Text key={idx} style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 4 }}>• {tip}</Text>
                         ))}

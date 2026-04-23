@@ -35,10 +35,10 @@ export default function ServiceDetailsScreen() {
   }
 
   const highlights = [
-    { icon: <Clock size={18} color={colors.primary} />, label: 'Duration', value: service.duration },
-    { icon: <DollarSign size={18} color={colors.primary} />, label: 'Starting from', value: `₼${service.price}` },
-    { icon: <Shield size={18} color={colors.primary} />, label: 'Warranty', value: '6 months' },
-    { icon: <Star size={18} color={colors.primary} />, label: 'Rating', value: '4.8 / 5.0' },
+    { icon: <Clock size={18} color={colors.primary} />, label: t('services.duration'), value: service.duration },
+    { icon: <DollarSign size={18} color={colors.primary} />, label: t('services.startingFrom'), value: `₼${service.price}` },
+    { icon: <Shield size={18} color={colors.primary} />, label: t('services.warranty'), value: t('services.sixMonths') },
+    { icon: <Star size={18} color={colors.primary} />, label: t('services.rating'), value: '4.8 / 5.0' },
   ];
 
   return (
@@ -63,7 +63,7 @@ export default function ServiceDetailsScreen() {
           <View style={styles.imageContent}>
             <View style={[styles.categoryBadge, { backgroundColor: colors.primary }]}>
               <Wrench size={14} color="#000" />
-              <Text style={styles.categoryBadgeText}>Service</Text>
+              <Text style={styles.categoryBadgeText}>{t('services.service')}</Text>
             </View>
             <Text style={styles.imageTitle}>{service.name}</Text>
           </View>
@@ -83,7 +83,7 @@ export default function ServiceDetailsScreen() {
 
           {/* Description */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>About This Service</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('services.aboutThisService')}</Text>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
               {service.fullDescription}
             </Text>
@@ -91,7 +91,7 @@ export default function ServiceDetailsScreen() {
 
           {/* What's Included */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>What's Included</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('services.whatsIncluded')}</Text>
             <View style={[styles.includesCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {service.includes.map((item, index) => (
                 <View key={index} style={styles.includeItem}>
@@ -104,14 +104,14 @@ export default function ServiceDetailsScreen() {
 
           {/* Why Choose Qaraj */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Why Choose Qaraj?</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('services.whyChooseQaraj')}</Text>
             <View style={[styles.whyCard, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }]}>
               {[
-                'Certified technicians with 10+ years experience',
-                'Genuine OEM and premium aftermarket parts',
-                'Transparent pricing — no hidden fees',
-                '6-month service warranty on all work',
-                'Real-time status updates via the app',
+                t('services.reason1'),
+                t('services.reason2'),
+                t('services.reason3'),
+                t('services.reason4'),
+                t('services.reason5'),
               ].map((reason, idx) => (
                 <View key={idx} style={styles.whyItem}>
                   <View style={[styles.whyDot, { backgroundColor: colors.primary }]} />
@@ -139,7 +139,7 @@ export default function ServiceDetailsScreen() {
           }
         >
           <Calendar size={18} color="#000" />
-          <Text style={styles.bookButtonText}>Book Now</Text>
+          <Text style={styles.bookButtonText}>{t('services.bookNow')}</Text>
         </TouchableOpacity>
       </View>
     </View>

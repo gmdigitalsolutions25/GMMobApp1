@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Bell, Calendar, Wrench, Car, Info } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
+import { useTranslation } from 'react-i18next';
 
 interface NotificationSetting {
   id: string;
@@ -25,42 +26,43 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme } = useApp();
+  const { t } = useTranslation();
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
 
   const [settings, setSettings] = useState<NotificationSetting[]>([
     {
       id: 'appointment_reminders',
       icon: <Calendar size={22} color={colors.primary} />,
-      title: 'Appointment Reminders',
-      description: 'Get notified 24h and 1h before your service appointment',
+      title: t('notifications.appointmentReminders'),
+      description: t('notifications.appointmentRemindersDesc'),
       enabled: true,
     },
     {
       id: 'service_due',
       icon: <Wrench size={22} color={colors.primary} />,
-      title: 'Service Due Alerts',
-      description: 'Receive alerts when your vehicle is due for maintenance',
+      title: t('notifications.serviceDueAlerts'),
+      description: t('notifications.serviceDueAlertsDesc'),
       enabled: true,
     },
     {
       id: 'vehicle_updates',
       icon: <Car size={22} color={colors.primary} />,
-      title: 'Vehicle Status Updates',
-      description: 'Get notified when your vehicle service status changes',
+      title: t('notifications.vehicleStatusUpdates'),
+      description: t('notifications.vehicleStatusUpdatesDesc'),
       enabled: true,
     },
     {
       id: 'promotions',
       icon: <Info size={22} color={colors.primary} />,
-      title: 'Promotions & Offers',
-      description: 'Receive special offers and discounts from Qaraj service centers',
+      title: t('notifications.promotionsOffers'),
+      description: t('notifications.promotionsOffersDesc'),
       enabled: false,
     },
     {
       id: 'general',
       icon: <Bell size={22} color={colors.primary} />,
-      title: 'General Notifications',
-      description: 'App updates, news, and important announcements',
+      title: t('notifications.generalNotifications'),
+      description: t('notifications.generalNotificationsDesc'),
       enabled: true,
     },
   ]);
@@ -75,25 +77,25 @@ export default function NotificationsScreen() {
   const recentNotifications = [
     {
       id: '1',
-      title: 'Appointment Confirmed',
-      message: 'Your oil change appointment on Mar 10 at 10:00 AM has been confirmed.',
-      time: '2 hours ago',
+      title: t('notifications.appointmentConfirmed'),
+      message: t('notifications.appointmentConfirmedMsg'),
+      time: t('notifications.twoHoursAgo'),
       read: false,
       type: 'appointment',
     },
     {
       id: '2',
-      title: 'Service Due Soon',
-      message: 'Your Toyota Camry is due for a filter replacement in 500 km.',
-      time: '1 day ago',
+      title: t('notifications.serviceDueSoon'),
+      message: t('notifications.serviceDueSoonMsg'),
+      time: t('notifications.oneDayAgo'),
       read: true,
       type: 'service',
     },
     {
       id: '3',
-      title: 'Welcome to Qaraj!',
-      message: 'Thank you for joining. Book your first service appointment today.',
-      time: '3 days ago',
+      title: t('notifications.welcomeToQaraj'),
+      message: t('notifications.welcomeToQarajMsg'),
+      time: t('notifications.threeDaysAgo'),
       read: true,
       type: 'general',
     },
@@ -105,14 +107,14 @@ export default function NotificationsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('notifications.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Recent Notifications */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('notifications.recent')}</Text>
           {recentNotifications.map((notif) => (
             <View
               key={notif.id}
@@ -136,7 +138,7 @@ export default function NotificationsScreen() {
 
         {/* Notification Settings */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Notification Settings</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('notifications.notificationSettings')}</Text>
           <View style={[styles.settingsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {settings.map((setting, index) => (
               <View key={setting.id}>

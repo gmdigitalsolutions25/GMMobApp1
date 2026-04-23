@@ -109,7 +109,7 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      Alert.alert(t('profile.errorUpdateProfile'), t('profile.errorUpdateProfileMessage'));
     }
   };
 
@@ -118,7 +118,7 @@ export default function ProfileScreen() {
       await updateUser({ username: editedName.trim() });
       setIsEditingName(false);
     } else {
-      Alert.alert('Error', 'Please enter a valid name.');
+      Alert.alert(t('profile.errorUpdateProfile'), t('profile.enterValidName'));
     }
   };
 
@@ -181,7 +181,7 @@ export default function ProfileScreen() {
                   value={editedName}
                   onChangeText={setEditedName}
                   autoFocus
-                  placeholder="Enter your name"
+                  placeholder={t('profile.enterYourName')}
                   placeholderTextColor={colors.textTertiary}
                 />
                 <View style={styles.editButtons}>
@@ -189,13 +189,13 @@ export default function ProfileScreen() {
                     style={[styles.editButton, { backgroundColor: colors.error + '20' }]}
                     onPress={handleCancelEdit}
                   >
-                    <Text style={[styles.editButtonText, { color: colors.error }]}>Cancel</Text>
+                    <Text style={[styles.editButtonText, { color: colors.error }]}>{t('profile.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.editButton, { backgroundColor: colors.primary }]}
                     onPress={handleSaveName}
                   >
-                    <Text style={[styles.editButtonText, { color: '#fff' }]}>Save</Text>
+                    <Text style={[styles.editButtonText, { color: '#fff' }]}>{t('profile.save')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
