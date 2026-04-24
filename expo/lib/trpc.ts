@@ -26,11 +26,19 @@ const getBaseUrl = (): string => {
   return 'http://localhost:3000';
 };
 
+// API key for authenticating mobile app requests to the backend
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY || 'qaraj-dev-key-2026';
+
 export const trpcClient = trpc.createClient({
   links: [
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
+      headers() {
+        return {
+          'x-api-key': API_KEY,
+        };
+      },
     }),
   ],
 });

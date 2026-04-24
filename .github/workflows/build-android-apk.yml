@@ -63,6 +63,7 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: 1
           EXPO_PUBLIC_API_BASE_URL: http://91.107.161.67:3000
+          EXPO_PUBLIC_API_KEY: qaraj-dev-key-2026
 
       # ── 9. Force JS bundle into debug APK ──────────────────────────────────────
       # expo prebuild --clean regenerates build.gradle from scratch every time.
@@ -102,6 +103,7 @@ jobs:
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
         env:
           EXPO_PUBLIC_API_BASE_URL: http://91.107.161.67:3000
+          EXPO_PUBLIC_API_KEY: qaraj-dev-key-2026
 
       # ── 13. Find and rename APK ──────────────────────────────────────────────
       - name: Locate and rename APK
