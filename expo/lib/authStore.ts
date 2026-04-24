@@ -97,7 +97,7 @@ export async function getLastActivity(): Promise<number> {
 /**
  * Determine what auth level is needed based on last activity.
  *
- * - 'none': Active within 24 hours → go straight to home
+ * - 'none': Active within 1 hour → go straight to home
  * - 'pin': Active within 7 days → ask for PIN or biometric
  * - 'otp': Inactive for 30+ days or no session → full re-auth
  */
@@ -111,7 +111,7 @@ export async function getRequiredAuthLevel(): Promise<'none' | 'pin' | 'otp'> {
   const now = Date.now();
   const hoursSinceActivity = (now - lastActivity) / (1000 * 60 * 60);
 
-  if (hoursSinceActivity < 24) return 'none';      // Fresh — skip auth
+  if (hoursSinceActivity < 1) return 'none';       // Fresh — skip auth (1 hour grace)
   if (hoursSinceActivity < 7 * 24) return 'pin';   // Within a week — PIN/biometric
   return 'otp';                                      // Stale — full re-auth
 }

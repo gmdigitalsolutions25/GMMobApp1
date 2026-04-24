@@ -4,8 +4,8 @@
  * Auth routing logic:
  *   1. App starts → check SecureStore for JWT token + phone
  *   2. No token/phone → /auth (full flow: phone → OTP → PIN)
- *   3. Token exists, activity < 24h → straight to /(tabs)/home
- *   4. Token exists, activity 24h–7d → /pin-login (PIN or biometric)
+ *   3. Token exists, activity < 1h → straight to /(tabs)/home
+ *   4. Token exists, activity 1h–7d → /pin-login (PIN or biometric)
  *   5. Token exists, activity > 30d → /auth (full re-auth)
  *   6. No onboarding completed → /welcome
  */
