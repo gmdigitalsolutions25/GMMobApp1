@@ -15,6 +15,7 @@ import { verifyOtpProcedure } from "./routes/auth/verify-otp/route";
 import { setPinProcedure } from "./routes/auth/set-pin/route";
 import { verifyPinProcedure } from "./routes/auth/verify-pin/route";
 import { changePinProcedure } from "./routes/auth/change-pin/route";
+import { refreshTokenProcedure } from "./routes/auth/refresh-token/route";
 import { registerPushTokenProcedure } from "./routes/push-tokens/register/route";
 
 export const appRouter = createTRPCRouter({
@@ -47,6 +48,7 @@ export const appRouter = createTRPCRouter({
     setPin: setPinProcedure,
     verifyPin: verifyPinProcedure,
     changePin: changePinProcedure,
+    refreshToken: refreshTokenProcedure,
   }),
   pushTokens: createTRPCRouter({
     register: registerPushTokenProcedure,

@@ -7,10 +7,15 @@
  *
  * The AppRouter type is imported from @/types/router which is a type-only
  * file with no server-side imports.
+ *
+ * Headers sent with every request:
+ *   - x-api-key: API key for backend authentication
+ *   - Authorization: Bearer <JWT> for user session (when available)
  */
 import { createTRPCReact } from '@trpc/react-query';
 import { httpLink } from '@trpc/client';
 import superjson from 'superjson';
+import * as SecureStore from 'expo-secure-store';
 import type { AppRouter } from '@/types/router';
 
 export const trpc = createTRPCReact<AppRouter>();
@@ -21,8 +26,6 @@ const getBaseUrl = (): string => {
     return process.env.EXPO_PUBLIC_API_BASE_URL;
   }
   // Default to localhost for local development
-  // The app works fully offline without a backend — API calls will fail
-  // gracefully and the app will use local AsyncStorage state instead.
   return 'http://localhost:3000';
 };
 
@@ -34,10 +37,22 @@ export const trpcClient = trpc.createClient({
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
-      headers() {
-        return {
+      async headers() {
+        const headers: Record<string, string> = {
           'x-api-key': API_KEY,
         };
+
+        // Attach JWT token if available
+        try {
+          const token = await SecureStore.getItemAsync('qaraj_jwt_token');
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+        } catch {
+          // SecureStore not available (e.g., during SSR) — skip
+        }
+
+        return headers;
       },
     }),
   ],

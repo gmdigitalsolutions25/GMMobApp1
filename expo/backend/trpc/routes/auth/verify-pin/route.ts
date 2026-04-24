@@ -1,7 +1,7 @@
 /**
- * auth.verifyPin — Verify a PIN against the stored bcrypt hash
+ * auth.verifyPin — Verify a PIN against the stored bcrypt hash and return JWT
  *
- * Returns success: true if the PIN matches, along with the user profile.
+ * Returns success: true with JWT token and user profile if PIN matches.
  * Returns success: false with a message if the PIN is wrong or user not found.
  *
  * Includes attempt tracking to prevent brute-force attacks.
@@ -13,6 +13,7 @@ import bcrypt from "bcryptjs";
 import { db } from "../../../../../db";
 import { users } from "../../../../../db/schema";
 import { eq } from "drizzle-orm";
+import { createToken } from "../jwt-utils";
 
 // In-memory attempt tracker (replace with Redis in production for multi-instance support)
 const pinAttempts = new Map<string, { count: number; lockedUntil: number }>();
@@ -33,6 +34,7 @@ export const verifyPinProcedure = publicProcedure
   .mutation(async ({ input }) => {
     try {
       if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
+
       // Check lockout
       const tracker = pinAttempts.get(input.phone);
       if (tracker && tracker.lockedUntil > Date.now()) {
@@ -44,7 +46,7 @@ export const verifyPinProcedure = publicProcedure
         };
       }
 
-      // Fetch user
+      // Fetch user by phone (primary identifier)
       const user = await db.query.users.findFirst({
         where: eq(users.phone, input.phone),
       });
@@ -87,12 +89,17 @@ export const verifyPinProcedure = publicProcedure
         };
       }
 
-      // PIN correct — clear attempt tracker
+      // PIN correct — clear attempt tracker and issue JWT
       pinAttempts.delete(input.phone);
+
+      const token = createToken(user.id, user.phone);
+
+      console.log(`[AUTH] PIN verified for phone: ${input.phone}, user: ${user.id}`);
 
       return {
         success: true,
         message: "PIN verified successfully",
+        token,
         user: {
           id: user.id,
           phone: user.phone,

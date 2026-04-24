@@ -1,4 +1,16 @@
-import React, { useEffect, useRef } from 'react';
+/**
+ * Qaraj GM — Root Layout
+ *
+ * Auth routing logic:
+ *   1. App starts → check SecureStore for JWT token + phone
+ *   2. No token/phone → /auth (full flow: phone → OTP → PIN)
+ *   3. Token exists, activity < 24h → straight to /(tabs)/home
+ *   4. Token exists, activity 24h–7d → /pin-login (PIN or biometric)
+ *   5. Token exists, activity > 30d → /auth (full re-auth)
+ *   6. No onboarding completed → /welcome
+ */
+
+import React, { useEffect, useRef, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -7,6 +19,7 @@ import { trpc, trpcClient } from '@/lib/trpc';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import '@/constants/i18n';
 import { AppProvider, useApp } from '@/providers/AppProvider';
+import { getRequiredAuthLevel, getPhone, getToken } from '@/lib/authStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,25 +33,59 @@ function RootLayoutNav() {
   const router = useRouter();
   const { isLoading, hasCompletedOnboarding, user, defaultStartScreen } = useApp();
   const hasNavigated = useRef(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
     if (hasNavigated.current) return;
-    hasNavigated.current = true;
 
-    SplashScreen.hideAsync();
+    const checkAuth = async () => {
+      hasNavigated.current = true;
+      SplashScreen.hideAsync();
 
-    const navigate = () => {
+      // Step 1: Onboarding check
       if (!hasCompletedOnboarding) {
         router.replace('/welcome');
-      } else if (!user) {
+        return;
+      }
+
+      // Step 2: Check stored session
+      const phone = await getPhone();
+      const token = await getToken();
+
+      if (!phone || !token) {
+        // No session — full auth flow
         router.replace('/auth');
-      } else {
-        router.replace(`/(tabs)/${defaultStartScreen}`);
+        return;
+      }
+
+      // Step 3: Check activity level
+      const authLevel = await getRequiredAuthLevel();
+
+      switch (authLevel) {
+        case 'none':
+          // Fresh session — go straight to home
+          if (user) {
+            router.replace(`/(tabs)/${defaultStartScreen}`);
+          } else {
+            // User data in AppProvider is stale — need PIN to refresh
+            router.replace('/pin-login');
+          }
+          break;
+
+        case 'pin':
+          // Need PIN or biometric to unlock
+          router.replace('/pin-login');
+          break;
+
+        case 'otp':
+          // Session too old — full re-auth
+          router.replace('/auth');
+          break;
       }
     };
 
-    const timer = setTimeout(navigate, 100);
+    const timer = setTimeout(checkAuth, 100);
     return () => clearTimeout(timer);
   }, [isLoading, hasCompletedOnboarding, user, defaultStartScreen, router]);
 
@@ -47,6 +94,7 @@ function RootLayoutNav() {
       <Stack.Screen name="index" />
       <Stack.Screen name="welcome" />
       <Stack.Screen name="auth" />
+      <Stack.Screen name="pin-login" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="add-vehicle" options={{ presentation: 'modal' }} />
       <Stack.Screen name="notifications" />
