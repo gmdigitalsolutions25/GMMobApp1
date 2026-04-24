@@ -103,21 +103,23 @@ jobs:
       # ── 13. Find and rename APK ──────────────────────────────────────────────
       - name: Locate and rename APK
         run: |
+          VERSION_CODE=$(python3 -c "import json; print(json.load(open('app.json'))['expo']['android']['versionCode'])")
           APK=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
           echo "Found APK: $APK"
-          cp "$APK" Qaraj-GM-debug.apk
-          ls -lh Qaraj-GM-debug.apk
+          cp "$APK" "QarajGM-v${VERSION_CODE}.apk"
+          ls -lh "QarajGM-v${VERSION_CODE}.apk"
+          echo "APK_NAME=QarajGM-v${VERSION_CODE}.apk" >> $GITHUB_ENV
 
       # ── 14. Upload APK as artifact ───────────────────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Qaraj-GM-APK
-          path: expo/Qaraj-GM-debug.apk
+          name: ${{ env.APK_NAME }}
+          path: expo/${{ env.APK_NAME }}
           retention-days: 30
 
       # ── 15. Print download instructions ──────────────────────────────────────
       - name: Build complete
         run: |
-          echo "APK build successful!"
-          ls -lh Qaraj-GM-debug.apk
+          echo "APK build successful! → ${{ env.APK_NAME }}"
+          ls -lh ${{ env.APK_NAME }}
