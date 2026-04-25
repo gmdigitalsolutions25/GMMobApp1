@@ -6,7 +6,7 @@ name: Build Android AAB (Production)
 # PREREQUISITES — GitHub → Settings → Secrets and variables → Actions:
 #   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
 #
-# TRIGGER: push to main, push tag v*, or manual workflow_dispatch
+# TRIGGER: manual workflow_dispatch only (say "Publish" to trigger)
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -20,10 +20,7 @@ on:
         description: 'Version code (integer)'
         required: false
         default: '19'
-  push:
-    branches: [main]
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+
 
 defaults:
   run:
