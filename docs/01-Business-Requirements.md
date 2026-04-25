@@ -2,14 +2,14 @@
 
 **Version:** 1.0
 **Date:** April 25, 2026
-**Author:** Manus (AI CTO) for Diamond Motors / Qaraj GM
+**Author:** Manus (AI CTO) for Group Motors / Qaraj GM
 **Status:** Draft — Pre-Production
 
 ---
 
 ## 1. Executive Summary
 
-Qaraj GM is a mobile-first car service management platform built for **Diamond Motors**, an authorized Honda and Toyota dealer group in Baku, Azerbaijan. The platform digitizes the customer-facing service experience: vehicle registration, appointment booking, service history tracking, and AI-powered spare parts advisory. It serves as the digital bridge between Diamond Motors' service centers and their customers.
+Qaraj GM is a mobile-first car service management platform built for **Group Motors**, an authorized Honda and Toyota dealer group in Baku, Azerbaijan. The platform digitizes the customer-facing service experience: vehicle registration, appointment booking, service history tracking, and AI-powered spare parts advisory. It serves as the digital bridge between Group Motors' service centers and their customers.
 
 The system consists of a **React Native mobile application** (Android, with iOS planned) and a **Node.js/Hono backend API** deployed on a dedicated Windows Server in Baku. The backend uses PostgreSQL (via TiDB/Neon) for persistent storage and exposes a type-safe tRPC API consumed by the mobile client.
 
@@ -19,7 +19,7 @@ The system consists of a **React Native mobile application** (Android, with iOS 
 
 ### 2.1 Company Profile
 
-Diamond Motors operates authorized Honda and Toyota service centers across Baku. The company maintains a fleet of service facilities and employs certified technicians for both brands. Current customer interaction relies on phone calls, WhatsApp messages, and walk-in visits — creating friction, missed appointments, and incomplete service records.
+Group Motors operates authorized Honda and Toyota service centers across Baku. The company maintains a fleet of service facilities and employs certified technicians for both brands. Current customer interaction relies on phone calls, WhatsApp messages, and walk-in visits — creating friction, missed appointments, and incomplete service records.
 
 ### 2.2 Business Problem
 
@@ -46,7 +46,7 @@ Diamond Motors operates authorized Honda and Toyota service centers across Baku.
 | Stakeholder | Role | Primary Interest |
 |-------------|------|-----------------|
 | Elnur Hasanov | Project Owner / CTO | Strategic direction, technology decisions, business viability |
-| Diamond Motors Management | Business Sponsor | Customer satisfaction, operational efficiency, revenue |
+| Group Motors Management | Business Sponsor | Customer satisfaction, operational efficiency, revenue |
 | Service Center Managers | Operations | Appointment flow, technician scheduling, parts ordering |
 | Service Advisors | End Users (Staff) | Customer vehicle info, service history, appointment management |
 | Customers | End Users (Mobile) | Easy booking, service tracking, transparent pricing |
@@ -89,7 +89,7 @@ The phone number is the **primary identity key** for all users. No email or user
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| SC-01 | Display list of Diamond Motors service centers with name, address, phone, hours, rating | Must Have |
+| SC-01 | Display list of Group Motors service centers with name, address, phone, hours, rating | Must Have |
 | SC-02 | Each center has a list of available service types | Must Have |
 | SC-03 | Centers have GPS coordinates for map integration | Should Have |
 | SC-04 | Service center data is seeded/managed server-side (not user-editable) | Must Have |
@@ -199,7 +199,7 @@ The system uses 8 primary tables plus 2 monitoring tables:
 | `users` | Customer identity and preferences | Phone (unique index) |
 | `vehicles` | Registered vehicles | → users (cascade delete) |
 | `vehicle_photos` | Vehicle images | → vehicles (cascade delete) |
-| `service_centers` | Diamond Motors locations | Standalone reference data |
+| `service_centers` | Group Motors locations | Standalone reference data |
 | `appointments` | Service bookings | → users, → vehicles, → service_centers |
 | `service_records` | Completed service history | → vehicles |
 | `otp_codes` | SMS verification codes | Phone indexed |
@@ -264,9 +264,9 @@ Create new service record after work is done
 
 ### Assumptions
 
-1. Diamond Motors will provide updated Softline SMS credentials
+1. Group Motors will provide updated Softline SMS credentials
 2. Service center data is managed manually (no integration with DMS yet)
-3. Initial user base is limited to Diamond Motors customers and internal testers
+3. Initial user base is limited to Group Motors customers and internal testers
 4. Internet connectivity is available at all service center locations
 5. Customers have Android smartphones with internet access
 
@@ -277,7 +277,7 @@ Create new service record after work is done
 The minimum viable product is accepted when:
 
 1. A new customer can register via phone + OTP + PIN and add a vehicle
-2. A customer can book an appointment at a Diamond Motors service center
+2. A customer can book an appointment at a Group Motors service center
 3. A customer can view their appointment and service history
 4. The AI spare parts search returns relevant results for Honda/Toyota vehicles
 5. The monitoring dashboard shows error logs and accepts bug reports

@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Date:** April 25, 2026
-**Author:** Manus (AI CTO) for Diamond Motors / Qaraj GM
+**Author:** Manus (AI CTO) for Group Motors / Qaraj GM
 **Status:** Draft — Pre-Production
 
 ---
@@ -302,7 +302,7 @@ Cancels an existing appointment.
 ## 5. Service Center Endpoints (`serviceCenters.*`)
 
 ### 5.1 `serviceCenters.list` (Query)
-Lists all available Diamond Motors service centers.
+Lists all available Group Motors service centers.
 
 **Input:** None
 
@@ -312,7 +312,7 @@ Lists all available Diamond Motors service centers.
   "centers": [
     {
       "id": "uuid",
-      "name": "Diamond Motors - Baku Main",
+      "name": "Group Motors - Baku Main",
       "address": "123 Heydar Aliyev Ave",
       "phone": "+994123456789",
       "latitude": 40.4093,

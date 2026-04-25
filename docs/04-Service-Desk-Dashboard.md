@@ -2,14 +2,14 @@
 
 **Version:** 1.0
 **Date:** April 25, 2026
-**Author:** Manus (AI CTO) for Diamond Motors / Qaraj GM
+**Author:** Manus (AI CTO) for Group Motors / Qaraj GM
 **Status:** Draft — Pre-Production
 
 ---
 
 ## 1. Overview
 
-The Service Desk Dashboard is a planned web-based administrative interface for Diamond Motors staff. While the mobile app serves customers, the Service Desk serves the internal team: Service Advisors, Call Center Agents, and System Administrators.
+The Service Desk Dashboard is a planned web-based administrative interface for Group Motors staff. While the mobile app serves customers, the Service Desk serves the internal team: Service Advisors, Call Center Agents, and System Administrators.
 
 This document outlines the requirements, use cases, and technical approach for building this dashboard in Phase 2.
 
@@ -28,7 +28,7 @@ This document outlines the requirements, use cases, and technical approach for b
 ## 3. Core Modules & Use Cases
 
 ### 3.1 Customer 360° View
-The core of the dashboard is the ability to look up any customer by their phone number and see their entire relationship with Diamond Motors.
+The core of the dashboard is the ability to look up any customer by their phone number and see their entire relationship with Group Motors.
 
 **Use Cases:**
 - **Search:** Agent enters `+994501234567` and instantly sees the customer profile.
@@ -85,7 +85,7 @@ The current backend API will need new endpoints to support the dashboard:
 
 ### 4.3 Security Considerations
 - **Network:** The dashboard should be hosted on a separate subdomain (e.g., `admin.qaraj.az`) or port.
-- **IP Whitelisting:** Access restricted to Diamond Motors corporate IP addresses and VPNs.
+- **IP Whitelisting:** Access restricted to Group Motors corporate IP addresses and VPNs.
 - **RBAC:** Strict role checks on every `admin.*` tRPC route.
 - **Audit Logging:** Every action taken by an admin (e.g., updating a record) must be logged with their ID and timestamp.
 

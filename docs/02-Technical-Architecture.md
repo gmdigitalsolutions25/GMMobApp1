@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Date:** April 25, 2026
-**Author:** Manus (AI CTO) for Diamond Motors / Qaraj GM
+**Author:** Manus (AI CTO) for Group Motors / Qaraj GM
 **Status:** Draft — Pre-Production
 
 ---
