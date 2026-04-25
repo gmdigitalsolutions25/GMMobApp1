@@ -1,13 +1,16 @@
 /**
  * Qaraj GM — Root Layout
  *
+ * Kill switch: Blocks app if build is older than 7 days.
+ *
  * Auth routing logic:
- *   1. App starts → check SecureStore for JWT token + phone
- *   2. No token/phone → /auth (full flow: phone → OTP → PIN)
- *   3. Token exists, activity < 1h → straight to /(tabs)/home
- *   4. Token exists, activity 1h–7d → /pin-login (PIN or biometric)
- *   5. Token exists, activity > 30d → /auth (full re-auth)
- *   6. No onboarding completed → /welcome
+ *   1. App starts → kill switch check (build expiry)
+ *   2. Check SecureStore for JWT token + phone
+ *   3. No token/phone → /auth (full flow: phone → OTP → PIN)
+ *   4. Token exists, activity < 1h → straight to /(tabs)/home
+ *   5. Token exists, activity 1h–7d → /pin-login (PIN or biometric)
+ *   6. Token exists, activity > 30d → /auth (full re-auth)
+ *   7. No onboarding completed → /welcome
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -17,6 +20,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc, trpcClient } from '@/lib/trpc';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { KillSwitchScreen, isAppExpired } from '@/components/KillSwitch';
 import '@/constants/i18n';
 import { AppProvider, useApp } from '@/providers/AppProvider';
 import { getRequiredAuthLevel, getPhone, getToken } from '@/lib/authStore';
@@ -106,6 +110,11 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  // Kill switch — block everything if build is expired
+  if (isAppExpired()) {
+    return <KillSwitchScreen />;
+  }
+
   return (
     <ErrorBoundary>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>

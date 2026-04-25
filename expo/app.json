@@ -2,7 +2,7 @@
   "expo": {
     "name": "Qaraj",
     "slug": "qaraj",
-    "version": "1.0.19",
+    "version": "1.0.20",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "qaraj",
@@ -27,7 +27,7 @@
         "backgroundColor": "#0A0E1E"
       },
       "package": "az.qaraj.app",
-      "versionCode": 19,
+      "versionCode": 20,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE"

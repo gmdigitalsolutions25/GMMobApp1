@@ -38,6 +38,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set build date
+        run: echo "BUILD_DATE=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
+
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -89,6 +92,7 @@ jobs:
         run: echo "y" | npx expo prebuild --platform android --clean
         env:
           EXPO_NO_TELEMETRY: 1
+          EXPO_PUBLIC_BUILD_DATE: ${{ env.BUILD_DATE }}
 
       - name: Decode keystore
         run: |
@@ -124,6 +128,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          EXPO_PUBLIC_BUILD_DATE: ${{ env.BUILD_DATE }}
 
       - name: Locate and rename AAB
         run: |
