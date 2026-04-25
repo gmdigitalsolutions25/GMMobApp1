@@ -1,14 +1,20 @@
 /**
  * auth.sendOtp — Generate and send OTP to phone number
  *
- * Currently uses mock mode (logs OTP to console + returns devCode).
- * When Twilio is configured, set OTP_PROVIDER=twilio in .env and provide
- * TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER.
+ * Uses Softline SMS gateway when SMS_PROVIDER=softline in .env.
+ * Falls back to mock mode (logs OTP to console + returns devCode).
+ *
+ * Softline config (.env):
+ *   SMS_PROVIDER=softline
+ *   SMS_USER=diamondapi
+ *   SMS_PASSWORD=u6s0Wo52
+ *   SMS_SENDER=TOYOTA
  */
 
 import { publicProcedure } from "../../../create-context";
 import { z } from "zod";
 import { otpStore, normalizePhone, generateOtp } from "../otp-store";
+import { sendOtpSms } from "../sms-provider";
 
 export const sendOtpProcedure = publicProcedure
   .input(z.object({ phone: z.string().min(7) }))
@@ -31,17 +37,24 @@ export const sendOtpProcedure = publicProcedure
     otpStore.set(phone, { code, expiresAt, attempts: 0 });
 
     // ── OTP Delivery ──────────────────────────────────────────────────────
-    // TODO: When Twilio is ready, add:
-    //   if (process.env.OTP_PROVIDER === 'twilio') {
-    //     await sendViaTwilio(input.phone, code);
-    //   }
-    // For now: mock mode — log to console and return in response
-    console.log(`[OTP] Phone: +994${phone} | Code: ${code}`);
+    const smsResult = await sendOtpSms(phone, code);
+
+    if (!smsResult.success) {
+      console.error(`[OTP] SMS delivery failed for ${phone}: ${smsResult.error}`);
+      // Still return success to client — OTP is stored, they can retry
+      // Don't expose SMS provider errors to the client
+    }
+
+    const isMockMode = (process.env.SMS_PROVIDER || 'mock') === 'mock';
 
     return {
       success: true,
-      message: "OTP sent successfully",
-      // DEVELOPMENT ONLY — remove when Twilio is active:
-      devCode: process.env.OTP_PROVIDER !== 'twilio' ? code : undefined,
+      message: smsResult.success
+        ? "OTP sent successfully"
+        : "OTP generated. SMS delivery may be delayed.",
+      // DEVELOPMENT ONLY — only return code in mock mode:
+      devCode: isMockMode ? code : undefined,
+      // Include balance info for monitoring (only in non-mock mode):
+      ...(smsResult.balance && !isMockMode ? { _smsBalance: smsResult.balance } : {}),
     };
   });
