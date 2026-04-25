@@ -224,6 +224,104 @@ export const pushTokens = pgTable(
   })
 );
 
+// ── Error Logs (Monitoring) ───────────────────────────────────────────────────
+
+export const severityEnum = pgEnum('severity', ['low', 'medium', 'high', 'critical']);
+
+export const errorLogs = pgTable(
+  'error_logs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    severity: severityEnum('severity').default('medium').notNull(),
+    source: varchar('source', { length: 50 }).notNull(), // 'api', 'mobile', 'system', 'database', 'sms', 'auth'
+    endpoint: varchar('endpoint', { length: 200 }),
+    message: text('message').notNull(),
+    stackTrace: text('stack_trace'),
+    userId: uuid('user_id'),
+    userPhone: varchar('user_phone', { length: 20 }),
+    deviceInfo: text('device_info'),
+    appVersion: varchar('app_version', { length: 20 }),
+    requestId: varchar('request_id', { length: 50 }),
+    ipAddress: varchar('ip_address', { length: 50 }),
+    resolved: boolean('resolved').default(false).notNull(),
+    resolvedAt: timestamp('resolved_at'),
+    resolvedBy: varchar('resolved_by', { length: 100 }),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    severityIdx: index('error_logs_severity_idx').on(table.severity),
+    sourceIdx: index('error_logs_source_idx').on(table.source),
+    resolvedIdx: index('error_logs_resolved_idx').on(table.resolved),
+    createdIdx: index('error_logs_created_idx').on(table.createdAt),
+  })
+);
+
+// ── Bug Reports (Monitoring) ──────────────────────────────────────────────────
+
+export const bugReportStatusEnum = pgEnum('bug_report_status', [
+  'new', 'acknowledged', 'in_progress', 'resolved', 'wont_fix',
+]);
+
+export const bugReports = pgTable(
+  'bug_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    reporterName: varchar('reporter_name', { length: 100 }).notNull(),
+    reporterPhone: varchar('reporter_phone', { length: 20 }),
+    reporterRole: varchar('reporter_role', { length: 30 }).default('tester').notNull(),
+    title: varchar('title', { length: 300 }).notNull(),
+    description: text('description').notNull(),
+    stepsToReproduce: text('steps_to_reproduce'),
+    expectedBehavior: text('expected_behavior'),
+    actualBehavior: text('actual_behavior'),
+    severity: severityEnum('severity').default('medium').notNull(),
+    status: bugReportStatusEnum('status').default('new').notNull(),
+    assignedTo: varchar('assigned_to', { length: 100 }),
+    resolution: text('resolution'),
+    deviceInfo: text('device_info'),
+    appVersion: varchar('app_version', { length: 20 }),
+    screenshotUrls: text('screenshot_urls').array().default([]),
+    resolvedAt: timestamp('resolved_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index('bug_reports_status_idx').on(table.status),
+    severityIdx: index('bug_reports_severity_idx').on(table.severity),
+    createdIdx: index('bug_reports_created_idx').on(table.createdAt),
+  })
+);
+
+// ── System Health Snapshots ───────────────────────────────────────────────────
+
+export const systemHealthSnapshots = pgTable(
+  'system_health_snapshots',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    apiStatus: varchar('api_status', { length: 20 }).notNull(), // 'healthy', 'degraded', 'down'
+    dbStatus: varchar('db_status', { length: 20 }).notNull(),
+    smsStatus: varchar('sms_status', { length: 20 }).notNull(),
+    apiResponseTimeMs: integer('api_response_time_ms'),
+    dbResponseTimeMs: integer('db_response_time_ms'),
+    activeUsers24h: integer('active_users_24h'),
+    totalUsers: integer('total_users'),
+    totalVehicles: integer('total_vehicles'),
+    totalAppointments: integer('total_appointments'),
+    pendingAppointments: integer('pending_appointments'),
+    otpSentToday: integer('otp_sent_today'),
+    otpFailuresToday: integer('otp_failures_today'),
+    errorCountToday: integer('error_count_today'),
+    uptimeSeconds: integer('uptime_seconds'),
+    nodeVersion: varchar('node_version', { length: 30 }),
+    apiVersion: varchar('api_version', { length: 20 }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    createdIdx: index('health_snapshots_created_idx').on(table.createdAt),
+  })
+);
+
 // ── Type Exports ───────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -240,3 +338,6 @@ export type ServiceCenter = typeof serviceCenters.$inferSelect;
 export type NewServiceCenter = typeof serviceCenters.$inferInsert;
 export type OtpCode = typeof otpCodes.$inferSelect;
 export type PushToken = typeof pushTokens.$inferSelect;
+export type ErrorLog = typeof errorLogs.$inferSelect;
+export type BugReport = typeof bugReports.$inferSelect;
+export type SystemHealthSnapshot = typeof systemHealthSnapshots.$inferSelect;

@@ -17,6 +17,10 @@ import { verifyPinProcedure } from "./routes/auth/verify-pin/route";
 import { changePinProcedure } from "./routes/auth/change-pin/route";
 import { refreshTokenProcedure } from "./routes/auth/refresh-token/route";
 import { registerPushTokenProcedure } from "./routes/push-tokens/register/route";
+// Monitoring routes
+import { listErrorsProcedure, errorStatsProcedure, resolveErrorProcedure } from "./routes/monitoring/errors/route";
+import { submitBugReportProcedure, listBugReportsProcedure, updateBugReportStatusProcedure, logClientErrorProcedure } from "./routes/monitoring/bug-reports/route";
+import { liveHealthProcedure, dashboardSummaryProcedure, saveHealthSnapshotProcedure, getHealthHistoryProcedure } from "./routes/monitoring/system-health/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -52,6 +56,25 @@ export const appRouter = createTRPCRouter({
   }),
   pushTokens: createTRPCRouter({
     register: registerPushTokenProcedure,
+  }),
+  monitoring: createTRPCRouter({
+    errors: createTRPCRouter({
+      list: listErrorsProcedure,
+      stats: errorStatsProcedure,
+      resolve: resolveErrorProcedure,
+    }),
+    bugs: createTRPCRouter({
+      submit: submitBugReportProcedure,
+      list: listBugReportsProcedure,
+      updateStatus: updateBugReportStatusProcedure,
+      logClientError: logClientErrorProcedure,
+    }),
+    health: createTRPCRouter({
+      live: liveHealthProcedure,
+      summary: dashboardSummaryProcedure,
+      saveSnapshot: saveHealthSnapshotProcedure,
+      history: getHealthHistoryProcedure,
+    }),
   }),
 });
 
