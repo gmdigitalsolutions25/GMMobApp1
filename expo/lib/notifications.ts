@@ -169,11 +169,11 @@ export async function getExpoPushToken(): Promise<string | null> {
 /**
  * Register push token with the backend.
  * Call after successful login + permission grant.
+ * Accepts a mutateAsync function from tRPC to avoid URL/auth issues.
  */
 export async function registerPushToken(
-  userId: string,
   phone: string,
-  backendUrl: string
+  mutateAsync: (input: { phone: string; token: string; platform: 'ios' | 'android' }) => Promise<any>
 ): Promise<void> {
   const token = await getExpoPushToken();
   if (!token) {
@@ -182,23 +182,12 @@ export async function registerPushToken(
   }
 
   try {
-    const response = await fetch(`${backendUrl}/api/trpc/pushTokens.register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.EXPO_PUBLIC_API_KEY || 'qaraj-dev-key-2026',
-      },
-      body: JSON.stringify({
-        json: {
-          phone,
-          token,
-          platform: Platform.OS as 'ios' | 'android',
-        },
-      }),
+    const result = await mutateAsync({
+      phone,
+      token,
+      platform: Platform.OS as 'ios' | 'android',
     });
-
-    const result = await response.json();
-    console.log('[Notifications] Push token registered:', result);
+    console.log('[Notifications] Push token registered:', JSON.stringify(result));
   } catch (e) {
     console.error('[Notifications] Failed to register push token:', (e as Error).message);
   }

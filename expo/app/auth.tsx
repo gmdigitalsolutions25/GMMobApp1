@@ -31,7 +31,7 @@ import {
 } from '@/lib/authStore';
 import { checkBiometricAvailability, getBiometricLabel } from '@/lib/biometric';
 import { requestNotificationPermissions, registerPushToken } from '@/lib/notifications';
-import Constants from 'expo-constants';
+// Constants import removed — no longer needed for push token registration
 
 import type { User as UserType } from '@/constants/types';
 
@@ -65,6 +65,7 @@ export default function AuthScreen() {
   const verifyOtpMutation = trpc.auth.verifyOtp.useMutation();
   const setPinMutation = trpc.auth.setPin.useMutation();
   const verifyPinMutation = trpc.auth.verifyPin.useMutation();
+  const registerPushTokenMutation = trpc.pushTokens.register.useMutation();
 
   // ── Phone Submit ──────────────────────────────────────────────────────────
   const handlePhoneSubmit = async () => {
@@ -240,10 +241,7 @@ export default function AuthScreen() {
     // Request notification permissions and register push token
     try {
       await requestNotificationPermissions();
-      const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL
-        || process.env.EXPO_PUBLIC_API_BASE_URL
-        || 'http://91.107.161.67:3000';
-      await registerPushToken(serverUser.id, serverUser.phone, backendUrl);
+      await registerPushToken(serverUser.phone, registerPushTokenMutation.mutateAsync);
     } catch (e) {
       console.log('[Auth] Push token registration failed (non-fatal):', (e as Error).message);
     }

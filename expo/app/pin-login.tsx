@@ -34,7 +34,7 @@ import {
 } from '@/lib/authStore';
 import { authenticateWithBiometric, checkBiometricAvailability } from '@/lib/biometric';
 import { requestNotificationPermissions, registerPushToken } from '@/lib/notifications';
-import Constants from 'expo-constants';
+// Constants import removed — no longer needed for push token registration
 
 const { width } = Dimensions.get('window');
 
@@ -68,6 +68,7 @@ export default function PinLoginScreen() {
   const refreshTokenMutation = trpc.auth.refreshToken.useMutation();
   const sendOtpMutation = trpc.auth.sendOtp.useMutation();
   const resetPinMutation = trpc.auth.resetPin.useMutation();
+  const registerPushTokenMutation = trpc.pushTokens.register.useMutation();
 
   // ── Initialize ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -132,10 +133,7 @@ export default function PinLoginScreen() {
         // Register push token (non-blocking)
         try {
           await requestNotificationPermissions();
-          const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL
-            || process.env.EXPO_PUBLIC_API_BASE_URL
-            || 'http://91.107.161.67:3000';
-          if (result.user) await registerPushToken(result.user.id, result.user.phone, backendUrl);
+          if (result.user) await registerPushToken(result.user.phone, registerPushTokenMutation.mutateAsync);
         } catch (_) {}
 
         router.replace('/(tabs)/home');
@@ -192,10 +190,7 @@ export default function PinLoginScreen() {
           // Register push token (non-blocking)
           try {
             await requestNotificationPermissions();
-            const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL
-              || process.env.EXPO_PUBLIC_API_BASE_URL
-              || 'http://91.107.161.67:3000';
-            await registerPushToken(result.user.id, result.user.phone, backendUrl);
+            await registerPushToken(result.user.phone, registerPushTokenMutation.mutateAsync);
           } catch (_) {}
 
           router.replace('/(tabs)/home');
@@ -338,10 +333,7 @@ export default function PinLoginScreen() {
           // Register push token (non-blocking)
           try {
             await requestNotificationPermissions();
-            const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL
-              || process.env.EXPO_PUBLIC_API_BASE_URL
-              || 'http://91.107.161.67:3000';
-            await registerPushToken(result.user.id, result.user.phone, backendUrl);
+            await registerPushToken(result.user.phone, registerPushTokenMutation.mutateAsync);
           } catch (_) {}
 
           Alert.alert(t('common.success'), t('auth.pinResetSuccess'));
