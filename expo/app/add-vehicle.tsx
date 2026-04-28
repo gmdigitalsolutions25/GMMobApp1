@@ -194,6 +194,7 @@ export default function AddVehicleScreen() {
   const [year, setYear] = useState<string>('');
   const [vin, setVin] = useState<string>('');
   const [licensePlate, setLicensePlate] = useState<string>('');
+  const [mileage, setMileage] = useState<string>('');
 
   const formatVin = (value: string) => {
     // VIN: only uppercase A-Z (excluding I, O, Q) and 0-9, max 17 characters
@@ -322,6 +323,7 @@ export default function AddVehicleScreen() {
       year: year ? parseInt(year, 10) : new Date().getFullYear(),
       vin: vin || '',
       licensePlate: licensePlate || '',
+      mileage: mileage ? parseInt(mileage, 10) : undefined,
       photos,
       primaryPhotoId: photos[0]?.id,
     });
@@ -448,6 +450,27 @@ export default function AddVehicleScreen() {
             {t('addVehicle.formatLicensePlate', { defaultValue: 'Format: NN-CC-NNN (e.g., 10-AB-123)' })}
           </Text>
           {errors.licensePlate ? <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.licensePlate}</Text> : null}
+        </View>
+
+        {/* Mileage */}
+        <View style={styles.formGroup}>
+          <Text style={[styles.label, { color: colors.text }]}>{t('editVehicle.mileage', { defaultValue: 'Mileage (km)' })}</Text>
+          <TextInput
+            style={[
+              styles.input,
+              styles.textInput,
+              { backgroundColor: colors.surface, color: colors.text, borderColor: mileage ? colors.primary : colors.border },
+            ]}
+            placeholder={t('editVehicle.mileagePlaceholder', { defaultValue: 'e.g., 45000' })}
+            placeholderTextColor={colors.textSecondary}
+            value={mileage}
+            onChangeText={(text) => setMileage(text.replace(/[^0-9]/g, ''))}
+            keyboardType="numeric"
+            maxLength={7}
+          />
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>
+            {t('addVehicle.mileageHint', { defaultValue: 'Current odometer reading in kilometers' })}
+          </Text>
         </View>
 
         {/* Car Image section */}

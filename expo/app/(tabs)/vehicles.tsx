@@ -315,6 +315,14 @@ export default function VehiclesScreen() {
                       {selectedVehicle?.licensePlate || 'N/A'}
                     </Text>
                   </View>
+
+                  {selectedVehicle?.mileage ? (
+                    <View>
+                      <Text style={[styles.vehiclePlate, { color: colors.textSecondary }]}>
+                        {selectedVehicle.mileage.toLocaleString()} km
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
               </View>
             </View>
