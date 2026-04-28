@@ -29,11 +29,12 @@
       "package": "az.qaraj.app",
       "versionCode": 21,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "SCHEDULE_EXACT_ALARM"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECORD_AUDIO"
       ],
       "useNextNotificationsApi": true
     },
@@ -60,6 +61,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "76b96668-e97c-4609-a448-d655ae30ec2d"
+      }
+    },
+    "owner": "elnurhasan"
   }
 }
