@@ -6,7 +6,7 @@
  *   SMS_PROVIDER=softline          (or "mock" for dev mode)
  *   SMS_USER=diamondapi
  *   SMS_PASSWORD=u6s0Wo52
- *   SMS_SENDER=TOYOTA              (change to "Qaraj" when registered)
+ *   SMS_SENDER=Groupmotors
  *   SMS_BASE_URL=https://gw.soft-line.az
  *
  * API format:
@@ -50,7 +50,7 @@ const SOFTLINE_ERRORS: Record<string, string> = {
 async function sendViaSoftline(phone: string, message: string): Promise<SmsResult> {
   const user = process.env.SMS_USER || 'diamondapi';
   const password = process.env.SMS_PASSWORD || 'u6s0Wo52';
-  const sender = process.env.SMS_SENDER || 'TOYOTA';
+  const sender = process.env.SMS_SENDER || 'Groupmotors';
   const baseUrl = process.env.SMS_BASE_URL || 'https://gw.soft-line.az';
 
   // Build URL with query params

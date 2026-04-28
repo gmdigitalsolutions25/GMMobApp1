@@ -8,7 +8,7 @@
  *   SMS_PROVIDER=softline
  *   SMS_USER=diamondapi
  *   SMS_PASSWORD=u6s0Wo52
- *   SMS_SENDER=TOYOTA
+ *   SMS_SENDER=Groupmotors
  */
 
 import { publicProcedure } from "../../../create-context";
