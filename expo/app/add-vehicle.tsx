@@ -195,6 +195,22 @@ export default function AddVehicleScreen() {
   const [vin, setVin] = useState<string>('');
   const [licensePlate, setLicensePlate] = useState<string>('');
 
+  const formatVin = (value: string) => {
+    // VIN: only uppercase A-Z (excluding I, O, Q) and 0-9, max 17 characters
+    return value
+      .toUpperCase()
+      .replace(/[^A-HJ-NPR-Z0-9]/g, '')
+      .slice(0, 17);
+  };
+
+  const handleVinChange = (text: string) => {
+    const formatted = formatVin(text);
+    setVin(formatted);
+    if (errors.vin) {
+      setErrors((prev) => ({ ...prev, vin: '' }));
+    }
+  };
+
   const formatLicensePlate = (value: string) => {
     const cleaned = value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
     if (cleaned.length <= 2) {
@@ -260,6 +276,9 @@ export default function AddVehicleScreen() {
     }
     if (!model) {
       newErrors.model = t('addVehicle.modelRequired');
+    }
+    if (vin && vin.length !== 17) {
+      newErrors.vin = t('addVehicle.vinMustBe17', { defaultValue: 'VIN must be exactly 17 characters' });
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -377,10 +396,17 @@ export default function AddVehicleScreen() {
             placeholder="e.g., 1HGBH41JXMN109186"
             placeholderTextColor={colors.textSecondary}
             value={vin}
-            onChangeText={setVin}
+            onChangeText={handleVinChange}
             autoCapitalize="characters"
             autoCorrect={false}
+            maxLength={17}
           />
+          {vin.length > 0 && (
+            <Text style={{ color: vin.length === 17 ? '#22c55e' : colors.textSecondary, fontSize: 12, marginTop: 4 }}>
+              {vin.length}/17
+            </Text>
+          )}
+          {errors.vin ? <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.vin}</Text> : null}
         </View>
 
         <View style={styles.formGroup}>

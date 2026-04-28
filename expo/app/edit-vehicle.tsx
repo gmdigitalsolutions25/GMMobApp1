@@ -108,6 +108,22 @@ export default function EditVehicleScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const formatVin = (value: string) => {
+    // VIN: only uppercase A-Z (excluding I, O, Q) and 0-9, max 17 characters
+    return value
+      .toUpperCase()
+      .replace(/[^A-HJ-NPR-Z0-9]/g, '')
+      .slice(0, 17);
+  };
+
+  const handleVinChange = (text: string) => {
+    const formatted = formatVin(text);
+    setVin(formatted);
+    if (errors.vin) {
+      setErrors((prev) => ({ ...prev, vin: '' }));
+    }
+  };
+
   const { brands: carBrands, getModels } = useBrandsModels();
   const availableModels = brand ? getModels(brand) : [];
 
@@ -374,13 +390,19 @@ export default function EditVehicleScreen() {
             <TextInput
               style={[styles.textInput, { color: colors.text }]}
               value={vin}
-              onChangeText={setVin}
+              onChangeText={handleVinChange}
               placeholder={t('addVehicle.vinPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               autoCapitalize="characters"
               maxLength={17}
             />
           </View>
+          {vin.length > 0 && (
+            <Text style={{ color: vin.length === 17 ? '#22c55e' : colors.textSecondary, fontSize: 12, marginTop: 4 }}>
+              {vin.length}/17
+            </Text>
+          )}
+          {errors.vin ? <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.vin}</Text> : null}
         </View>
 
         {/* Mileage */}
