@@ -212,19 +212,35 @@ export default function AddVehicleScreen() {
   };
 
   const formatLicensePlate = (value: string) => {
-    const cleaned = value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
-    if (cleaned.length <= 2) {
-      return cleaned;
-    } else if (cleaned.length <= 4) {
-      return `${cleaned.slice(0, 2)}-${cleaned.slice(2)}`;
-    } else {
-      return `${cleaned.slice(0, 2)}-${cleaned.slice(2, 4)}-${cleaned.slice(4, 7)}`;
+    // Azerbaijan plate format: NN-CC-NNN
+    // N = digit (0-9), C = letter (A-Z)
+    const raw = value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+    let result = '';
+    let pos = 0;
+    // Position 0-1: digits only
+    for (let i = 0; i < 2 && pos < raw.length; pos++) {
+      if (/[0-9]/.test(raw[pos])) { result += raw[pos]; i++; }
     }
+    // Position 2-3: letters only
+    for (let i = 0; i < 2 && pos < raw.length; pos++) {
+      if (/[A-Z]/.test(raw[pos])) { result += raw[pos]; i++; }
+    }
+    // Position 4-6: digits only
+    for (let i = 0; i < 3 && pos < raw.length; pos++) {
+      if (/[0-9]/.test(raw[pos])) { result += raw[pos]; i++; }
+    }
+    // Insert dashes: NN-CC-NNN
+    if (result.length <= 2) return result;
+    if (result.length <= 4) return `${result.slice(0, 2)}-${result.slice(2)}`;
+    return `${result.slice(0, 2)}-${result.slice(2, 4)}-${result.slice(4, 7)}`;
   };
 
   const handleLicensePlateChange = (text: string) => {
     const formatted = formatLicensePlate(text);
     setLicensePlate(formatted);
+    if (errors.licensePlate) {
+      setErrors((prev) => ({ ...prev, licensePlate: '' }));
+    }
   };
 
   const [carImage, setCarImage] = useState<string | null>(null);
@@ -279,6 +295,9 @@ export default function AddVehicleScreen() {
     }
     if (vin && vin.length !== 17) {
       newErrors.vin = t('addVehicle.vinMustBe17', { defaultValue: 'VIN must be exactly 17 characters' });
+    }
+    if (licensePlate && licensePlate.replace(/-/g, '').length !== 7) {
+      newErrors.licensePlate = t('addVehicle.plateFormat', { defaultValue: 'Plate must be NN-CC-NNN format (e.g., 10-AB-123)' });
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -417,16 +436,18 @@ export default function AddVehicleScreen() {
               styles.textInput,
               { backgroundColor: colors.surface, color: colors.text, borderColor: licensePlate ? colors.primary : colors.border },
             ]}
-            placeholder="e.g., 12-AB-345"
+            placeholder="e.g., 10-AB-123"
             placeholderTextColor={colors.textSecondary}
             value={licensePlate}
             onChangeText={handleLicensePlateChange}
             autoCapitalize="characters"
             autoCorrect={false}
+            maxLength={10}
           />
           <Text style={[styles.hint, { color: colors.textSecondary }]}>
-            {t('addVehicle.formatLicensePlate')}
+            {t('addVehicle.formatLicensePlate', { defaultValue: 'Format: NN-CC-NNN (e.g., 10-AB-123)' })}
           </Text>
+          {errors.licensePlate ? <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.licensePlate}</Text> : null}
         </View>
 
         {/* Car Image section */}

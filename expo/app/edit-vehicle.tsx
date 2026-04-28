@@ -133,14 +133,34 @@ export default function EditVehicleScreen() {
   const displayPhotoUri = primaryPhoto?.uri || libraryImage?.uri || FALLBACK_CAR_IMAGE;
 
   const formatLicensePlate = (value: string) => {
-    const cleaned = value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
-    if (cleaned.length <= 2) return cleaned;
-    if (cleaned.length <= 4) return `${cleaned.slice(0, 2)}-${cleaned.slice(2)}`;
-    return `${cleaned.slice(0, 2)}-${cleaned.slice(2, 4)}-${cleaned.slice(4, 7)}`;
+    // Azerbaijan plate format: NN-CC-NNN
+    // N = digit (0-9), C = letter (A-Z)
+    const raw = value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+    let result = '';
+    let pos = 0;
+    // Position 0-1: digits only
+    for (let i = 0; i < 2 && pos < raw.length; pos++) {
+      if (/[0-9]/.test(raw[pos])) { result += raw[pos]; i++; }
+    }
+    // Position 2-3: letters only
+    for (let i = 0; i < 2 && pos < raw.length; pos++) {
+      if (/[A-Z]/.test(raw[pos])) { result += raw[pos]; i++; }
+    }
+    // Position 4-6: digits only
+    for (let i = 0; i < 3 && pos < raw.length; pos++) {
+      if (/[0-9]/.test(raw[pos])) { result += raw[pos]; i++; }
+    }
+    // Insert dashes: NN-CC-NNN
+    if (result.length <= 2) return result;
+    if (result.length <= 4) return `${result.slice(0, 2)}-${result.slice(2)}`;
+    return `${result.slice(0, 2)}-${result.slice(2, 4)}-${result.slice(4, 7)}`;
   };
 
   const handleLicensePlateChange = (text: string) => {
     setLicensePlate(formatLicensePlate(text));
+    if (errors.licensePlate) {
+      setErrors((prev) => ({ ...prev, licensePlate: '' }));
+    }
   };
 
   const handleSelectBrand = (value: string) => {
@@ -374,13 +394,14 @@ export default function EditVehicleScreen() {
               style={[styles.textInput, { color: colors.text }]}
               value={licensePlate}
               onChangeText={handleLicensePlateChange}
-              placeholder="10-AA-123"
+              placeholder="10-AB-123"
               placeholderTextColor={colors.textTertiary}
               autoCapitalize="characters"
-              maxLength={9}
+              maxLength={10}
             />
           </View>
-          <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('addVehicle.licensePlateHint')}</Text>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('addVehicle.formatLicensePlate', { defaultValue: 'Format: NN-CC-NNN (e.g., 10-AB-123)' })}</Text>
+          {errors.licensePlate ? <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.licensePlate}</Text> : null}
         </View>
 
         {/* VIN */}
