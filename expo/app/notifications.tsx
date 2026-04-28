@@ -97,7 +97,7 @@ export default function NotificationsScreen() {
       icon: <Info size={22} color={colors.primary} />,
       title: t('notifications.promotionsOffers'),
       description: t('notifications.promotionsOffersDesc'),
-      enabled: false,
+      enabled: true,
     },
     {
       id: 'general',

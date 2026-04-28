@@ -14,6 +14,7 @@
 
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -137,12 +138,27 @@ export async function getExpoPushToken(): Promise<string | null> {
   if (!Device.isDevice) return null;
 
   try {
-    const permission = await Notifications.getPermissionsAsync();
-    if (permission.status !== 'granted') return null;
+    // Request permission if not already granted (handles race conditions)
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      console.log('[Notifications] Permission not granted, cannot get push token');
+      return null;
+    }
 
-    // projectId is needed for Expo Push Tokens
-    // It will be auto-detected from app.json once configured
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    // Explicitly pass projectId from app.json extra config
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    if (!projectId) {
+      console.log('[Notifications] No projectId found in app config');
+    }
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: projectId || '76b96668-e97c-4609-a448-d655ae30ec2d',
+    });
+    console.log('[Notifications] Got push token:', tokenData.data);
     return tokenData.data;
   } catch (e) {
     console.log('[Notifications] Could not get push token:', (e as Error).message);
