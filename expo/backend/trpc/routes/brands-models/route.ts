@@ -7,8 +7,8 @@
 
 import { publicProcedure } from "../../create-context";
 import { z } from "zod";
-import { db } from "../../../db";
-import { brands, models } from "../../../db/schema";
+import { db } from "../../../../db";
+import { brands, models } from "../../../../db/schema";
 import { eq, asc } from "drizzle-orm";
 
 /**
