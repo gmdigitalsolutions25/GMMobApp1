@@ -10,6 +10,9 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000"
       }
     },
     "preview": {
@@ -17,6 +20,9 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000"
       }
     },
     "production": {
@@ -25,7 +31,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_NO_TELEMETRY": "1"
+        "EXPO_NO_TELEMETRY": "1",
+        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000"
       }
     }
   },
