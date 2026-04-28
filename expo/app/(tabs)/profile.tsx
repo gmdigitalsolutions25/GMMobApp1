@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { PHONE_PLACEHOLDER } from '@/constants/phoneUtils';
 import type { Language, Theme } from '@/constants/types';
 import { useState } from 'react';
+import Constants from 'expo-constants';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -314,7 +315,7 @@ export default function ProfileScreen() {
         <View style={styles.footer}>
           <Info size={16} color={colors.textTertiary} />
           <Text style={[styles.footerText, { color: colors.textTertiary }]}>
-            {t('profile.version')} 1.0.0
+            {t('profile.version')} {Constants.expoConfig?.version || '1.0.0'}
           </Text>
         </View>
       </ScrollView>
