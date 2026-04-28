@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Car, Calendar, History, Shield } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
+import { AppVersion } from '@/components/AppVersion';
 import type { Language } from '@/constants/types';
 import { useTranslation } from 'react-i18next';
 
@@ -179,6 +180,7 @@ export default function WelcomeScreen() {
           </View>
         </View>
       </View>
+      <AppVersion />
     </View>
   );
 }

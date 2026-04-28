@@ -24,6 +24,7 @@ import Colors from '@/constants/colors';
 import { useTranslation } from 'react-i18next';
 import { formatPhoneNumber, unformatPhoneNumber, PHONE_PLACEHOLDER } from '@/constants/phoneUtils';
 import { trpc } from '@/lib/trpc';
+import { AppVersion } from '@/components/AppVersion';
 import {
   saveToken, savePhone, saveUserData, updateLastActivity,
   setPinStatus, setBiometricEnabled,
@@ -78,10 +79,10 @@ export default function AuthScreen() {
       }
       setOtpError(null);
       setStep('otp');
-    } catch (e) {
-      // Fallback: proceed with dev code for offline/dev mode
-      setDevOtp('123456');
-      setStep('otp');
+    } catch (e: any) {
+      // Show error to user instead of silently falling back to dev mode
+      const msg = e?.message || t('auth.networkError') || 'Failed to send OTP. Check your connection.';
+      Alert.alert(t('auth.error') || 'Error', msg);
     } finally {
       setIsLoading(false);
     }
@@ -117,17 +118,12 @@ export default function AuthScreen() {
           setOtp(['', '', '', '', '', '']);
           otpRefs.current[0]?.focus();
         }
-      } catch (e) {
-        // Fallback for offline/dev mode
-        if (code === (devOtp || '123456')) {
-          setOtpError(null);
-          setIsNewUser(true);
-          setTimeout(() => setStep('pin'), 300);
-        } else {
-          setOtpError(t('auth.invalidOtp'));
-          setOtp(['', '', '', '', '', '']);
-          otpRefs.current[0]?.focus();
-        }
+      } catch (e: any) {
+        // Show error to user — don't silently accept dev codes
+        const msg = e?.message || t('auth.networkError') || 'Verification failed. Check your connection.';
+        setOtpError(msg);
+        setOtp(['', '', '', '', '', '']);
+        otpRefs.current[0]?.focus();
       } finally {
         setIsLoading(false);
       }
@@ -508,6 +504,7 @@ export default function AuthScreen() {
           </View>
         </ScrollView>
       </View>
+      <AppVersion />
     </KeyboardAvoidingView>
   );
 }

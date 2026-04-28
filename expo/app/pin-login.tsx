@@ -25,6 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fingerprint, LogOut, ArrowLeft } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
+import { AppVersion } from '@/components/AppVersion';
 import { useTranslation } from 'react-i18next';
 import { trpc } from '@/lib/trpc';
 import {
@@ -532,6 +533,7 @@ export default function PinLoginScreen() {
           </>
         )}
       </View>
+      <AppVersion />
     </View>
   );
 }
