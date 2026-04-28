@@ -61,7 +61,6 @@
       "exclude": [
         "expo-location",
         "expo-file-system",
-        "expo-application",
         "expo-keep-awake",
         "expo-symbols",
         "react-native-maps",
