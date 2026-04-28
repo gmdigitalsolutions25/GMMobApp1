@@ -4,8 +4,14 @@
  * Shown to returning users who have a valid JWT but need to unlock.
  * Offers biometric first (if enabled), then falls back to PIN.
  *
+ * Includes "Forgot PIN?" flow:
+ *   Step 1: Send OTP to stored phone
+ *   Step 2: Verify OTP
+ *   Step 3: Set new PIN
+ *   All via auth.resetPin (single backend call with OTP + new PIN)
+ *
  * This screen is shown when:
- *   - App reopened after 24+ hours but within 7 days
+ *   - App reopened after 1+ hours but within 7 days
  *   - User has a stored JWT token and phone number
  */
 
@@ -16,8 +22,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Fingerprint, LogOut } from 'lucide-react-native';
+import { Fingerprint, LogOut, ArrowLeft } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +34,8 @@ import {
 import { authenticateWithBiometric, checkBiometricAvailability } from '@/lib/biometric';
 
 const { width } = Dimensions.get('window');
+
+type ResetStep = 'none' | 'otp' | 'newPin';
 
 export default function PinLoginScreen() {
   const router = useRouter();
@@ -42,44 +49,59 @@ export default function PinLoginScreen() {
   const [showBiometric, setShowBiometric] = useState(false);
   const [phone, setPhone] = useState<string>('');
 
+  // ── Forgot PIN state ──────────────────────────────────────────────────────
+  const [resetStep, setResetStep] = useState<ResetStep>('none');
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [newPin, setNewPin] = useState(['', '', '', '']);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+
   const pinRefs = useRef<(TextInput | null)[]>([]);
+  const otpRefs = useRef<(TextInput | null)[]>([]);
+  const newPinRefs = useRef<(TextInput | null)[]>([]);
   const float1 = useRef(new Animated.Value(0)).current;
 
   const verifyPinMutation = trpc.auth.verifyPin.useMutation();
   const refreshTokenMutation = trpc.auth.refreshToken.useMutation();
+  const sendOtpMutation = trpc.auth.sendOtp.useMutation();
+  const resetPinMutation = trpc.auth.resetPin.useMutation();
 
   // ── Initialize ────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       const storedPhone = await getPhone();
       if (!storedPhone) {
-        // No phone stored — go to full auth
         router.replace('/auth');
         return;
       }
       setPhone(storedPhone);
 
-      // Check if biometric is enabled and available
       const bioEnabled = await isBiometricEnabled();
       if (bioEnabled) {
         const bioStatus = await checkBiometricAvailability();
         if (bioStatus.isAvailable && bioStatus.isEnrolled) {
           setShowBiometric(true);
-          // Auto-trigger biometric
           handleBiometricAuth();
         }
       }
 
-      // Focus PIN input
       setTimeout(() => pinRefs.current[0]?.focus(), 300);
     })();
   }, []);
+
+  // ── OTP Countdown Timer ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (otpCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCountdown(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpCountdown]);
 
   // ── Biometric Auth ────────────────────────────────────────────────────────
   const handleBiometricAuth = async () => {
     const success = await authenticateWithBiometric('Unlock Qaraj');
     if (success) {
-      // Biometric passed — refresh token and go to home
       setIsLoading(true);
       try {
         const token = await getToken();
@@ -105,14 +127,12 @@ export default function PinLoginScreen() {
         await updateLastActivity();
         router.replace('/(tabs)/home');
       } catch (e) {
-        // Token refresh failed — still allow entry with existing data
         await updateLastActivity();
         router.replace('/(tabs)/home');
       } finally {
         setIsLoading(false);
       }
     } else {
-      // Biometric failed — fall back to PIN
       setTimeout(() => pinRefs.current[0]?.focus(), 100);
     }
   };
@@ -121,16 +141,16 @@ export default function PinLoginScreen() {
   const handlePinChange = async (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;
 
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
+    const newPinArr = [...pin];
+    newPinArr[index] = value;
+    setPin(newPinArr);
 
     if (value && index < 3) {
       pinRefs.current[index + 1]?.focus();
     }
 
-    if (newPin.every(digit => digit !== '')) {
-      const pinCode = newPin.join('');
+    if (newPinArr.every(digit => digit !== '')) {
+      const pinCode = newPinArr.join('');
       setIsLoading(true);
 
       try {
@@ -157,7 +177,6 @@ export default function PinLoginScreen() {
           pinRefs.current[0]?.focus();
         }
       } catch (e) {
-        // Offline fallback — allow entry if we have cached data
         await updateLastActivity();
         router.replace('/(tabs)/home');
       } finally {
@@ -170,6 +189,155 @@ export default function PinLoginScreen() {
     if (key === 'Backspace' && !pin[index] && index > 0) {
       pinRefs.current[index - 1]?.focus();
     }
+  };
+
+  // ── Forgot PIN: Step 1 — Send OTP ────────────────────────────────────────
+  const handleForgotPin = async () => {
+    setResetError(null);
+    setIsLoading(true);
+
+    try {
+      const result = await sendOtpMutation.mutateAsync({ phone });
+      if (result.success) {
+        setResetStep('otp');
+        setOtpCode(['', '', '', '', '', '']);
+        setOtpCountdown(60);
+        setTimeout(() => otpRefs.current[0]?.focus(), 300);
+      } else {
+        setResetError((result as any).message || 'Failed to send OTP');
+      }
+    } catch (e: any) {
+      setResetError(e?.message || 'Failed to send OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── Forgot PIN: Resend OTP ───────────────────────────────────────────────
+  const handleResendOtp = async () => {
+    if (otpCountdown > 0) return;
+    setResetError(null);
+    setIsLoading(true);
+
+    try {
+      const result = await sendOtpMutation.mutateAsync({ phone });
+      if (result.success) {
+        setOtpCode(['', '', '', '', '', '']);
+        setOtpCountdown(60);
+        otpRefs.current[0]?.focus();
+      }
+    } catch (e) {
+      // silently fail
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── Forgot PIN: Step 2 — OTP Input ───────────────────────────────────────
+  const handleOtpChange = (value: string, index: number) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const newOtp = [...otpCode];
+    newOtp[index] = value;
+    setOtpCode(newOtp);
+
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+
+    // When all 6 digits entered, move to new PIN step
+    if (newOtp.every(digit => digit !== '')) {
+      setResetStep('newPin');
+      setNewPin(['', '', '', '']);
+      setResetError(null);
+      setTimeout(() => newPinRefs.current[0]?.focus(), 300);
+    }
+  };
+
+  const handleOtpKeyPress = (key: string, index: number) => {
+    if (key === 'Backspace' && !otpCode[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // ── Forgot PIN: Step 3 — New PIN Input + Submit ──────────────────────────
+  const handleNewPinChange = async (value: string, index: number) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const updated = [...newPin];
+    updated[index] = value;
+    setNewPin(updated);
+
+    if (value && index < 3) {
+      newPinRefs.current[index + 1]?.focus();
+    }
+
+    // When all 4 digits entered, call resetPin
+    if (updated.every(digit => digit !== '')) {
+      const pinCode = updated.join('');
+      const otp = otpCode.join('');
+      setIsLoading(true);
+      setResetError(null);
+
+      try {
+        const result = await resetPinMutation.mutateAsync({
+          phone,
+          otpCode: otp,
+          newPin: pinCode,
+        });
+
+        if (result.success && result.token && result.user) {
+          await saveToken(result.token);
+          await saveUserData(result.user);
+          await updateLastActivity();
+          await signIn({
+            id: result.user.id,
+            username: result.user.username,
+            phone: result.user.phone,
+            email: result.user.email,
+            avatar: result.user.avatar,
+            language: (result.user.language as 'en' | 'az' | 'ru') || 'en',
+            theme: (result.user.theme as 'light' | 'dark') || 'dark',
+            createdAt: result.user.createdAt,
+          });
+          Alert.alert(t('common.success'), t('auth.pinResetSuccess'));
+          router.replace('/(tabs)/home');
+        } else {
+          setResetError((result as any).message || t('auth.pinResetFailed'));
+          setNewPin(['', '', '', '']);
+          newPinRefs.current[0]?.focus();
+        }
+      } catch (e: any) {
+        setResetError(e?.message || t('auth.pinResetFailed'));
+        // If OTP was invalid, go back to OTP step
+        if (e?.message?.includes('OTP') || e?.message?.includes('expired')) {
+          setResetStep('otp');
+          setOtpCode(['', '', '', '', '', '']);
+          setTimeout(() => otpRefs.current[0]?.focus(), 300);
+        } else {
+          setNewPin(['', '', '', '']);
+          newPinRefs.current[0]?.focus();
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleNewPinKeyPress = (key: string, index: number) => {
+    if (key === 'Backspace' && !newPin[index] && index > 0) {
+      newPinRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // ── Cancel Reset Flow ────────────────────────────────────────────────────
+  const handleCancelReset = () => {
+    setResetStep('none');
+    setOtpCode(['', '', '', '', '', '']);
+    setNewPin(['', '', '', '']);
+    setResetError(null);
+    setPin(['', '', '', '']);
+    setTimeout(() => pinRefs.current[0]?.focus(), 300);
   };
 
   // ── Logout ────────────────────────────────────────────────────────────────
@@ -211,6 +379,10 @@ export default function PinLoginScreen() {
     ? `+994-${phone.slice(-9, -7)}-***-**-${phone.slice(-2)}`
     : phone;
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + 40 }]}>
       <View style={styles.heroBackground}>
@@ -218,44 +390,147 @@ export default function PinLoginScreen() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>{maskedPhone}</Text>
+        {/* ── Normal PIN Login ──────────────────────────────────────────── */}
+        {resetStep === 'none' && (
+          <>
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.subtitle}>{maskedPhone}</Text>
 
-        {/* PIN Input */}
-        <View style={styles.pinContainer}>
-          {pin.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={ref => { pinRefs.current[index] = ref; }}
-              style={[styles.pinInput, digit && styles.pinInputFilled]}
-              value={digit}
-              onChangeText={(value) => handlePinChange(value, index)}
-              onKeyPress={({ nativeEvent }) => handlePinKeyPress(nativeEvent.key, index)}
-              keyboardType="number-pad"
-              maxLength={1}
-              secureTextEntry
-              selectTextOnFocus
-            />
-          ))}
-        </View>
+            {/* PIN Input */}
+            <View style={styles.pinContainer}>
+              {pin.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={ref => { pinRefs.current[index] = ref; }}
+                  style={[styles.pinInput, digit && styles.pinInputFilled]}
+                  value={digit}
+                  onChangeText={(value) => handlePinChange(value, index)}
+                  onKeyPress={({ nativeEvent }) => handlePinKeyPress(nativeEvent.key, index)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  secureTextEntry
+                  selectTextOnFocus
+                />
+              ))}
+            </View>
 
-        {pinError && <Text style={styles.errorText}>{pinError}</Text>}
+            {pinError && <Text style={styles.errorText}>{pinError}</Text>}
 
-        {isLoading && <ActivityIndicator color={Colors.dark.primary} style={{ marginTop: 16 }} />}
+            {isLoading && <ActivityIndicator color={Colors.dark.primary} style={{ marginTop: 16 }} />}
 
-        {/* Biometric Button */}
-        {showBiometric && !isLoading && (
-          <TouchableOpacity style={styles.biometricButton} onPress={handleBiometricAuth}>
-            <Fingerprint size={32} color={Colors.dark.primary} strokeWidth={1.5} />
-            <Text style={styles.biometricText}>Use Biometric</Text>
-          </TouchableOpacity>
+            {/* Biometric Button */}
+            {showBiometric && !isLoading && (
+              <TouchableOpacity style={styles.biometricButton} onPress={handleBiometricAuth}>
+                <Fingerprint size={32} color={Colors.dark.primary} strokeWidth={1.5} />
+                <Text style={styles.biometricText}>Use Biometric</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Forgot PIN */}
+            {!isLoading && (
+              <TouchableOpacity style={styles.forgotPinButton} onPress={handleForgotPin}>
+                <Text style={styles.forgotPinText}>{t('auth.forgotPin')}</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Logout */}
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <LogOut size={16} color={Colors.dark.textTertiary} />
+              <Text style={styles.logoutText}>Use a different number</Text>
+            </TouchableOpacity>
+          </>
         )}
 
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={16} color={Colors.dark.textTertiary} />
-          <Text style={styles.logoutText}>Use a different number</Text>
-        </TouchableOpacity>
+        {/* ── Reset Step 1: Enter OTP ──────────────────────────────────── */}
+        {resetStep === 'otp' && (
+          <>
+            <TouchableOpacity style={styles.backButton} onPress={handleCancelReset}>
+              <ArrowLeft size={20} color={Colors.dark.textSecondary} />
+              <Text style={styles.backText}>{t('common.back')}</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.title}>{t('auth.resetPinTitle')}</Text>
+            <Text style={styles.subtitle}>{t('auth.enterCodeSent')} {maskedPhone}</Text>
+
+            {/* OTP Input — 6 boxes */}
+            <View style={styles.otpContainer}>
+              {otpCode.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={ref => { otpRefs.current[index] = ref; }}
+                  style={[styles.otpInput, digit && styles.otpInputFilled]}
+                  value={digit}
+                  onChangeText={(value) => handleOtpChange(value, index)}
+                  onKeyPress={({ nativeEvent }) => handleOtpKeyPress(nativeEvent.key, index)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  selectTextOnFocus
+                />
+              ))}
+            </View>
+
+            {resetError && <Text style={styles.errorText}>{resetError}</Text>}
+
+            {isLoading && <ActivityIndicator color={Colors.dark.primary} style={{ marginTop: 16 }} />}
+
+            {/* Resend OTP */}
+            {!isLoading && (
+              <TouchableOpacity
+                style={[styles.resendButton, otpCountdown > 0 && styles.resendButtonDisabled]}
+                onPress={handleResendOtp}
+                disabled={otpCountdown > 0}
+              >
+                <Text style={[styles.resendText, otpCountdown > 0 && styles.resendTextDisabled]}>
+                  {otpCountdown > 0
+                    ? `${t('auth.resendCode')} (${otpCountdown}s)`
+                    : t('auth.resendCode')}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+
+        {/* ── Reset Step 2: Enter New PIN ──────────────────────────────── */}
+        {resetStep === 'newPin' && (
+          <>
+            <TouchableOpacity style={styles.backButton} onPress={() => {
+              setResetStep('otp');
+              setNewPin(['', '', '', '']);
+              setResetError(null);
+              setTimeout(() => otpRefs.current[0]?.focus(), 300);
+            }}>
+              <ArrowLeft size={20} color={Colors.dark.textSecondary} />
+              <Text style={styles.backText}>{t('common.back')}</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.title}>{t('auth.resetPinTitle')}</Text>
+            <Text style={styles.subtitle}>{t('auth.enterNewPin')}</Text>
+
+            {/* New PIN Input — 4 boxes */}
+            <View style={styles.pinContainer}>
+              {newPin.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={ref => { newPinRefs.current[index] = ref; }}
+                  style={[styles.pinInput, digit && styles.pinInputFilled]}
+                  value={digit}
+                  onChangeText={(value) => handleNewPinChange(value, index)}
+                  onKeyPress={({ nativeEvent }) => handleNewPinKeyPress(nativeEvent.key, index)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  secureTextEntry
+                  selectTextOnFocus
+                />
+              ))}
+            </View>
+
+            {resetError && <Text style={styles.errorText}>{resetError}</Text>}
+
+            {isLoading && <ActivityIndicator color={Colors.dark.primary} style={{ marginTop: 16 }} />}
+
+            <Text style={styles.hintText}>{t('auth.pinHint')}</Text>
+          </>
+        )}
       </View>
     </View>
   );
@@ -292,6 +567,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16, color: Colors.dark.textSecondary,
     marginBottom: 48,
+    textAlign: 'center',
   },
   pinContainer: {
     flexDirection: 'row', justifyContent: 'center', gap: 16,
@@ -306,9 +582,26 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.primary,
     backgroundColor: `${Colors.dark.primary}15`,
   },
+  otpContainer: {
+    flexDirection: 'row', justifyContent: 'center', gap: 10,
+  },
+  otpInput: {
+    width: 44, height: 56,
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 12, borderWidth: 2, borderColor: Colors.dark.border,
+    fontSize: 22, fontWeight: '700', color: Colors.dark.text, textAlign: 'center',
+  },
+  otpInputFilled: {
+    borderColor: Colors.dark.primary,
+    backgroundColor: `${Colors.dark.primary}15`,
+  },
   errorText: {
     fontSize: 14, color: Colors.dark.error,
     textAlign: 'center', paddingVertical: 8, fontWeight: '500',
+  },
+  hintText: {
+    fontSize: 13, color: Colors.dark.textTertiary,
+    textAlign: 'center', marginTop: 24,
   },
   biometricButton: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -319,11 +612,37 @@ const styles = StyleSheet.create({
   biometricText: {
     fontSize: 16, color: Colors.dark.primary, fontWeight: '600',
   },
+  forgotPinButton: {
+    marginTop: 24, paddingVertical: 12,
+  },
+  forgotPinText: {
+    fontSize: 15, color: Colors.dark.primary, fontWeight: '500',
+  },
   logoutButton: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginTop: 48, paddingVertical: 12,
+    marginTop: 24, paddingVertical: 12,
   },
   logoutText: {
     fontSize: 14, color: Colors.dark.textTertiary,
+  },
+  backButton: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 24, paddingVertical: 8,
+  },
+  backText: {
+    fontSize: 15, color: Colors.dark.textSecondary, fontWeight: '500',
+  },
+  resendButton: {
+    marginTop: 24, paddingVertical: 12,
+  },
+  resendButtonDisabled: {
+    opacity: 0.5,
+  },
+  resendText: {
+    fontSize: 15, color: Colors.dark.primary, fontWeight: '500',
+  },
+  resendTextDisabled: {
+    color: Colors.dark.textTertiary,
   },
 });

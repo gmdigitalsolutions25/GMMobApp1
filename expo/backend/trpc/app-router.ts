@@ -17,6 +17,7 @@ import { setPinProcedure } from "./routes/auth/set-pin/route";
 import { verifyPinProcedure } from "./routes/auth/verify-pin/route";
 import { changePinProcedure } from "./routes/auth/change-pin/route";
 import { refreshTokenProcedure } from "./routes/auth/refresh-token/route";
+import { resetPinProcedure } from "./routes/auth/reset-pin/route";
 import { registerPushTokenProcedure } from "./routes/push-tokens/register/route";
 import { listBrandsWithModelsProcedure, listModelsByBrandProcedure } from "./routes/brands-models/route";
 // Monitoring routes
@@ -55,6 +56,7 @@ export const appRouter = createTRPCRouter({
     setPin: setPinProcedure,
     verifyPin: verifyPinProcedure,
     changePin: changePinProcedure,
+    resetPin: resetPinProcedure,
     refreshToken: refreshTokenProcedure,
   }),
   pushTokens: createTRPCRouter({

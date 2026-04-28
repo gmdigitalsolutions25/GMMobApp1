@@ -51,6 +51,7 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   'auth.verifyOtp':  { windowMs: 60_000,  maxRequests: 5 },   // 5 per minute
   'auth.verifyPin':  { windowMs: 60_000,  maxRequests: 10 },  // 10 per minute
   'auth.changePin':  { windowMs: 60_000,  maxRequests: 3 },   // 3 per minute
+  'auth.resetPin':   { windowMs: 60_000,  maxRequests: 3 },   // 3 per minute
 
   // Data mutation endpoints: moderate limits
   'vehicles.create':           { windowMs: 60_000,  maxRequests: 10 },
