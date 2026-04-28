@@ -80,9 +80,12 @@ export default function AuthScreen() {
       setOtpError(null);
       setStep('otp');
     } catch (e: any) {
-      // Show error to user instead of silently falling back to dev mode
-      const msg = e?.message || t('auth.networkError') || 'Failed to send OTP. Check your connection.';
-      Alert.alert(t('auth.error') || 'Error', msg);
+      // Show translated error to user instead of silently falling back to dev mode
+      const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+      const msg = isNetworkError
+        ? t('auth.networkError')
+        : (e?.message || t('auth.networkError'));
+      Alert.alert(t('common.error'), msg);
     } finally {
       setIsLoading(false);
     }
@@ -119,8 +122,11 @@ export default function AuthScreen() {
           otpRefs.current[0]?.focus();
         }
       } catch (e: any) {
-        // Show error to user — don't silently accept dev codes
-        const msg = e?.message || t('auth.networkError') || 'Verification failed. Check your connection.';
+        // Show translated error to user — don't silently accept dev codes
+        const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+        const msg = isNetworkError
+          ? t('auth.networkError')
+          : (e?.message || t('auth.networkError'));
         setOtpError(msg);
         setOtp(['', '', '', '', '', '']);
         otpRefs.current[0]?.focus();
@@ -177,23 +183,15 @@ export default function AuthScreen() {
             pinRefs.current[0]?.focus();
           }
         }
-      } catch (e) {
-        // Offline/dev fallback — create local user
-        setPinError(null);
-        const fallbackUser: UserType = {
-          id: Date.now().toString(),
-          username: '',
-          phone: unformatted,
-          language: 'en',
-          theme: 'dark',
-          createdAt: new Date().toISOString(),
-        };
-        await savePhone(unformatted);
-        await saveUserData(fallbackUser);
-        await setPinStatus(true);
-        await updateLastActivity();
-        await signIn(fallbackUser);
-        router.replace('/(tabs)/home');
+      } catch (e: any) {
+        // Show translated error to user — don't silently create fallback user
+        const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+        const msg = isNetworkError
+          ? t('auth.networkError')
+          : (e?.message || t('auth.networkError'));
+        setPinError(msg);
+        setPin(['', '', '', '']);
+        pinRefs.current[0]?.focus();
       } finally {
         setIsLoading(false);
       }

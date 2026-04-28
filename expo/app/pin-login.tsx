@@ -127,9 +127,14 @@ export default function PinLoginScreen() {
         }
         await updateLastActivity();
         router.replace('/(tabs)/home');
-      } catch (e) {
-        await updateLastActivity();
-        router.replace('/(tabs)/home');
+      } catch (e: any) {
+        const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+        const msg = isNetworkError
+          ? t('auth.networkError')
+          : (e?.message || t('auth.networkError'));
+        setPinError(msg);
+        setPin(['', '', '', '']);
+        pinRefs.current[0]?.focus();
       } finally {
         setIsLoading(false);
       }
@@ -177,9 +182,14 @@ export default function PinLoginScreen() {
           setPin(['', '', '', '']);
           pinRefs.current[0]?.focus();
         }
-      } catch (e) {
-        await updateLastActivity();
-        router.replace('/(tabs)/home');
+      } catch (e: any) {
+        const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+        const msg = isNetworkError
+          ? t('auth.networkError')
+          : (e?.message || t('auth.networkError'));
+        setPinError(msg);
+        setPin(['', '', '', '']);
+        pinRefs.current[0]?.focus();
       } finally {
         setIsLoading(false);
       }
@@ -208,7 +218,8 @@ export default function PinLoginScreen() {
         setResetError((result as any).message || 'Failed to send OTP');
       }
     } catch (e: any) {
-      setResetError(e?.message || 'Failed to send OTP');
+      const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+      setResetError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.networkError')));
     } finally {
       setIsLoading(false);
     }
@@ -227,8 +238,9 @@ export default function PinLoginScreen() {
         setOtpCountdown(60);
         otpRefs.current[0]?.focus();
       }
-    } catch (e) {
-      // silently fail
+    } catch (e: any) {
+      const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+      setResetError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.networkError')));
     } finally {
       setIsLoading(false);
     }
@@ -309,7 +321,8 @@ export default function PinLoginScreen() {
           newPinRefs.current[0]?.focus();
         }
       } catch (e: any) {
-        setResetError(e?.message || t('auth.pinResetFailed'));
+        const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+        setResetError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.pinResetFailed')));
         // If OTP was invalid, go back to OTP step
         if (e?.message?.includes('OTP') || e?.message?.includes('expired')) {
           setResetStep('otp');
