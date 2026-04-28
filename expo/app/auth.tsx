@@ -30,6 +30,8 @@ import {
   setPinStatus, setBiometricEnabled,
 } from '@/lib/authStore';
 import { checkBiometricAvailability, getBiometricLabel } from '@/lib/biometric';
+import { requestNotificationPermissions, registerPushToken } from '@/lib/notifications';
+import Constants from 'expo-constants';
 
 import type { User as UserType } from '@/constants/types';
 
@@ -234,6 +236,17 @@ export default function AuthScreen() {
 
     // Hydrate full profile from server (vehicles, appointments, service records)
     await hydrateFromServer(serverUser.phone);
+
+    // Request notification permissions and register push token
+    try {
+      await requestNotificationPermissions();
+      const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL
+        || process.env.EXPO_PUBLIC_API_BASE_URL
+        || 'http://91.107.161.67:3000';
+      await registerPushToken(serverUser.id, serverUser.phone, backendUrl);
+    } catch (e) {
+      console.log('[Auth] Push token registration failed (non-fatal):', (e as Error).message);
+    }
 
     // For first-time users, check if biometric is available and offer it
     if (isFirstTime) {

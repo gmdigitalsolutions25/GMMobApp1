@@ -33,6 +33,8 @@ import {
   saveUserData, isBiometricEnabled, clearAllAuthData,
 } from '@/lib/authStore';
 import { authenticateWithBiometric, checkBiometricAvailability } from '@/lib/biometric';
+import { requestNotificationPermissions, registerPushToken } from '@/lib/notifications';
+import Constants from 'expo-constants';
 
 const { width } = Dimensions.get('window');
 
@@ -126,6 +128,16 @@ export default function PinLoginScreen() {
           }
         }
         await updateLastActivity();
+
+        // Register push token (non-blocking)
+        try {
+          await requestNotificationPermissions();
+          const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL
+            || process.env.EXPO_PUBLIC_API_BASE_URL
+            || 'http://91.107.161.67:3000';
+          if (result.user) await registerPushToken(result.user.id, result.user.phone, backendUrl);
+        } catch (_) {}
+
         router.replace('/(tabs)/home');
       } catch (e: any) {
         const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
@@ -176,6 +188,16 @@ export default function PinLoginScreen() {
             theme: (result.user.theme as 'light' | 'dark') || 'dark',
             createdAt: result.user.createdAt,
           });
+
+          // Register push token (non-blocking)
+          try {
+            await requestNotificationPermissions();
+            const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL
+              || process.env.EXPO_PUBLIC_API_BASE_URL
+              || 'http://91.107.161.67:3000';
+            await registerPushToken(result.user.id, result.user.phone, backendUrl);
+          } catch (_) {}
+
           router.replace('/(tabs)/home');
         } else {
           setPinError((result as any).message || t('auth.incorrectPin'));
@@ -313,6 +335,15 @@ export default function PinLoginScreen() {
             theme: (result.user.theme as 'light' | 'dark') || 'dark',
             createdAt: result.user.createdAt,
           });
+          // Register push token (non-blocking)
+          try {
+            await requestNotificationPermissions();
+            const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL
+              || process.env.EXPO_PUBLIC_API_BASE_URL
+              || 'http://91.107.161.67:3000';
+            await registerPushToken(result.user.id, result.user.phone, backendUrl);
+          } catch (_) {}
+
           Alert.alert(t('common.success'), t('auth.pinResetSuccess'));
           router.replace('/(tabs)/home');
         } else {
