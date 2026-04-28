@@ -42,12 +42,26 @@ import { useTranslation } from 'react-i18next';
 import Colors from '@/constants/colors';
 import { getTranslatedServices, carsForSale, serviceCenters } from '@/constants/mockData';
 import { trpc } from '@/lib/trpc';
+import { getUnreadCount } from '@/lib/notifications';
 
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Load unread notification count
+  useEffect(() => {
+    const loadUnread = async () => {
+      const count = await getUnreadCount();
+      setUnreadCount(count);
+    };
+    loadUnread();
+    // Refresh count when screen comes into focus
+    const interval = setInterval(loadUnread, 30000); // every 30s
+    return () => clearInterval(interval);
+  }, []);
   const { theme, vehicles } = useApp();
   const serviceTypes = getTranslatedServices(t);
   const insets = useSafeAreaInsets();
@@ -258,9 +272,11 @@ export default function HomeScreen() {
             style={[styles.notifButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           >
             <Bell size={20} color={colors.primary} />
-            <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.notifBadgeText}>2</Text>
-            </View>
+            {unreadCount > 0 && (
+              <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
+                <Text style={styles.notifBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
