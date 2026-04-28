@@ -1,6 +1,25 @@
 # Firebase Cloud Messaging (FCM) Setup Guide for Qaraj GM
 
+**Version:** 2.0
+**Date:** April 29, 2026
+**Status:** Pending — Requires Firebase Console access
+
 This guide walks through setting up Firebase and `google-services.json` to enable **push notifications** on Android for the Qaraj GM app.
+
+## Current Status
+
+| Component | Status |
+|-----------|--------|
+| `app.json` — `googleServicesFile` reference | ✅ Configured |
+| `expo/lib/notifications.ts` — Push token logic | ✅ Implemented (uses tRPC) |
+| `auth.tsx` / `pin-login.tsx` — Token registration after login | ✅ Wired |
+| `pushTokens.register` backend endpoint | ✅ Deployed |
+| `pushTokens.send` backend endpoint | ✅ Deployed |
+| `push_tokens` database table | ✅ Created |
+| `google-services.json` file | ❌ **MISSING — Blocks push notifications** |
+| Firebase project creation | ❌ **Requires Google account login** |
+
+**Without `google-services.json`, `getExpoPushTokenAsync()` returns null on Android and push token registration silently fails.**
 
 ## Prerequisites
 
@@ -158,13 +177,15 @@ Backend Server (91.107.161.67)
 | `expo/app/_layout.tsx` | Notification listeners + deep linking |
 | `expo/app/notifications.tsx` | Notification screen (clickable cards) |
 | `expo/backend/trpc/routes/push-tokens/register/route.ts` | Backend push token storage |
+| `expo/backend/trpc/routes/push-tokens/send/route.ts` | Admin push notification sending |
 | `expo/db/schema.ts` | `push_tokens` table schema |
 
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| `getExpoPushTokenAsync` fails | Add `extra.eas.projectId` to app.json |
+| `getExpoPushTokenAsync` returns null | Missing `google-services.json` — complete Firebase setup |
+| `getExpoPushTokenAsync` fails | Add `extra.eas.projectId` to app.json (already configured: `76b96668-e97c-4609-a448-d655ae30ec2d`) |
 | Notifications not received | Check permissions, ensure physical device (not emulator) |
 | Token not registered in DB | Check backend logs, verify `push_tokens` table exists |
 | `google-services.json` not found | Must be at `expo/google-services.json`, referenced in app.json |

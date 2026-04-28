@@ -27,6 +27,7 @@
         "backgroundColor": "#0A0E1E"
       },
       "package": "az.qaraj.app",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 29,
       "permissions": [
         "android.permission.CAMERA",
