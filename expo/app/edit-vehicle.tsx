@@ -18,7 +18,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '@/providers/AppProvider';
 import { useTranslation } from 'react-i18next';
 import Colors from '@/constants/colors';
-import { carBrands, carModels, carYears } from '@/constants/mockData';
+import { carYears } from '@/constants/mockData';
+import { useBrandsModels } from '@/hooks/useBrandsModels';
 import { getCarModelImage, FALLBACK_CAR_IMAGE } from '@/constants/carImages';
 import type { VehiclePhoto } from '@/constants/types';
 
@@ -107,7 +108,8 @@ export default function EditVehicleScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const availableModels = brand ? carModels[brand] || [] : [];
+  const { brands: carBrands, getModels } = useBrandsModels();
+  const availableModels = brand ? getModels(brand) : [];
 
   // Determine the primary photo URI to display
   const primaryPhoto = photos.find(p => p.isPrimary) || photos[0];

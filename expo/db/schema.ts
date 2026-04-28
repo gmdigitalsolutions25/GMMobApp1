@@ -10,6 +10,8 @@
  *  - service_centers
  *  - otp_codes
  *  - push_tokens
+ *  - brands
+ *  - models
  */
 
 import {
@@ -22,6 +24,7 @@ import {
   real,
   pgEnum,
   varchar,
+  serial,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
@@ -322,6 +325,46 @@ export const systemHealthSnapshots = pgTable(
   })
 );
 
+// ── Brands ────────────────────────────────────────────────────────────────────
+
+export const brands = pgTable(
+  'brands',
+  {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 64 }).notNull().unique(),
+    logoUrl: text('logo_url'),
+    isActive: boolean('is_active').default(true).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    activeIdx: index('brands_is_active_idx').on(table.isActive),
+  })
+);
+
+// ── Models ────────────────────────────────────────────────────────────────────
+
+export const models = pgTable(
+  'models',
+  {
+    id: serial('id').primaryKey(),
+    brandId: integer('brand_id')
+      .notNull()
+      .references(() => brands.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 96 }).notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    brandIdx: index('models_brand_id_idx').on(table.brandId),
+    activeIdx: index('models_is_active_idx').on(table.isActive),
+    uniqueBrandModel: uniqueIndex('models_brand_model_idx').on(table.brandId, table.name),
+  })
+);
+
 // ── Type Exports ───────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -341,3 +384,7 @@ export type PushToken = typeof pushTokens.$inferSelect;
 export type ErrorLog = typeof errorLogs.$inferSelect;
 export type BugReport = typeof bugReports.$inferSelect;
 export type SystemHealthSnapshot = typeof systemHealthSnapshots.$inferSelect;
+export type Brand = typeof brands.$inferSelect;
+export type NewBrand = typeof brands.$inferInsert;
+export type Model = typeof models.$inferSelect;
+export type NewModel = typeof models.$inferInsert;

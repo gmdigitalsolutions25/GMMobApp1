@@ -19,7 +19,8 @@ import { Image } from 'expo-image';
 import { useApp } from '@/providers/AppProvider';
 import { useTranslation } from 'react-i18next';
 import Colors from '@/constants/colors';
-import { carBrands, carModels, carYears } from '@/constants/mockData';
+import { carYears } from '@/constants/mockData';
+import { useBrandsModels } from '@/hooks/useBrandsModels';
 import type { VehiclePhoto } from '@/constants/types';
 import {
   getBrandImages,
@@ -217,7 +218,8 @@ export default function AddVehicleScreen() {
   const [showLibrary, setShowLibrary] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const availableModels = brand ? carModels[brand] || [] : [];
+  const { brands: carBrands, getModels } = useBrandsModels();
+  const availableModels = brand ? getModels(brand) : [];
 
   const handleSelectBrand = (value: string) => {
     setBrand(value);
