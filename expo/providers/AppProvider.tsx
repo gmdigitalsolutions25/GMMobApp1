@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User, Vehicle, ServiceRecord, Appointment, Language, Theme } from '@/constants/types';
+import { trpc } from '@/lib/trpc';
 
 type DefaultStartScreen = 'home' | 'vehicles';
 
@@ -35,6 +36,8 @@ interface AppActions {
   setTheme: (theme: Theme) => Promise<void>;
   completeOnboarding: () => Promise<void>;
   setDefaultStartScreen: (screen: DefaultStartScreen) => Promise<void>;
+  hydrateFromServer: (phone: string) => Promise<void>;
+  refreshData: () => Promise<void>;
 }
 
 const STORAGE_KEYS = {
@@ -50,6 +53,7 @@ const STORAGE_KEYS = {
 
 export const [AppProvider, useApp] = createContextHook(() => {
   const { i18n } = useTranslation();
+  const trpcUtils = trpc.useUtils();
   const [state, setState] = useState<AppState>({
     user: null,
     vehicles: [],
@@ -62,6 +66,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     defaultStartScreen: 'home',
   });
 
+  // ── Load from local cache (AsyncStorage) on app start ──────────────────────
   const loadDataCallback = useCallback(async () => {
     try {
       const [user, vehicles, serviceRecords, appointments, language, theme, onboarding, defaultStartScreen] = await Promise.all([
@@ -100,14 +105,112 @@ export const [AppProvider, useApp] = createContextHook(() => {
     loadDataCallback();
   }, [loadDataCallback]);
 
+  // ── Hydrate from server — called after successful auth ─────────────────────
+  // Fetches full profile (user + vehicles + appointments + service records)
+  // from the database and updates both state and AsyncStorage cache.
+  const hydrateFromServer = useCallback(async (phone: string) => {
+    try {
+      console.log('[AppProvider] Hydrating from server for phone:', phone);
+      const profile = await trpcUtils.users.getFullProfile.fetch({ phone });
+
+      if (!profile || !profile.user) {
+        console.log('[AppProvider] No server profile found, keeping local data');
+        return;
+      }
+
+      // Map server data to app types
+      const serverVehicles: Vehicle[] = (profile.vehicles || []).map((v: any) => ({
+        id: v.id,
+        userId: v.userId,
+        brand: v.brand,
+        model: v.model,
+        year: v.year,
+        vin: v.vin || '',
+        licensePlate: v.licensePlate || '',
+        mileage: v.mileage,
+        color: v.color,
+        photos: v.photos || [],
+        primaryPhoto: v.primaryPhoto,
+        createdAt: v.createdAt,
+      }));
+
+      const serverAppointments: Appointment[] = (profile.appointments || []).map((a: any) => ({
+        id: a.id,
+        vehicleId: a.vehicleId,
+        serviceTypes: a.serviceTypes || [],
+        serviceCenter: a.serviceCenter,
+        serviceCenterAddress: a.serviceCenterAddress,
+        date: a.date,
+        time: a.time,
+        status: a.status,
+        notes: a.notes,
+        createdAt: a.createdAt,
+      }));
+
+      const serverServiceRecords: ServiceRecord[] = (profile.serviceRecords || []).map((r: any) => ({
+        id: r.id,
+        vehicleId: r.vehicleId,
+        serviceName: r.serviceName,
+        serviceType: r.serviceType,
+        date: r.date,
+        mileage: r.mileage,
+        notes: r.notes,
+        cost: r.cost,
+        serviceCenter: r.serviceCenter,
+        technician: r.technician,
+        partsUsed: r.partsUsed || [],
+        createdAt: r.createdAt,
+      }));
+
+      // Save to AsyncStorage (cache for offline access)
+      await Promise.all([
+        AsyncStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(serverVehicles)),
+        AsyncStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(serverAppointments)),
+        AsyncStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify(serverServiceRecords)),
+      ]);
+
+      // Update state
+      setState(prev => ({
+        ...prev,
+        vehicles: serverVehicles,
+        appointments: serverAppointments,
+        serviceRecords: serverServiceRecords,
+      }));
+
+      console.log(`[AppProvider] Hydrated: ${serverVehicles.length} vehicles, ${serverAppointments.length} appointments, ${serverServiceRecords.length} service records`);
+    } catch (error) {
+      console.warn('[AppProvider] Failed to hydrate from server, keeping local data:', error);
+      // Silently fail — local AsyncStorage data is still available
+    }
+  }, [trpcUtils]);
+
+  // ── Refresh data — can be called from any screen to re-sync ────────────────
+  const refreshData = useCallback(async () => {
+    if (state.user?.phone) {
+      await hydrateFromServer(state.user.phone);
+    }
+  }, [state.user?.phone, hydrateFromServer]);
+
   const signIn = useCallback(async (user: User) => {
     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
     setState(prev => ({ ...prev, user }));
   }, []);
 
   const signOut = useCallback(async () => {
-    await AsyncStorage.removeItem(STORAGE_KEYS.USER);
-    setState(prev => ({ ...prev, user: null }));
+    // Clear all user data from AsyncStorage
+    await Promise.all([
+      AsyncStorage.removeItem(STORAGE_KEYS.USER),
+      AsyncStorage.removeItem(STORAGE_KEYS.VEHICLES),
+      AsyncStorage.removeItem(STORAGE_KEYS.SERVICE_RECORDS),
+      AsyncStorage.removeItem(STORAGE_KEYS.APPOINTMENTS),
+    ]);
+    setState(prev => ({
+      ...prev,
+      user: null,
+      vehicles: [],
+      serviceRecords: [],
+      appointments: [],
+    }));
   }, []);
 
   const updateUser = useCallback(async (updates: Partial<User>) => {
@@ -216,12 +319,14 @@ export const [AppProvider, useApp] = createContextHook(() => {
     addServiceRecord, updateServiceRecord, deleteServiceRecord,
     addAppointment, updateAppointment, deleteAppointment,
     setLanguage, setTheme, completeOnboarding, setDefaultStartScreen,
+    hydrateFromServer, refreshData,
   }), [
     signIn, signOut, updateUser,
     addVehicle, updateVehicle, deleteVehicle,
     addServiceRecord, updateServiceRecord, deleteServiceRecord,
     addAppointment, updateAppointment, deleteAppointment,
     setLanguage, setTheme, completeOnboarding, setDefaultStartScreen,
+    hydrateFromServer, refreshData,
   ]);
 
   return useMemo(() => ({ ...state, ...actions }), [state, actions]);

@@ -39,7 +39,7 @@ const { width } = Dimensions.get('window');
 export default function AuthScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signIn } = useApp();
+  const { signIn, hydrateFromServer } = useApp();
   const { t } = useTranslation();
 
   const [step, setStep] = useState<AuthStep>('phone');
@@ -237,6 +237,9 @@ export default function AuthScreen() {
 
     // Sign in to AppProvider (updates AsyncStorage + state)
     await signIn(appUser);
+
+    // Hydrate full profile from server (vehicles, appointments, service records)
+    await hydrateFromServer(serverUser.phone);
 
     // For first-time users, check if biometric is available and offer it
     if (isFirstTime) {

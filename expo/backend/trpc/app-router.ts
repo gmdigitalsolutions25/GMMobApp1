@@ -8,6 +8,7 @@ import { getAppointmentsByUserProcedure } from "./routes/appointments/get-by-use
 import { updateAppointmentStatusProcedure } from "./routes/appointments/update-status/route";
 import { upsertUserProcedure } from "./routes/users/upsert/route";
 import { getUserByPhoneProcedure } from "./routes/users/get-by-phone/route";
+import { getFullProfileProcedure } from "./routes/users/get-full-profile/route";
 import { listServiceCentersProcedure } from "./routes/service-centers/list/route";
 import { sparePartsSearchProcedure } from "./routes/ai/spare-parts/route";
 import { sendOtpProcedure } from "./routes/auth/send-otp/route";
@@ -40,6 +41,7 @@ export const appRouter = createTRPCRouter({
   users: createTRPCRouter({
     upsert: upsertUserProcedure,
     getByPhone: getUserByPhoneProcedure,
+    getFullProfile: getFullProfileProcedure,
   }),
   serviceCenters: createTRPCRouter({
     list: listServiceCentersProcedure,
