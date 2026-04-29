@@ -92,9 +92,11 @@ function checkRateLimit(ip: string, procedure: string): { allowed: boolean; retr
 
 function getClientIp(c: Context): string {
   return (
-    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
-    c.req.header('x-real-ip') ||
+    c.req.header('x-real-client-ip') ||
     c.req.header('cf-connecting-ip') ||
+    c.req.header('x-real-ip') ||
+    // x-forwarded-for is last resort — can be spoofed by clients
+    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
     '127.0.0.1'
   );
 }
