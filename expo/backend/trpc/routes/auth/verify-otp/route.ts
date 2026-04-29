@@ -75,7 +75,7 @@ export const verifyOtpProcedure = publicProcedure
       success: true,
       message: "OTP verified successfully",
       hasPin,
-      userId,
+      // SECURITY: userId removed from response to prevent user enumeration
       // Client uses hasPin to decide: true → show PIN entry, false → show PIN setup
     };
   });
