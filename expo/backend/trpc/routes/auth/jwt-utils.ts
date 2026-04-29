@@ -12,7 +12,10 @@
 
 import crypto from 'node:crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.QARAJ_API_KEY || 'qaraj-jwt-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  console.warn('[SECURITY] JWT_SECRET not set! Using random secret. All tokens will be invalidated on restart. Set JWT_SECRET in .env for production.');
+  return crypto.randomBytes(32).toString('hex');
+})();
 const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
 
 interface JwtPayload {
