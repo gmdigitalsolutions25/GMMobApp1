@@ -9,11 +9,11 @@
  * Biometric is offered after first PIN setup.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   KeyboardAvoidingView, Platform, ScrollView, Alert,
-  Dimensions, Animated, ActivityIndicator,
+  Dimensions, Animated, ActivityIndicator, Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -371,7 +371,8 @@ export default function AuthScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <View style={styles.backgroundContainer}>
         <View style={styles.heroBackground}>
@@ -391,8 +392,12 @@ export default function AuthScreen() {
           <Animated.View style={[styles.floatingAccent2, { transform: [{ translateY: float2Y }] }]} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-          <View style={[styles.content, { paddingTop: insets.top + 60 }]}>
+        <ScrollView 
+          contentContainerStyle={[styles.scrollContent, (step === 'pin' || step === 'otp') && { justifyContent: 'flex-start' }]} 
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          <View style={[styles.content, { paddingTop: (step === 'pin' || step === 'otp') ? insets.top + 20 : insets.top + 60 }]}>
             {(step === 'otp' || step === 'pin') && (
               <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                 <ArrowLeft size={24} color={Colors.dark.text} />
@@ -620,8 +625,8 @@ const styles = StyleSheet.create({
   carSilhouette3: { top: 160, right: 30, width: 110, height: 110, transform: [{ rotate: '20deg' }], borderColor: `${Colors.dark.primary}10` },
   floatingAccent1: { position: 'absolute', width: 80, height: 80, borderRadius: 40, top: 80, left: 40, backgroundColor: `${Colors.dark.primary}10`, opacity: 0.6 },
   floatingAccent2: { position: 'absolute', width: 60, height: 60, borderRadius: 30, bottom: 100, right: 60, backgroundColor: `${Colors.dark.primary}08`, opacity: 0.5 },
-  scrollContent: { flexGrow: 1 },
-  content: { flex: 1, paddingHorizontal: 24, paddingTop: 100, paddingBottom: 80 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center' },
+  content: { paddingHorizontal: 24, paddingTop: 100, paddingBottom: 40 },
   backButton: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: Colors.dark.surface,

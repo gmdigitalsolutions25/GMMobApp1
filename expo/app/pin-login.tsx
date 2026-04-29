@@ -17,8 +17,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, Alert,
-  Dimensions, Animated, TouchableOpacity, ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  Alert, Dimensions, Animated, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -421,12 +422,20 @@ export default function PinLoginScreen() {
   // ═══════════════════════════════════════════════════════════════════════════
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 40 }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top + 20 }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <View style={styles.heroBackground}>
         <Animated.View style={[styles.floatingAccent, { transform: [{ translateY: float1Y }] }]} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        <View style={styles.content}>
         {/* ── Normal PIN Login ──────────────────────────────────────────── */}
         {resetStep === 'none' && (
           <>
@@ -568,9 +577,10 @@ export default function PinLoginScreen() {
             <Text style={styles.hintText}>{t('auth.pinHint')}</Text>
           </>
         )}
-      </View>
+        </View>
+      </ScrollView>
       <AppVersion />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -591,10 +601,13 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.dark.primary}08`,
     opacity: 0.5,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+  },
+  content: {
+    paddingHorizontal: 24,
+    paddingVertical: 40,
     alignItems: 'center',
   },
   title: {
