@@ -833,7 +833,7 @@ export default function HomeScreen() {
             >
               <View style={styles.serviceCenterImageContainer}>
                 <Image
-                  source={{ uri: center.imageUri }}
+                  source={typeof center.imageUri === 'string' ? { uri: center.imageUri } : center.imageUri}
                   style={styles.serviceCenterImage}
                   contentFit="cover"
                 />
@@ -914,7 +914,7 @@ export default function HomeScreen() {
                       { borderColor: colors.border, backgroundColor: colors.background },
                     ]}
                     onPress={() => {
-                      const url = Platform.select({
+                      const url = center.mapUrl || Platform.select({
                         ios: `maps:?q=${encodeURIComponent(center.address)}&ll=${center.lat},${center.lng}`,
                         android: `geo:${center.lat},${center.lng}?q=${encodeURIComponent(center.address)}`,
                         default: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(center.address)}`,

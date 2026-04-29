@@ -66,11 +66,7 @@ export default function AppointmentsScreen() {
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId) || vehicles[0];
 
   const serviceCenters = [
-    'Abşeron - Bakı Sumqayıt şossesi 6-cı km',
-    'Gəncə - Şah İsmayıl Xətai pr 2 B',
-    'Fizuli - Horadiz qəs. Bayraq meydanı',
-    'Babək - Babək pr. 34',
-    'Lənkəran - F.X. Xoyski 25',
+    'Groupmotors - Babək pr. 78, Bakı',
   ];
 
   const serviceTypes = [
