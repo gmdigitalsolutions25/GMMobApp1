@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, Platform, TextInput, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, Alert, Platform, TextInput, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -20,7 +20,7 @@ import { Image } from 'expo-image';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
 import { mockServiceRecords } from '@/constants/mockData';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useTranslation } from 'react-i18next';
 
@@ -30,6 +30,7 @@ export default function VehiclesScreen() {
   const { vehicles, theme, deleteVehicle, appointments, user, addVehicle } = useApp();
   const insets = useSafeAreaInsets();
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
+  const [refreshing, setRefreshing] = useState(false);
   const [expandedRecords, setExpandedRecords] = useState<Record<string, boolean>>({});
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -213,6 +214,17 @@ export default function VehiclesScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              setTimeout(() => setRefreshing(false), 1000);
+            }}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {vehicles.length === 0 ? (
           <View style={styles.emptyState}>

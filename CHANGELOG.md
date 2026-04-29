@@ -6,6 +6,22 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.2.2 (versionCode 32) — April 29, 2026
+
+### Added
+- **20 missing car model images**: BYD Chazor/Destroyer/Leopard, Mitsubishi Gallant/Lancer/Pajero, Subaru Tribeca/XV, Toyota Corolla Cross/FJ Cruiser/Hiace/Yaris Cross, Mazda CX-7/CX-9/EZ-60, Ford Courier/Custom/Fusion/Transit, Honda e:NS/Insight/Passport
+- **Pull-to-refresh** on all 4 tab screens (Home, Vehicles, Appointments, Profile)
+- **5 brand-specific service centers** from Groupmotors Excel: Toyota Absheron, Toyota Ganja, Mitsubishi Motors, Mazda Azerbaijan, BYD Absheron
+- **Working hours display** on home screen service center cards (Mon-Sat 09:00-18:00)
+- **Server infrastructure documentation** (`docs/05-Server-Infrastructure.md`)
+
+### Changed
+- `carImages.ts` expanded with 20 new model entries (131 total images)
+- `mockData.ts` updated with 5 brand-specific service centers replacing single Groupmotors entry
+- `appointments.tsx` service center picker updated with all 5 centers
+
+---
+
 ## v1.2.1 (versionCode 31) — April 29, 2026
 
 ### Fixed

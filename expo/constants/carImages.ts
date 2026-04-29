@@ -19,9 +19,19 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'BYD Atto 3',
       year: 2024,
     },
+    'Chazor': {
+      uri: 'http://91.107.161.67:3000/static/cars/byd/chazor.webp',
+      label: 'BYD Chazor',
+      year: 2024,
+    },
     'Denza D9': {
       uri: 'http://91.107.161.67:3000/static/cars/byd/denza-d9.webp',
       label: 'BYD Denza D9',
+      year: 2024,
+    },
+    'Destroyer': {
+      uri: 'http://91.107.161.67:3000/static/cars/byd/destroyer.webp',
+      label: 'BYD Destroyer',
       year: 2024,
     },
     'Dolphin': {
@@ -33,6 +43,11 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       uri: 'http://91.107.161.67:3000/static/cars/byd/han.webp',
       label: 'BYD Han',
       year: 2024,
+    },
+    'Leopard': {
+      uri: 'http://91.107.161.67:3000/static/cars/byd/leopard.webp',
+      label: 'BYD Leopard',
+      year: 2025,
     },
     'Qin Plus': {
       uri: 'http://91.107.161.67:3000/static/cars/byd/qin-plus.webp',
@@ -97,6 +112,16 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'Ford Bronco Sport',
       year: 2024,
     },
+    'Courier': {
+      uri: 'http://91.107.161.67:3000/static/cars/ford/courier.webp',
+      label: 'Ford Courier',
+      year: 2024,
+    },
+    'Custom': {
+      uri: 'http://91.107.161.67:3000/static/cars/ford/custom.webp',
+      label: 'Ford Custom',
+      year: 2024,
+    },
     'EcoSport': {
       uri: 'http://91.107.161.67:3000/static/cars/ford/ecosport.webp',
       label: 'Ford EcoSport',
@@ -136,6 +161,11 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       uri: 'http://91.107.161.67:3000/static/cars/ford/fiesta.webp',
       label: 'Ford Fiesta',
       year: 2023,
+    },
+    'Fusion': {
+      uri: 'http://91.107.161.67:3000/static/cars/ford/fusion.webp',
+      label: 'Ford Fusion',
+      year: 2020,
     },
     'Focus': {
       uri: 'http://91.107.161.67:3000/static/cars/ford/focus.webp',
@@ -187,6 +217,11 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'Ford Tourneo Connect',
       year: 2024,
     },
+    'Transit': {
+      uri: 'http://91.107.161.67:3000/static/cars/ford/transit.webp',
+      label: 'Ford Transit',
+      year: 2024,
+    },
     'Transit Custom': {
       uri: 'http://91.107.161.67:3000/static/cars/ford/transit-custom.webp',
       label: 'Ford Transit Custom',
@@ -220,6 +255,11 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'Honda Civic',
       year: 2024,
     },
+    'e:NS': {
+      uri: 'http://91.107.161.67:3000/static/cars/honda/e-ns.webp',
+      label: 'Honda e:NS',
+      year: 2024,
+    },
     'Fit': {
       uri: 'http://91.107.161.67:3000/static/cars/honda/fit.webp',
       label: 'Honda Fit',
@@ -230,9 +270,19 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'Honda HR-V',
       year: 2024,
     },
+    'Insight': {
+      uri: 'http://91.107.161.67:3000/static/cars/honda/insight.webp',
+      label: 'Honda Insight',
+      year: 2022,
+    },
     'Odyssey': {
       uri: 'http://91.107.161.67:3000/static/cars/honda/odyssey.webp',
       label: 'Honda Odyssey',
+      year: 2024,
+    },
+    'Passport': {
+      uri: 'http://91.107.161.67:3000/static/cars/honda/passport.webp',
+      label: 'Honda Passport',
       year: 2024,
     },
     'Pilot': {
@@ -282,6 +332,16 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       uri: 'http://91.107.161.67:3000/static/cars/mazda/cx-50.webp',
       label: 'Mazda CX-50',
       year: 2024,
+    },
+    'CX-7': {
+      uri: 'http://91.107.161.67:3000/static/cars/mazda/cx-7.webp',
+      label: 'Mazda CX-7',
+      year: 2012,
+    },
+    'CX-9': {
+      uri: 'http://91.107.161.67:3000/static/cars/mazda/cx-9.webp',
+      label: 'Mazda CX-9',
+      year: 2023,
     },
     'CX-60': {
       uri: 'http://91.107.161.67:3000/static/cars/mazda/cx-60.webp',
@@ -333,6 +393,11 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'Mazda Mazda6',
       year: 2023,
     },
+    'EZ-60': {
+      uri: 'http://91.107.161.67:3000/static/cars/mazda/ez-60.webp',
+      label: 'Mazda EZ-60',
+      year: 2025,
+    },
   },
 
   Mitsubishi: {
@@ -351,10 +416,20 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'Mitsubishi Delica',
       year: 2024,
     },
+    'Gallant': {
+      uri: 'http://91.107.161.67:3000/static/cars/mitsubishi/gallant.webp',
+      label: 'Mitsubishi Gallant',
+      year: 2012,
+    },
     'Eclipse Cross': {
       uri: 'http://91.107.161.67:3000/static/cars/mitsubishi/eclipse-cross.webp',
       label: 'Mitsubishi Eclipse Cross',
       year: 2024,
+    },
+    'Lancer': {
+      uri: 'http://91.107.161.67:3000/static/cars/mitsubishi/lancer.webp',
+      label: 'Mitsubishi Lancer',
+      year: 2017,
     },
     'Mirage': {
       uri: 'http://91.107.161.67:3000/static/cars/mitsubishi/mirage.webp',
@@ -380,6 +455,11 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       uri: 'http://91.107.161.67:3000/static/cars/mitsubishi/outlander-sport-asx-rvr.webp',
       label: 'Mitsubishi Outlander Sport / ASX / RVR',
       year: 2024,
+    },
+    'Pajero': {
+      uri: 'http://91.107.161.67:3000/static/cars/mitsubishi/pajero.webp',
+      label: 'Mitsubishi Pajero',
+      year: 2021,
     },
     'Pajero Sport': {
       uri: 'http://91.107.161.67:3000/static/cars/mitsubishi/pajero-sport.webp',
@@ -449,10 +529,20 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'Subaru Solterra',
       year: 2024,
     },
+    'Tribeca': {
+      uri: 'http://91.107.161.67:3000/static/cars/subaru/tribeca.webp',
+      label: 'Subaru Tribeca',
+      year: 2014,
+    },
     'WRX': {
       uri: 'http://91.107.161.67:3000/static/cars/subaru/wrx.webp',
       label: 'Subaru WRX',
       year: 2024,
+    },
+    'XV': {
+      uri: 'http://91.107.161.67:3000/static/cars/subaru/xv.webp',
+      label: 'Subaru XV',
+      year: 2021,
     },
   },
 
@@ -482,10 +572,20 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
       label: 'Toyota Corolla',
       year: 2024,
     },
+    'Corolla Cross': {
+      uri: 'http://91.107.161.67:3000/static/cars/toyota/corolla-cross.webp',
+      label: 'Toyota Corolla Cross',
+      year: 2024,
+    },
     'Crown': {
       uri: 'http://91.107.161.67:3000/static/cars/toyota/crown.webp',
       label: 'Toyota Crown',
       year: 2024,
+    },
+    'FJ Cruiser': {
+      uri: 'http://91.107.161.67:3000/static/cars/toyota/fj-cruiser.webp',
+      label: 'Toyota FJ Cruiser',
+      year: 2014,
     },
     'Fortuner': {
       uri: 'http://91.107.161.67:3000/static/cars/toyota/fortuner.webp',
@@ -495,6 +595,11 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
     'Grand Highlander': {
       uri: 'http://91.107.161.67:3000/static/cars/toyota/grand-highlander.webp',
       label: 'Toyota Grand Highlander',
+      year: 2024,
+    },
+    'Hiace': {
+      uri: 'http://91.107.161.67:3000/static/cars/toyota/hiace.webp',
+      label: 'Toyota Hiace',
       year: 2024,
     },
     'Highlander': {
@@ -570,6 +675,11 @@ export const carModelImages: Record<string, Record<string, CarImageEntry>> = {
     'Yaris': {
       uri: 'http://91.107.161.67:3000/static/cars/toyota/yaris.webp',
       label: 'Toyota Yaris',
+      year: 2024,
+    },
+    'Yaris Cross': {
+      uri: 'http://91.107.161.67:3000/static/cars/toyota/yaris-cross.webp',
+      label: 'Toyota Yaris Cross',
       year: 2024,
     },
     'bZ4X': {

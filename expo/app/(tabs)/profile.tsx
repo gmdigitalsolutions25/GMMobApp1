@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert, Image, TextInput, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { User as UserIcon, Languages, Moon, Sun, LogOut, Info, ChevronRight, Camera, Edit2, Home, Car } from 'lucide-react-native';
@@ -8,7 +8,7 @@ import Colors from '@/constants/colors';
 import { useTranslation } from 'react-i18next';
 import { PHONE_PLACEHOLDER } from '@/constants/phoneUtils';
 import type { Language, Theme } from '@/constants/types';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Constants from 'expo-constants';
 
 export default function ProfileScreen() {
@@ -17,6 +17,7 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
+  const [refreshing, setRefreshing] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(user?.username || '');
 
@@ -151,6 +152,17 @@ export default function ProfileScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              setTimeout(() => setRefreshing(false), 1000);
+            }}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         <View style={[styles.profileCard, { 
           backgroundColor: colors.surface,

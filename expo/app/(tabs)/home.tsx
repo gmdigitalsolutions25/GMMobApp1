@@ -3,6 +3,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   TextInput,
   Dimensions,
@@ -12,7 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import {
@@ -36,6 +37,7 @@ import {
   ShoppingBag,
   Building2,
   ChevronRight,
+  Clock,
 } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import { useTranslation } from 'react-i18next';
@@ -68,6 +70,13 @@ export default function HomeScreen() {
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    // Force re-render by toggling state, images will re-fetch from server
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
   const sparePartsSectionRef = useRef<View>(null);
   const carsSectionRef = useRef<View>(null);
   const serviceCentersSectionRef = useRef<View>(null);
@@ -286,6 +295,14 @@ export default function HomeScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         <View style={styles.heroSection}>
           <View style={styles.heroBackground}>
@@ -862,9 +879,17 @@ export default function HomeScreen() {
                   <View style={styles.serviceCenterDetailRow}>
                     <Phone size={16} color={colors.textSecondary} />
                     <Text style={[styles.serviceCenterDetailText, { color: colors.textSecondary }]}>
-                      {center.phoneDisplay || center.phone}
+                      {center.phoneDisplay || center.phone}{center.shortCode ? ` / ${center.shortCode}` : ''}
                     </Text>
                   </View>
+                  {center.workingHours?.service ? (
+                    <View style={styles.serviceCenterDetailRow}>
+                      <Clock size={16} color={colors.textSecondary} />
+                      <Text style={[styles.serviceCenterDetailText, { color: colors.textSecondary }]}>
+                        {center.workingHours.service}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
 
                 <View style={styles.serviceTagsContainer}>

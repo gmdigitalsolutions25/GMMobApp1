@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, ChevronDown, Car, ChevronLeft, ChevronRight, Check, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
 import { useTranslation } from 'react-i18next';
 import type { Appointment } from '@/constants/types';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { trpc } from '@/lib/trpc';
 import { scheduleAppointmentReminders } from '@/lib/notifications';
@@ -17,6 +17,7 @@ export default function AppointmentsScreen() {
   const insets = useSafeAreaInsets();
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
   
+  const [refreshing, setRefreshing] = useState(false);
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
   const [showServiceCenterPicker, setShowServiceCenterPicker] = useState(false);
   const [showServiceTypePicker, setShowServiceTypePicker] = useState(false);
@@ -66,7 +67,11 @@ export default function AppointmentsScreen() {
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId) || vehicles[0];
 
   const serviceCenters = [
-    'Groupmotors - Babək pr. 78, Bakı',
+    'Toyota Abşeron Mərkəzi - Bakı-Sumqayıt şossesi 6-cı km',
+    'Mitsubishi Motors - Bakı-Sumqayıt şossesi 6-cı km, Babək pr. 33',
+    'Mazda Azərbaycan - Bakı-Sumqayıt şossesi 6-cı km, Babək pr. 33',
+    'Toyota Gəncə Mərkəzi - Gəncə-Şəmkir şossesi 1-ci km',
+    'BYD Abşeron Mərkəzi - Bakı-Sumqayıt şossesi 6-cı km',
   ];
 
   const serviceTypes = [
@@ -240,6 +245,17 @@ export default function AppointmentsScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              setTimeout(() => setRefreshing(false), 1000);
+            }}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {sortedAppointments.length > 0 && (
           <View style={styles.section}>
