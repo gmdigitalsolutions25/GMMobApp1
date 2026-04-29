@@ -2,7 +2,7 @@
 
 **Version:** 2.0
 **Date:** April 29, 2026
-**Status:** Pending — Requires Firebase Console access
+**Status:** ✅ Complete — FCM integrated in v1.2.0
 
 This guide walks through setting up Firebase and `google-services.json` to enable **push notifications** on Android for the Qaraj GM app.
 
@@ -16,10 +16,10 @@ This guide walks through setting up Firebase and `google-services.json` to enabl
 | `pushTokens.register` backend endpoint | ✅ Deployed |
 | `pushTokens.send` backend endpoint | ✅ Deployed |
 | `push_tokens` database table | ✅ Created |
-| `google-services.json` file | ❌ **MISSING — Blocks push notifications** |
-| Firebase project creation | ❌ **Requires Google account login** |
+| `google-services.json` file | ✅ Integrated (project: qaraj-gm-fb5e3) |
+| Firebase project creation | ✅ Created (qaraj-gm-fb5e3) |
 
-**Without `google-services.json`, `getExpoPushTokenAsync()` returns null on Android and push token registration silently fails.**
+**All components are now in place. Push notifications will work after installing v1.2.0 (versionCode 30) APK.**
 
 ## Prerequisites
 

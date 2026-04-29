@@ -6,6 +6,29 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.2.0 (versionCode 30) — April 29, 2026
+
+### Added
+- **Firebase Cloud Messaging (FCM)**: `google-services.json` integrated — push notifications now fully functional on Android
+- **Server-hosted car images**: All 109 car model images served from `http://91.107.161.67:3000/static/cars/` with 30-day client-side caching
+- **Groupmotors showroom**: Real service center at Babək pr. 78, Bakı with photo, phone, Google Maps directions
+- Static file serving route in Hono backend for `/static/cars/` endpoint
+- `imageCache.ts` utility for client-side image caching with 30-day TTL
+
+### Changed
+- Car images no longer bundled in APK — fetched from server on first use, cached locally
+- Service centers replaced with real Groupmotors location (was mock data)
+- All notification toggles ON by default
+
+### Fixed
+- Push token registration now works end-to-end (FCM → Expo Push Token → backend)
+
+### Deployment Notes
+- Server: copy `car-images/` folder to `C:\QarajGM\Backend\car-images\` and restart QarajAPI
+- Firebase: project `qaraj-gm-fb5e3`, package `az.qaraj.app`
+
+---
+
 ## v1.1.3 (versionCode 29) — April 29, 2026
 
 ### Fixed
