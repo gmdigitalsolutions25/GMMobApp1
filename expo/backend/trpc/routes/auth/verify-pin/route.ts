@@ -24,7 +24,7 @@ const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 export const verifyPinProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
+      phone: z.string().min(7).max(20),
       pin: z
         .string()
         .length(4, "PIN must be exactly 4 digits")

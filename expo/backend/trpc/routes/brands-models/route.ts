@@ -66,7 +66,7 @@ export const listBrandsWithModelsProcedure = publicProcedure.query(async () => {
  * List models for a specific brand.
  */
 export const listModelsByBrandProcedure = publicProcedure
-  .input(z.object({ brand: z.string().min(1) }))
+  .input(z.object({ brand: z.string().min(1).max(100) }))
   .query(async ({ input }) => {
     try {
       const brand = await db

@@ -14,8 +14,8 @@ import { eq, sql } from "drizzle-orm";
 export const registerPushTokenProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
-      token: z.string().min(10),
+      phone: z.string().min(7).max(20),
+      token: z.string().min(10).max(500),
       platform: z.enum(["ios", "android"]),
     })
   )

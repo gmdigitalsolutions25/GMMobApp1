@@ -20,11 +20,11 @@ const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 export const sendPushProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
-      title: z.string().min(1),
-      body: z.string().min(1),
+      phone: z.string().min(7).max(20),
+      title: z.string().min(1).max(200),
+      body: z.string().min(1).max(2000),
       data: z.record(z.unknown()).optional(),
-      adminKey: z.string().min(1),
+      adminKey: z.string().min(1).max(500),
     })
   )
   .mutation(async ({ input }) => {

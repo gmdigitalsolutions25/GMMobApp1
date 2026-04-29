@@ -17,7 +17,7 @@ const BCRYPT_ROUNDS = 12;
 export const changePinProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
+      phone: z.string().min(7).max(20),
       currentPin: z
         .string()
         .length(4)

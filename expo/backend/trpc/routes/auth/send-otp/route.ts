@@ -17,7 +17,7 @@ import { otpStore, normalizePhone, generateOtp } from "../otp-store";
 import { sendOtpSms } from "../sms-provider";
 
 export const sendOtpProcedure = publicProcedure
-  .input(z.object({ phone: z.string().min(7) }))
+  .input(z.object({ phone: z.string().min(7).max(20) }))
   .mutation(async ({ input }) => {
     const phone = normalizePhone(input.phone);
     const existing = otpStore.get(phone);

@@ -15,7 +15,7 @@ import { eq } from "drizzle-orm";
 export const verifyOtpProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
+      phone: z.string().min(7).max(20),
       code: z.string().length(6),
     })
   )

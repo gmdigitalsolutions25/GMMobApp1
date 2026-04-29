@@ -14,8 +14,8 @@ export const createVehicleProcedure = publicProcedure
   .input(
     z.object({
       phone: z.string(),
-      brand: z.string().min(1),
-      model: z.string().min(1),
+      brand: z.string().min(1).max(100),
+      model: z.string().min(1).max(100),
       year: z.number().int().min(1900).max(new Date().getFullYear() + 1),
       vin: z.string().optional().default(""),
       licensePlate: z.string().optional().default(""),

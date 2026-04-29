@@ -15,7 +15,7 @@ import { verifyToken, createToken } from "../jwt-utils";
 export const refreshTokenProcedure = publicProcedure
   .input(
     z.object({
-      token: z.string().min(10),
+      token: z.string().min(10).max(500),
     })
   )
   .mutation(async ({ input }) => {

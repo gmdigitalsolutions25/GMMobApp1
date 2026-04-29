@@ -19,7 +19,7 @@ export interface SparePartsResponse {
 export const sparePartsSearchProcedure = publicProcedure
   .input(
     z.object({
-      query: z.string().min(1),
+      query: z.string().min(1).max(1000),
       vehicleBrand: z.string().optional(),
       vehicleModel: z.string().optional(),
       vehicleYear: z.number().optional(),

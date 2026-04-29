@@ -7,8 +7,8 @@ import { eq, sql } from "drizzle-orm";
 export const upsertUserProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
-      username: z.string().min(1),
+      phone: z.string().min(7).max(20),
+      username: z.string().min(1).max(100),
       email: z.string().email().optional(),
       avatar: z.string().optional(),
       language: z.enum(["en", "az", "ru"]).default("en"),
