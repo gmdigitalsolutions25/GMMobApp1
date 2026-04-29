@@ -6,12 +6,12 @@ const Colors = {
     border: '#1E3A5F',
     borderLight: '#162948',
     
-    primary: '#00D9FF',
-    primaryDark: '#00B8D9',
-    primaryLight: '#33E0FF',
+    primary: '#F24141',
+    primaryDark: '#D93636',
+    primaryLight: '#F56565',
     
-    accent: '#00D9FF',
-    accentDark: '#00B8D9',
+    accent: '#F24141',
+    accentDark: '#D93636',
     warning: '#F59E0B',
     error: '#EF4444',
     
@@ -20,7 +20,7 @@ const Colors = {
     textTertiary: '#718096',
     
     success: '#10B981',
-    info: '#00D9FF',
+    info: '#F24141',
   },
   
   light: {
@@ -30,12 +30,12 @@ const Colors = {
     border: '#E5E7EB',
     borderLight: '#F3F4F6',
     
-    primary: '#00D9FF',
-    primaryDark: '#00B8D9',
-    primaryLight: '#33E0FF',
+    primary: '#F24141',
+    primaryDark: '#D93636',
+    primaryLight: '#F56565',
     
-    accent: '#00D9FF',
-    accentDark: '#00B8D9',
+    accent: '#F24141',
+    accentDark: '#D93636',
     warning: '#F59E0B',
     error: '#EF4444',
     
@@ -44,7 +44,7 @@ const Colors = {
     textTertiary: '#9CA3AF',
     
     success: '#10B981',
-    info: '#00D9FF',
+    info: '#F24141',
   }
 };
 
