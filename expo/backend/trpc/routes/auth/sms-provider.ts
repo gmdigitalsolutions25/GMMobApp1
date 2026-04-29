@@ -4,8 +4,8 @@
  * Sends SMS via Soft-line.az HTTP API.
  * Configuration via .env:
  *   SMS_PROVIDER=softline          (or "mock" for dev mode)
- *   SMS_USER=diamondapi
- *   SMS_PASSWORD=u6s0Wo52
+ *   SMS_USER=(Softline account username)
+ *   SMS_PASSWORD=(Softline account password)
  *   SMS_SENDER=Groupmotors
  *   SMS_BASE_URL=https://gw.soft-line.az
  *
@@ -48,10 +48,15 @@ const SOFTLINE_ERRORS: Record<string, string> = {
  * @param message - SMS text content
  */
 async function sendViaSoftline(phone: string, message: string): Promise<SmsResult> {
-  const user = process.env.SMS_USER || 'diamondapi';
-  const password = process.env.SMS_PASSWORD || 'u6s0Wo52';
+  const user = process.env.SMS_USER;
+  const password = process.env.SMS_PASSWORD;
   const sender = process.env.SMS_SENDER || 'Groupmotors';
   const baseUrl = process.env.SMS_BASE_URL || 'https://gw.soft-line.az';
+
+  if (!user || !password) {
+    console.error('[SMS] CRITICAL: SMS_USER or SMS_PASSWORD not set in environment!');
+    return { success: false, error: 'SMS credentials not configured' };
+  }
 
   // Build URL with query params
   const url = new URL('/sendsms', baseUrl);
@@ -129,9 +134,13 @@ export async function sendOtpSms(phone: string, code: string): Promise<SmsResult
  * @param messageId - The message_id returned from sendViaSoftline
  */
 export async function checkSmsStatus(messageId: string): Promise<{ status: string; date?: string }> {
-  const user = process.env.SMS_USER || 'diamondapi';
-  const password = process.env.SMS_PASSWORD || 'u6s0Wo52';
+  const user = process.env.SMS_USER;
+  const password = process.env.SMS_PASSWORD;
   const baseUrl = process.env.SMS_BASE_URL || 'https://gw.soft-line.az';
+
+  if (!user || !password) {
+    return { status: 'error: SMS credentials not configured' };
+  }
 
   const url = `${baseUrl}/query/single?username=${user}&apikey=${password}&messageid=${messageId}`;
 
