@@ -35,7 +35,7 @@ yarn-error.*
 
 # Credentials & secrets
 google-play-service-account.json
-google-services.json
+# google-services.json  # Needed for EAS Build (repo is private)
 GoogleService-Info.plist
 *.p8
 *.p12
