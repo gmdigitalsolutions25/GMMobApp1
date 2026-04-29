@@ -1,6 +1,6 @@
 # Qaraj GM — Server Infrastructure & Path Reference
 
-**Version:** 1.0
+**Version:** 1.1
 **Last updated:** April 29, 2026
 **Server:** Windows Server 2019 (10.0.17763) at `91.107.161.67`
 
@@ -54,14 +54,14 @@ C:\QarajGM\
 │   │           └── vehicles/ (create, delete, get-by-phone)
 │   │
 │   ├── car-images\             ← Static car images served at /static/cars/*
-│   │   ├── byd\       (14 images)
-│   │   ├── ford\      (21 images)
-│   │   ├── honda\     (12 images)
-│   │   ├── mazda\     (15 images)
-│   │   ├── mitsubishi\ (13 images)
-│   │   ├── subaru\    (10 images)
-│   │   └── toyota\    (24 images)
-│   │                   Total: 109 images, ~8.5 MB
+│   │   ├── byd\       (17 images)
+│   │   ├── ford\      (25 images)
+│   │   ├── honda\     (15 images)
+│   │   ├── mazda\     (18 images)
+│   │   ├── mitsubishi\ (16 images)
+│   │   ├── subaru\    (12 images)
+│   │   └── toyota\    (28 images)
+│   │                   Total: 131 images, ~10 MB
 │   │
 │   ├── db\                     ← Database layer
 │   │   ├── index.ts            ← DB connection (PostgreSQL via Drizzle)
@@ -301,6 +301,7 @@ The following files and folders at `C:\QarajGM\` root are **stale leftovers** fr
 | `C:\QarajGM\nssm.zip` | Already extracted to `nssm\` |
 | `C:\QarajGM\qaraj-monitoring-deploy.zip` | Already deployed |
 | `C:\QarajGM\Local Disk (C) - Shortcut.lnk` | Desktop shortcut |
+| `C:\QarajGM\repo_old\` | Corrupted old repo clone (if exists) — delete immediately |
 | `C:\QarajGM\Backend\1.env` / `2.env` | Test env files |
 | `C:\QarajGM\Backend\honoold.ts` | Old backup |
 | `C:\QarajGM\Backend\iptest.js` | Test script |
@@ -319,6 +320,7 @@ del C:\QarajGM\Backend\1.env C:\QarajGM\Backend\2.env
 del C:\QarajGM\Backend\backend\honoold.ts C:\QarajGM\Backend\iptest.js
 del C:\QarajGM\Backend\node-v22.13.0-x64.msi C:\QarajGM\Backend\Uninstall.exe
 del C:\QarajGM\Backend\bun.lock
+rmdir /S /Q C:\QarajGM\repo_old 2>nul
 ```
 
 ---
