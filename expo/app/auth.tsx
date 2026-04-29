@@ -55,11 +55,35 @@ export default function AuthScreen() {
   const [pinError, setPinError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [biometricType, setBiometricType] = useState<string>('Biometric');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [otpSentMessage, setOtpSentMessage] = useState<string | null>(null);
 
   const otpRefs = useRef<(TextInput | null)[]>([]);
   const pinRefs = useRef<(TextInput | null)[]>([]);
   const float1 = useRef(new Animated.Value(0)).current;
   const float2 = useRef(new Animated.Value(0)).current;
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Resend Cooldown Timer ─────────────────────────────────────────────────
+  const startCooldown = (seconds: number = 60) => {
+    setResendCooldown(seconds);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownRef.current) clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
 
   const sendOtpMutation = trpc.auth.sendOtp.useMutation();
   const verifyOtpMutation = trpc.auth.verifyOtp.useMutation();
@@ -81,7 +105,9 @@ export default function AuthScreen() {
         setDevOtp(result.devCode);
       }
       setOtpError(null);
+      setOtpSentMessage(t('auth.codeSent'));
       setStep('otp');
+      startCooldown(60);
     } catch (e: any) {
       // Show translated error to user instead of silently falling back to dev mode
       const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
@@ -89,6 +115,32 @@ export default function AuthScreen() {
         ? t('auth.networkError')
         : (e?.message || t('auth.networkError'));
       Alert.alert(t('common.error'), msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── Resend OTP ────────────────────────────────────────────────────────────
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || isLoading) return;
+    const unformatted = unformatPhoneNumber(phone);
+    setIsLoading(true);
+    try {
+      const result = await sendOtpMutation.mutateAsync({ phone: unformatted });
+      if (result.devCode) {
+        setDevOtp(result.devCode);
+      }
+      setOtpError(null);
+      setOtpSentMessage(t('auth.codeResent'));
+      setOtp(['', '', '', '', '', '']);
+      otpRefs.current[0]?.focus();
+      startCooldown(60);
+    } catch (e: any) {
+      const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+      const msg = isNetworkError
+        ? t('auth.networkError')
+        : (e?.message || t('auth.networkError'));
+      setOtpError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -429,12 +481,24 @@ export default function AuthScreen() {
                     ))}
                   </View>
 
+                  {otpSentMessage && !otpError && (
+                    <Text style={styles.successText}>{otpSentMessage}</Text>
+                  )}
+
                   {otpError && (
                     <Text style={styles.errorText}>{otpError}</Text>
                   )}
 
-                  <TouchableOpacity style={styles.resendButton}>
-                    <Text style={styles.resendText}>{t('auth.resendCode')}</Text>
+                  <TouchableOpacity
+                    style={[styles.resendButton, resendCooldown > 0 && styles.resendButtonDisabled]}
+                    onPress={handleResendOtp}
+                    disabled={resendCooldown > 0 || isLoading}
+                  >
+                    <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
+                      {resendCooldown > 0
+                        ? `${t('auth.resendCode')} (${resendCooldown}s)`
+                        : t('auth.resendCode')}
+                    </Text>
                   </TouchableOpacity>
 
                   {devOtp && (
@@ -598,13 +662,19 @@ const styles = StyleSheet.create({
   },
   pinInputFilled: { borderColor: Colors.dark.primary, backgroundColor: `${Colors.dark.primary}15` },
   resendButton: { alignItems: 'center', paddingVertical: 12 },
+  resendButtonDisabled: { opacity: 0.5 },
   resendText: { fontSize: 14, color: Colors.dark.primary, fontWeight: '600' },
+  resendTextDisabled: { color: Colors.dark.textTertiary },
   pinHint: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     paddingVertical: 12, paddingHorizontal: 16,
     backgroundColor: `${Colors.dark.success}15`, borderRadius: 12,
   },
   pinHintText: { fontSize: 14, color: Colors.dark.success, fontWeight: '500' },
+  successText: {
+    fontSize: 14, color: Colors.dark.success, textAlign: 'center',
+    paddingVertical: 8, fontWeight: '500',
+  },
   errorText: {
     fontSize: 14, color: Colors.dark.error, textAlign: 'center',
     paddingVertical: 8, fontWeight: '500',

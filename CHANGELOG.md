@@ -6,6 +6,20 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.2.1 (versionCode 31) — April 29, 2026
+
+### Fixed
+- **Resend OTP button was broken** — had no `onPress` handler, only showed haptic feedback
+- Added working resend handler with proper API call
+
+### Added
+- **"Verification code sent" confirmation** message on OTP screen after send/resend
+- **60-second cooldown timer** on Resend button to match server rate limit (3/min)
+- Cooldown shows countdown: "Resend Code (45s)"
+- i18n keys `codeSent` and `codeResent` for EN, AZ, RU
+
+---
+
 ## v1.2.0 (versionCode 30) — April 29, 2026
 
 ### Added
