@@ -6,6 +6,18 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.2.3 (versionCode 33) — April 29, 2026
+
+### Fixed
+- **PIN screen layout** — content moved higher, no longer hidden behind keyboard
+- **PIN login screen** — added KeyboardAvoidingView + ScrollView for proper keyboard handling
+- **Reduced top padding** on OTP/PIN steps for better vertical positioning
+
+### Changed
+- **Brand colors** — replaced cyan (#00D9FF) with Groupmotors red (#F24141) across entire app
+
+---
+
 ## v1.2.2 (versionCode 32) — April 29, 2026
 
 ### Added
