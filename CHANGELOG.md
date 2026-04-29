@@ -6,6 +6,20 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.2.4 (versionCode 34) — April 29, 2026
+
+### Added
+- **Real service center building photos** — 5 actual Groupmotors dealership images replacing generic placeholder
+  - Toyota Abşeron, Mitsubishi Motors, Mazda Azərbaycan, BYD Abşeron, Toyota Gəncə
+- **Server-side service center image hosting** — new `/static/service-centers/` endpoint with 30-day cache headers
+- Images optimized for mobile (1200px wide, WebP format, ~85-137 KB each)
+
+### Changed
+- Service center `imageUri` switched from bundled asset (`require()`) to server URLs
+- Backend `hono.ts` — added static file route for service center images
+
+---
+
 ## v1.2.3 (versionCode 33) — April 29, 2026
 
 ### Fixed

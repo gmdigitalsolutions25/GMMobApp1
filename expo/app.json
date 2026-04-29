@@ -2,7 +2,7 @@
   "expo": {
     "name": "Qaraj",
     "slug": "qaraj",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "qaraj",
@@ -28,7 +28,7 @@
       },
       "package": "az.qaraj.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 33,
+      "versionCode": 34,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",

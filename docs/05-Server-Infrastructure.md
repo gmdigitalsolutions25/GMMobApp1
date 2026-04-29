@@ -63,6 +63,14 @@ C:\QarajGM\
 │   │   └── toyota\    (28 images)
 │   │                   Total: 131 images, ~10 MB
 │   │
+│   ├── service-center-images\  ← Static service center photos served at /static/service-centers/*
+│   │   ├── toyota-absheron.webp
+│   │   ├── mitsubishi-motors.webp
+│   │   ├── mazda-azerbaijan.webp
+│   │   ├── byd-absheron.webp
+│   │   └── toyota-ganja.webp
+│   │                   Total: 5 images, ~500 KB
+│   │
 │   ├── db\                     ← Database layer
 │   │   ├── index.ts            ← DB connection (PostgreSQL via Drizzle)
 │   │   ├── schema.ts           ← Table definitions

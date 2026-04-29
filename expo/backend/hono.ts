@@ -535,6 +535,34 @@ app.get("/static/cars/*", async (c) => {
   }
 });
 
+// ── Static Service Center Images (no auth, cached by clients) ────────────────
+app.get("/static/service-centers/*", async (c) => {
+  const filePath = c.req.path.replace("/static/service-centers/", "");
+  // Sanitize path to prevent directory traversal
+  if (filePath.includes("..") || filePath.startsWith("/")) {
+    return c.text("Forbidden", 403);
+  }
+  const fullPath = join(process.cwd(), "service-center-images", filePath);
+  try {
+    const fileStat = await stat(fullPath);
+    if (!fileStat.isFile()) return c.text("Not found", 404);
+    const data = await readFile(fullPath);
+    const ext = extname(fullPath).toLowerCase();
+    const mimeMap: Record<string, string> = {
+      ".webp": "image/webp",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+    };
+    c.header("Content-Type", mimeMap[ext] || "application/octet-stream");
+    c.header("Cache-Control", "public, max-age=2592000"); // 30 days
+    c.header("Access-Control-Allow-Origin", "*");
+    return c.body(data);
+  } catch {
+    return c.text("Not found", 404);
+  }
+});
+
 // ── tRPC API Routes (API key + rate limiting) ─────────────────────────────────
 app.use("/api/trpc/*", rateLimiter);
 app.use("/api/trpc/*", apiKeyAuth);
