@@ -13,7 +13,8 @@ import { db } from "../../../../../db";
 import { users } from "../../../../../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { createToken } from "../jwt-utils";
-import { normalizePhone } from "../otp-store";
+import { normalizePhone, otpStore } from "../otp-store";
+import { TRPCError } from "@trpc/server";
 
 const BCRYPT_ROUNDS = 12;
 
@@ -30,6 +31,16 @@ export const setPinProcedure = publicProcedure
   .mutation(async ({ input }) => {
     try {
       if (!db) throw new Error('Database not configured. Set DATABASE_URL to enable this feature.');
+
+      // SECURITY: Verify that OTP was completed for this phone number
+      const normalizedPhone = normalizePhone(input.phone);
+      const otpRecord = otpStore.get(normalizedPhone) as any;
+      if (!otpRecord || !otpRecord.verified) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'OTP verification required before setting PIN',
+        });
+      }
 
       // Hash the PIN with bcrypt (12 rounds ≈ ~300ms, good for PINs)
       const pinHash = await bcrypt.hash(input.pin, BCRYPT_ROUNDS);
