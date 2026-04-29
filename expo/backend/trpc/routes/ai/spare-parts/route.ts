@@ -33,15 +33,22 @@ export const sparePartsSearchProcedure = publicProcedure
       throw new Error("OpenAI API key not configured");
     }
 
+    // SECURITY: Sanitize user inputs to prevent prompt injection
+    const sanitize = (s: string) => s.replace(/[\n\r]/g, ' ').replace(/["'`{}\[\]]/g, '').slice(0, 200);
+    const safeQuery = sanitize(input.query);
+    const safeBrand = input.vehicleBrand ? sanitize(input.vehicleBrand) : undefined;
+    const safeModel = input.vehicleModel ? sanitize(input.vehicleModel) : undefined;
+    const safeVin = input.vin ? input.vin.replace(/[^A-Z0-9]/gi, '').slice(0, 17) : undefined;
+
     const vehicleContext = [
       input.vehicleYear,
-      input.vehicleBrand,
-      input.vehicleModel,
+      safeBrand,
+      safeModel,
     ]
       .filter(Boolean)
       .join(" ");
 
-    const vinContext = input.vin ? ` (VIN: ${input.vin})` : "";
+    const vinContext = safeVin ? ` (VIN: ${safeVin})` : "";
 
     const languageInstruction =
       input.language === "az"
@@ -57,7 +64,7 @@ Always respond with valid JSON matching the exact schema provided.
 Be specific about part numbers (use realistic OEM-style numbers), pricing in AZN (Azerbaijani Manat), and compatibility.
 For pricing, use realistic Azerbaijani market prices (1 USD ≈ 1.7 AZN).`;
 
-    const userPrompt = `Find spare parts for: "${input.query}"
+    const userPrompt = `Find spare parts for: "${safeQuery}"
 ${vehicleContext ? `Vehicle: ${vehicleContext}${vinContext}` : ""}
 
 Return a JSON object with this exact structure:
