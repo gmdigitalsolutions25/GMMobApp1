@@ -79,9 +79,11 @@ export function verifyToken(token: string): JwtPayload | null {
 
     const [header, payload, signature] = parts;
 
-    // Verify signature
+    // Verify signature (timing-safe comparison to prevent timing attacks)
     const expectedSignature = sign(payload, header);
-    if (signature !== expectedSignature) {
+    const sigBuf = Buffer.from(signature);
+    const expectedBuf = Buffer.from(expectedSignature);
+    if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
       console.log('[JWT] Invalid signature');
       return null;
     }
