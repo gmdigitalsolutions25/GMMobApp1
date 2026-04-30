@@ -17,10 +17,10 @@
     },
     "preview": {
       "distribution": "internal",
-      "autoIncrement": "versionCode",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
+        "gradleCommand": ":app:assembleRelease",
+        "autoIncrement": true
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000"
@@ -28,9 +28,9 @@
     },
     "production": {
       "distribution": "store",
-      "autoIncrement": "versionCode",
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "autoIncrement": true
       },
       "env": {
         "EXPO_NO_TELEMETRY": "1",
