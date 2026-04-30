@@ -55,7 +55,7 @@ const SERVICE_CENTERS = [
 export default function OnboardingScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { user, updateUser, completeOnboarding } = useApp();
+  const { user, updateUser, completeOnboarding, addVehicle } = useApp();
 
   // Determine if user is known (has data from DB)
   // Don't count phone-as-username as "known"
@@ -151,7 +151,7 @@ export default function OnboardingScreen() {
         }),
       });
 
-      // Create vehicle if car info was provided
+      // Create vehicle if car info was provided — save to backend AND local state
       if (carBrand.trim()) {
         try {
           await fetch(`http://91.107.161.67:3000/api/trpc/vehicles.create`, {
@@ -169,7 +169,21 @@ export default function OnboardingScreen() {
             }),
           });
         } catch (vehicleError) {
-          console.error('[Onboarding] Vehicle creation failed:', vehicleError);
+          console.error('[Onboarding] Vehicle backend save failed:', vehicleError);
+        }
+        // Also save to local state so it appears in garage immediately
+        try {
+          await addVehicle({
+            brand: carBrand.trim(),
+            model: carModel.trim() || 'Unknown',
+            year: parseInt(carYear) || new Date().getFullYear(),
+            vin: '',
+            licensePlate: '',
+            mileage: selectedMileage ? selectedMileage * 12 : undefined,
+            photos: [],
+          });
+        } catch (localError) {
+          console.error('[Onboarding] Local vehicle save failed:', localError);
         }
       }
 
