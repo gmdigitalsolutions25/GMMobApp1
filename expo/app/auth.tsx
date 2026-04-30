@@ -386,11 +386,7 @@ export default function AuthScreen() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-    >
+    <View style={styles.container}>
       <View style={styles.backgroundContainer}>
         <View style={styles.heroBackground}>
           <View style={[styles.diagonalStripe, styles.diagonalStripe1]} />
@@ -409,12 +405,17 @@ export default function AuthScreen() {
           <Animated.View style={[styles.floatingAccent2, { transform: [{ translateY: float2Y }] }]} />
         </View>
 
-        <ScrollView 
-          contentContainerStyle={[styles.scrollContent, (step === 'pin' || step === 'otp') && { justifyContent: 'flex-start' }]} 
-          keyboardShouldPersistTaps="handled"
-          bounces={false}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={[styles.content, { paddingTop: (step === 'pin' || step === 'otp') ? insets.top + 20 : insets.top + 60 }]}>
+          <ScrollView 
+            contentContainerStyle={[styles.scrollContent, (step === 'pin' || step === 'otp') && { justifyContent: 'flex-start' }]} 
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.content, { paddingTop: (step === 'pin' || step === 'otp') ? insets.top + 20 : insets.top + 60 }]}>
             {(step === 'otp' || step === 'pin') && (
               <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                 <ArrowLeft size={24} color={Colors.dark.text} />
@@ -595,12 +596,13 @@ export default function AuthScreen() {
                   </TouchableOpacity>
                 </View>
               )}
-            </View>
-          </View>
-        </ScrollView>
+            </View>  {/* form */}
+          </View>  {/* content */}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
       <AppVersion />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -650,7 +652,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 24,
   },
-  header: { marginBottom: 48, alignItems: 'center' },
+  header: { marginBottom: 32, alignItems: 'center' },
   progressContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 32, paddingHorizontal: 40 },
   progressDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.dark.border },
   progressDotActive: { backgroundColor: Colors.dark.primary, width: 14, height: 14, borderRadius: 7 },
