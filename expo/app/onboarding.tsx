@@ -52,8 +52,7 @@ const SERVICE_CENTERS = [
 export default function OnboardingScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { state, updateUser, completeOnboarding } = useApp();
-  const user = state.user;
+  const { user, updateUser, completeOnboarding } = useApp();
 
   // Determine if user is known (has data from DB)
   const isKnownUser = !!(user?.firstName || user?.username);

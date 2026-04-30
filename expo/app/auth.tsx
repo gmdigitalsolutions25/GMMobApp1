@@ -43,7 +43,7 @@ const { width } = Dimensions.get('window');
 export default function AuthScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signIn, hydrateFromServer, state } = useApp();
+  const { signIn, hydrateFromServer, user: appUser } = useApp();
   const { t } = useTranslation();
   const { showError } = useAlert();
 
@@ -311,8 +311,7 @@ export default function AuthScreen() {
     }
 
     // Check if onboarding is needed
-    const hydratedUser = state.user;
-    if (isFirstTime || (!hydratedUser?.onboardingCompleted && !hydratedUser?.firstName)) {
+    if (isFirstTime || (!appUser?.onboardingCompleted && !appUser?.firstName)) {
       router.replace('/onboarding');
     } else {
       router.replace('/(tabs)/home');
@@ -322,8 +321,7 @@ export default function AuthScreen() {
   // ── Biometric Prompt Handlers ─────────────────────────────────────────────
   const handleEnableBiometric = async () => {
     await setBiometricEnabled(true);
-    const hydratedUser = state.user;
-    if (!hydratedUser?.onboardingCompleted && !hydratedUser?.firstName) {
+    if (!appUser?.onboardingCompleted && !appUser?.firstName) {
       router.replace('/onboarding');
     } else {
       router.replace('/(tabs)/home');
@@ -332,8 +330,7 @@ export default function AuthScreen() {
 
   const handleSkipBiometric = async () => {
     await setBiometricEnabled(false);
-    const hydratedUser = state.user;
-    if (!hydratedUser?.onboardingCompleted && !hydratedUser?.firstName) {
+    if (!appUser?.onboardingCompleted && !appUser?.firstName) {
       router.replace('/onboarding');
     } else {
       router.replace('/(tabs)/home');
