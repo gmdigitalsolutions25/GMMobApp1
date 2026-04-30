@@ -1,10 +1,14 @@
 /**
  * Onboarding Screen — Collects user profile data after first login
  *
- * Path A: Known customer (found in DB) — shows pre-filled data, asks to confirm/complete
- * Path B: Unknown customer — full flow: name, mileage, last service, preferred center
+ * Flow:
+ * Step 0: Welcome — explains what Qaraj does and why we need info
+ * Step 1: Name — first name + last name (no phone shown)
+ * Step 2: Car basics — brand/model/year (short info about the car)
+ * Step 3: Mileage & service preferences
  *
- * 3 steps max, under 60 seconds total.
+ * Path A: Known customer (found in DB) — shows pre-filled data
+ * Path B: Unknown customer — full flow
  */
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -23,7 +27,6 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/providers/AppProvider';
-import { trpc } from '@/lib/trpc';
 
 const { width } = Dimensions.get('window');
 
@@ -60,6 +63,9 @@ export default function OnboardingScreen() {
   // Form state
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
+  const [carBrand, setCarBrand] = useState('');
+  const [carModel, setCarModel] = useState('');
+  const [carYear, setCarYear] = useState('');
   const [selectedMileage, setSelectedMileage] = useState<number | null>(user?.monthlyMileage || null);
   const [selectedLastService, setSelectedLastService] = useState<string | null>(user?.lastServiceDate || null);
   const [selectedCenter, setSelectedCenter] = useState<string | null>(user?.preferredServiceCenter || null);
@@ -83,7 +89,7 @@ export default function OnboardingScreen() {
     }
   }, []);
 
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   const animateTransition = (direction: 'forward' | 'back') => {
     const toValue = direction === 'forward' ? -width : width;
@@ -123,7 +129,7 @@ export default function OnboardingScreen() {
       const phone = user?.phone || '';
 
       // Call backend to save onboarding data
-      const response = await fetch(`http://91.107.161.67:3000/api/trpc/users.updateOnboarding`, {
+      await fetch(`http://91.107.161.67:3000/api/trpc/users.updateOnboarding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,19 +170,72 @@ export default function OnboardingScreen() {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 0: return firstName.trim().length >= 2 && lastName.trim().length >= 2;
-      case 1: return selectedMileage !== null;
-      case 2: return true; // Last service & center are optional
+      case 0: return true; // Welcome step — always can proceed
+      case 1: return firstName.trim().length >= 2 && lastName.trim().length >= 2;
+      case 2: return true; // Car info is optional
+      case 3: return true; // Mileage & service are optional
       default: return false;
     }
   };
+
+  // ─── Step 0: Welcome ─────────────────────────────────────────────────────────
+  const renderWelcomeStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.welcomeHeader}>
+        <View style={styles.welcomeIconContainer}>
+          <Ionicons name="car-sport" size={48} color="#F24141" />
+        </View>
+        <Text style={styles.welcomeTitle}>{'Qaraj-a xoş gəlmisiniz!'}</Text>
+        <Text style={styles.welcomeSubtitle}>
+          {'Avtomobilinizin baxım tarixçəsini izləyin, servis vaxtlarını planlaşdırın və ehtiyat hissələrini asanlıqla tapın.'}
+        </Text>
+      </View>
+
+      <View style={styles.welcomeFeatures}>
+        <View style={styles.featureRow}>
+          <View style={styles.featureIcon}>
+            <Ionicons name="calendar-outline" size={22} color="#F24141" />
+          </View>
+          <View style={styles.featureTextContainer}>
+            <Text style={styles.featureTitle}>{'Servis planlaşdırma'}</Text>
+            <Text style={styles.featureDesc}>{'Vaxtında xatırlatmalar alın'}</Text>
+          </View>
+        </View>
+        <View style={styles.featureRow}>
+          <View style={styles.featureIcon}>
+            <Ionicons name="construct-outline" size={22} color="#F24141" />
+          </View>
+          <View style={styles.featureTextContainer}>
+            <Text style={styles.featureTitle}>{'Ehtiyat hissələri'}</Text>
+            <Text style={styles.featureDesc}>{'AI ilə hissə axtarışı'}</Text>
+          </View>
+        </View>
+        <View style={styles.featureRow}>
+          <View style={styles.featureIcon}>
+            <Ionicons name="analytics-outline" size={22} color="#F24141" />
+          </View>
+          <View style={styles.featureTextContainer}>
+            <Text style={styles.featureTitle}>{'Xərc izləmə'}</Text>
+            <Text style={styles.featureDesc}>{'Baxım xərclərini nəzarətdə saxlayın'}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.welcomeNote}>
+        <Ionicons name="information-circle-outline" size={18} color="#666" />
+        <Text style={styles.welcomeNoteText}>
+          {'Sizə daha yaxşı xidmət göstərmək üçün bir neçə sual soruşacağıq. Bu, 1 dəqiqədən az vaxt alacaq.'}
+        </Text>
+      </View>
+    </View>
+  );
 
   // ─── Step 1: Name ───────────────────────────────────────────────────────────
   const renderNameStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
-        <Text style={styles.stepEmoji}>👋</Text>
-        <Text style={styles.stepTitle}>Tanışlıq</Text>
+        <Text style={styles.stepEmoji}>{'👋'}</Text>
+        <Text style={styles.stepTitle}>{'Tanışlıq'}</Text>
         <Text style={styles.stepSubtitle}>
           {isKnownUser
             ? 'Məlumatlarınızı yoxlayın'
@@ -185,7 +244,7 @@ export default function OnboardingScreen() {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Ad</Text>
+        <Text style={styles.inputLabel}>{'Ad'}</Text>
         <TextInput
           style={styles.textInput}
           value={firstName}
@@ -198,7 +257,7 @@ export default function OnboardingScreen() {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Soyad</Text>
+        <Text style={styles.inputLabel}>{'Soyad'}</Text>
         <TextInput
           style={styles.textInput}
           value={lastName}
@@ -208,23 +267,70 @@ export default function OnboardingScreen() {
           autoCapitalize="words"
         />
       </View>
-
-      {isKnownUser && user?.phone && (
-        <View style={styles.prefilledCard}>
-          <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-          <Text style={styles.prefilledText}>Telefon: +{user.phone}</Text>
-        </View>
-      )}
     </View>
   );
 
-  // ─── Step 2: Monthly Mileage ────────────────────────────────────────────────
-  const renderMileageStep = () => (
+  // ─── Step 2: Car Info ───────────────────────────────────────────────────────
+  const renderCarStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
-        <Text style={styles.stepEmoji}>🚗</Text>
-        <Text style={styles.stepTitle}>Aylıq yürüşünüz</Text>
-        <Text style={styles.stepSubtitle}>Təxmini aylıq neçə km sürürsünüz?</Text>
+        <Text style={styles.stepEmoji}>{'🚗'}</Text>
+        <Text style={styles.stepTitle}>{'Avtomobiliniz'}</Text>
+        <Text style={styles.stepSubtitle}>
+          {'Əsas avtomobiliniz haqqında qısa məlumat (sonra dəyişə bilərsiniz)'}
+        </Text>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>{'Marka'}</Text>
+        <TextInput
+          style={styles.textInput}
+          value={carBrand}
+          onChangeText={setCarBrand}
+          placeholder="məs. Toyota, BMW, Mercedes"
+          placeholderTextColor="#999"
+          autoCapitalize="words"
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>{'Model'}</Text>
+        <TextInput
+          style={styles.textInput}
+          value={carModel}
+          onChangeText={setCarModel}
+          placeholder="məs. Camry, X5, E-Class"
+          placeholderTextColor="#999"
+          autoCapitalize="words"
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>{'İl'}</Text>
+        <TextInput
+          style={styles.textInput}
+          value={carYear}
+          onChangeText={setCarYear}
+          placeholder="məs. 2020"
+          placeholderTextColor="#999"
+          keyboardType="number-pad"
+          maxLength={4}
+        />
+      </View>
+
+      <Text style={styles.optionalHint}>
+        {'* Bu addımı keçə bilərsiniz, sonra əlavə edə bilərsiniz'}
+      </Text>
+    </View>
+  );
+
+  // ─── Step 3: Mileage & Service ──────────────────────────────────────────────
+  const renderMileageServiceStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.stepHeader}>
+        <Text style={styles.stepEmoji}>{'🔧'}</Text>
+        <Text style={styles.stepTitle}>{'Sürüş və servis'}</Text>
+        <Text style={styles.stepSubtitle}>{'Təxmini aylıq neçə km sürürsünüz?'}</Text>
       </View>
 
       <View style={styles.optionsGrid}>
@@ -254,18 +360,8 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         ))}
       </View>
-    </View>
-  );
 
-  // ─── Step 3: Last Service + Preferred Center ────────────────────────────────
-  const renderServiceStep = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.stepHeader}>
-        <Text style={styles.stepEmoji}>🔧</Text>
-        <Text style={styles.stepTitle}>Servis məlumatları</Text>
-        <Text style={styles.stepSubtitle}>Son servisiniz nə vaxt olub?</Text>
-      </View>
-
+      <Text style={[styles.sectionLabel, { marginTop: 20 }]}>{'Son servisiniz nə vaxt olub?'}</Text>
       <View style={styles.lastServiceRow}>
         {LAST_SERVICE_OPTIONS.map((option) => (
           <TouchableOpacity
@@ -286,42 +382,15 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         ))}
       </View>
-
-      <Text style={styles.sectionLabel}>Yaxın servis mərkəzi</Text>
-      <ScrollView style={styles.centersList} showsVerticalScrollIndicator={false}>
-        {SERVICE_CENTERS.map((center) => (
-          <TouchableOpacity
-            key={center.id}
-            style={[
-              styles.centerCard,
-              selectedCenter === center.name && styles.centerCardSelected,
-            ]}
-            onPress={() => setSelectedCenter(center.name)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.centerInfo}>
-              <Text style={[
-                styles.centerName,
-                selectedCenter === center.name && styles.centerNameSelected,
-              ]}>
-                {center.name}
-              </Text>
-              <Text style={styles.centerAddress}>{center.address}</Text>
-            </View>
-            {selectedCenter === center.name && (
-              <Ionicons name="checkmark-circle" size={24} color="#F24141" />
-            )}
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
     </View>
   );
 
   const renderStep = () => {
     switch (currentStep) {
-      case 0: return renderNameStep();
-      case 1: return renderMileageStep();
-      case 2: return renderServiceStep();
+      case 0: return renderWelcomeStep();
+      case 1: return renderNameStep();
+      case 2: return renderCarStep();
+      case 3: return renderMileageServiceStep();
       default: return null;
     }
   };
@@ -331,7 +400,6 @@ export default function OnboardingScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Progress Bar */}
       <View style={styles.progressContainer}>
         {Array.from({ length: totalSteps }).map((_, i) => (
           <View
@@ -344,22 +412,26 @@ export default function OnboardingScreen() {
         ))}
       </View>
 
-      {/* Content */}
-      <Animated.View
-        style={[
-          styles.content,
-          { opacity: fadeAnim, transform: [{ translateX: slideAnim }] },
-        ]}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {renderStep()}
-      </Animated.View>
+        <Animated.View
+          style={[
+            styles.content,
+            { opacity: fadeAnim, transform: [{ translateX: slideAnim }] },
+          ]}
+        >
+          {renderStep()}
+        </Animated.View>
+      </ScrollView>
 
-      {/* Bottom Buttons */}
       <View style={styles.bottomBar}>
         {currentStep > 0 ? (
           <TouchableOpacity style={styles.backButton} onPress={goBack}>
             <Ionicons name="arrow-back" size={20} color="#666" />
-            <Text style={styles.backButtonText}>Geri</Text>
+            <Text style={styles.backButtonText}>{'Geri'}</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.backButton} />
@@ -372,20 +444,21 @@ export default function OnboardingScreen() {
           activeOpacity={0.8}
         >
           <Text style={styles.nextButtonText}>
-            {currentStep === totalSteps - 1
-              ? (isSubmitting ? 'Yüklənir...' : 'Tamamla')
-              : 'Davam et'}
+            {currentStep === 0
+              ? 'Başlayaq'
+              : currentStep === totalSteps - 1
+                ? (isSubmitting ? 'Yüklənir...' : 'Tamamla')
+                : 'Davam et'}
           </Text>
-          {currentStep < totalSteps - 1 && (
+          {currentStep > 0 && currentStep < totalSteps - 1 && (
             <Ionicons name="arrow-forward" size={18} color="#fff" />
           )}
         </TouchableOpacity>
       </View>
 
-      {/* Skip on step 3 */}
-      {currentStep === 2 && (
+      {currentStep >= 2 && (
         <TouchableOpacity style={styles.skipButton} onPress={handleSubmit}>
-          <Text style={styles.skipButtonText}>Keç →</Text>
+          <Text style={styles.skipButtonText}>{'Keç →'}</Text>
         </TouchableOpacity>
       )}
     </KeyboardAvoidingView>
@@ -415,6 +488,9 @@ const styles = StyleSheet.create({
   progressDotActive: {
     backgroundColor: '#F24141',
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -422,6 +498,82 @@ const styles = StyleSheet.create({
   stepContainer: {
     flex: 1,
   },
+  // Welcome step styles
+  welcomeHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  welcomeIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FFF0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  welcomeTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  welcomeSubtitle: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 16,
+  },
+  welcomeFeatures: {
+    gap: 16,
+    marginBottom: 24,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 12,
+    padding: 14,
+    gap: 14,
+  },
+  featureIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureTextContainer: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  featureDesc: {
+    fontSize: 13,
+    color: '#888',
+  },
+  welcomeNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    padding: 12,
+    gap: 8,
+  },
+  welcomeNoteText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
+  },
+  // Step styles
   stepHeader: {
     marginBottom: 32,
   },
@@ -459,18 +611,11 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     backgroundColor: '#FAFAFA',
   },
-  prefilledCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0FFF0',
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 12,
-    gap: 8,
-  },
-  prefilledText: {
-    fontSize: 14,
-    color: '#333',
+  optionalHint: {
+    fontSize: 13,
+    color: '#999',
+    fontStyle: 'italic',
+    marginTop: 8,
   },
   optionsGrid: {
     gap: 12,
@@ -508,6 +653,12 @@ const styles = StyleSheet.create({
   optionSublabelSelected: {
     color: '#F24141',
   },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
   lastServiceRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -533,46 +684,6 @@ const styles = StyleSheet.create({
   },
   lastServiceChipTextSelected: {
     color: '#F24141',
-  },
-  sectionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  centersList: {
-    flex: 1,
-    maxHeight: 220,
-  },
-  centerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F8F8',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  centerCardSelected: {
-    borderColor: '#F24141',
-    backgroundColor: '#FFF5F5',
-  },
-  centerInfo: {
-    flex: 1,
-  },
-  centerName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-  },
-  centerNameSelected: {
-    color: '#F24141',
-  },
-  centerAddress: {
-    fontSize: 13,
-    color: '#999',
-    marginTop: 2,
   },
   bottomBar: {
     flexDirection: 'row',
