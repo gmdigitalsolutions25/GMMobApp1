@@ -275,7 +275,7 @@ export default function AuthScreen() {
     await updateLastActivity();
 
     // Map server user to app User type
-    const appUser: UserType = {
+    const mappedUser: UserType = {
       id: serverUser.id,
       username: serverUser.username,
       phone: serverUser.phone,
@@ -287,7 +287,7 @@ export default function AuthScreen() {
     };
 
     // Sign in to AppProvider (updates AsyncStorage + state)
-    await signIn(appUser);
+    await signIn(mappedUser);
 
     // Hydrate full profile from server (vehicles, appointments, service records)
     await hydrateFromServer(serverUser.phone);
@@ -310,7 +310,7 @@ export default function AuthScreen() {
       }
     }
 
-    // Check if onboarding is needed
+    // Check if onboarding is needed — use provider user (appUser) which has full profile
     if (isFirstTime || (!appUser?.onboardingCompleted && !appUser?.firstName)) {
       router.replace('/onboarding');
     } else {
