@@ -429,16 +429,18 @@ export default function AuthScreen() {
               </View>
 
               <Text style={styles.title}>
-                {step === 'phone' && t('auth.enterPhone')}
-                {step === 'otp' && t('auth.verifyOtp')}
-                {step === 'pin' && (isNewUser ? t('auth.createPin') : t('auth.enterPin'))}
-                {step === 'biometric-prompt' && `Enable ${biometricType}?`}
+                {step === 'phone' ? t('auth.enterPhone')
+                  : step === 'otp' ? t('auth.verifyOtp')
+                  : step === 'pin' ? (isNewUser ? t('auth.createPin') : t('auth.enterPin'))
+                  : step === 'biometric-prompt' ? `Enable ${biometricType}?`
+                  : ''}
               </Text>
               <Text style={styles.subtitle}>
-                {step === 'phone' && t('auth.sendVerificationCode')}
-                {step === 'otp' && `${t('auth.enterOtpCode')} ${phone}`}
-                {step === 'pin' && (isNewUser ? t('auth.createPinDesc') : t('auth.enterPinDesc'))}
-                {step === 'biometric-prompt' && `Unlock Qaraj quickly with ${biometricType} next time`}
+                {step === 'phone' ? t('auth.sendVerificationCode')
+                  : step === 'otp' ? `${t('auth.enterOtpCode')} ${phone}`
+                  : step === 'pin' ? (isNewUser ? t('auth.createPinDesc') : t('auth.enterPinDesc'))
+                  : step === 'biometric-prompt' ? `Unlock Qaraj quickly with ${biometricType} next time`
+                  : ''}
               </Text>
             </View>
 
@@ -593,8 +595,8 @@ export default function AuthScreen() {
                   </TouchableOpacity>
                 </View>
               )}
-            </View>  {/* form */}
-          </View>  {/* content */}
+            </View>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
