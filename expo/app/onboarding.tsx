@@ -58,7 +58,9 @@ export default function OnboardingScreen() {
   const { user, updateUser, completeOnboarding } = useApp();
 
   // Determine if user is known (has data from DB)
-  const isKnownUser = !!(user?.firstName || user?.username);
+  // Don't count phone-as-username as "known"
+  const usernameIsReal = user?.username && !/^[\+\d\s\-()]{7,}$/.test(user.username.trim());
+  const isKnownUser = !!(user?.firstName || usernameIsReal);
 
   // Form state
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -77,14 +79,18 @@ export default function OnboardingScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Pre-fill from username if firstName/lastName not set
+  // Skip if username looks like a phone number
   useEffect(() => {
     if (!firstName && !lastName && user?.username) {
-      const parts = user.username.split(' ');
-      if (parts.length >= 2) {
-        setFirstName(parts[0]);
-        setLastName(parts.slice(1).join(' '));
-      } else if (parts.length === 1) {
-        setFirstName(parts[0]);
+      const looksLikePhone = /^[\+\d\s\-()]{7,}$/.test(user.username.trim());
+      if (!looksLikePhone) {
+        const parts = user.username.trim().split(' ');
+        if (parts.length >= 2) {
+          setFirstName(parts[0]);
+          setLastName(parts.slice(1).join(' '));
+        } else if (parts.length === 1) {
+          setFirstName(parts[0]);
+        }
       }
     }
   }, []);
@@ -144,6 +150,28 @@ export default function OnboardingScreen() {
           preferredServiceCenter: selectedCenter || undefined,
         }),
       });
+
+      // Create vehicle if car info was provided
+      if (carBrand.trim()) {
+        try {
+          await fetch(`http://91.107.161.67:3000/api/trpc/vehicles.create`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': 'qrj_sk_live_2024_gm_xK9mP2vL8nQ4wR7j',
+            },
+            body: JSON.stringify({
+              phone: phone,
+              brand: carBrand.trim(),
+              model: carModel.trim() || 'Unknown',
+              year: parseInt(carYear) || new Date().getFullYear(),
+              mileage: selectedMileage ? selectedMileage * 12 : undefined,
+            }),
+          });
+        } catch (vehicleError) {
+          console.error('[Onboarding] Vehicle creation failed:', vehicleError);
+        }
+      }
 
       // Update local state
       await updateUser({
