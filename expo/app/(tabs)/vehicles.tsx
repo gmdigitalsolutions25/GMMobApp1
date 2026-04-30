@@ -279,13 +279,15 @@ export default function VehiclesScreen() {
                   activeOpacity={0.7}
                 >
                   <Image
-                    source={{
-                      uri:
-                        selectedVehicle?.photos?.find(p => p.isPrimary)?.uri ||
+                    source={
+                      (selectedVehicle?.photos?.find(p => p.isPrimary)?.uri ||
                         selectedVehicle?.photos?.[0]?.uri ||
-                        (selectedVehicle as any)?.libraryImageUri ||
-                        'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&q=80',
-                    }}
+                        (selectedVehicle as any)?.libraryImageUri)
+                        ? { uri: selectedVehicle?.photos?.find(p => p.isPrimary)?.uri ||
+                              selectedVehicle?.photos?.[0]?.uri ||
+                              (selectedVehicle as any)?.libraryImageUri }
+                        : require('@/assets/images/car-placeholder.png')
+                    }
                     style={styles.vehicleImage}
                     contentFit="cover"
                   />
