@@ -5,11 +5,17 @@ export type Theme = 'light' | 'dark';
 export interface User {
   id: string;
   username: string;
+  firstName?: string;
+  lastName?: string;
   phone: string;
   email?: string;
   avatar?: string;
   language: Language;
   theme: Theme;
+  monthlyMileage?: number;
+  lastServiceDate?: string;
+  preferredServiceCenter?: string;
+  onboardingCompleted?: boolean;
   createdAt: string;
 }
 

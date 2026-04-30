@@ -12,9 +12,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Platform, ScrollView, Alert,
+  KeyboardAvoidingView, Platform, ScrollView,
   Dimensions, Animated, ActivityIndicator, Keyboard,
 } from 'react-native';
+import { useAlert } from '@/components/CustomAlert';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,8 +43,9 @@ const { width } = Dimensions.get('window');
 export default function AuthScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signIn, hydrateFromServer } = useApp();
+  const { signIn, hydrateFromServer, state } = useApp();
   const { t } = useTranslation();
+  const { showError } = useAlert();
 
   const [step, setStep] = useState<AuthStep>('phone');
   const [phone, setPhone] = useState('');
@@ -95,7 +97,7 @@ export default function AuthScreen() {
   const handlePhoneSubmit = async () => {
     const unformatted = unformatPhoneNumber(phone);
     if (unformatted.length < 12) {
-      Alert.alert(t('common.error'), t('auth.invalidPhone'));
+      showError(t('common.error'), t('auth.invalidPhone'));
       return;
     }
     setIsLoading(true);
@@ -114,7 +116,7 @@ export default function AuthScreen() {
       const msg = isNetworkError
         ? t('auth.networkError')
         : (e?.message || t('auth.networkError'));
-      Alert.alert(t('common.error'), msg);
+      showError(t('common.error'), msg);
     } finally {
       setIsLoading(false);
     }
@@ -308,19 +310,34 @@ export default function AuthScreen() {
       }
     }
 
-    // Go to home
-    router.replace('/(tabs)/home');
+    // Check if onboarding is needed
+    const hydratedUser = state.user;
+    if (isFirstTime || (!hydratedUser?.onboardingCompleted && !hydratedUser?.firstName)) {
+      router.replace('/onboarding');
+    } else {
+      router.replace('/(tabs)/home');
+    }
   };
 
   // ── Biometric Prompt Handlers ─────────────────────────────────────────────
   const handleEnableBiometric = async () => {
     await setBiometricEnabled(true);
-    router.replace('/(tabs)/home');
+    const hydratedUser = state.user;
+    if (!hydratedUser?.onboardingCompleted && !hydratedUser?.firstName) {
+      router.replace('/onboarding');
+    } else {
+      router.replace('/(tabs)/home');
+    }
   };
 
   const handleSkipBiometric = async () => {
     await setBiometricEnabled(false);
-    router.replace('/(tabs)/home');
+    const hydratedUser = state.user;
+    if (!hydratedUser?.onboardingCompleted && !hydratedUser?.firstName) {
+      router.replace('/onboarding');
+    } else {
+      router.replace('/(tabs)/home');
+    }
   };
 
   // ── Navigation ────────────────────────────────────────────────────────────

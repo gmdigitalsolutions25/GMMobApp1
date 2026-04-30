@@ -4,11 +4,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Platform,
   FlatList,
   Dimensions,
 } from 'react-native';
+import { useAlert } from '@/components/CustomAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
@@ -38,6 +38,7 @@ export default function VehiclePhotoScreen() {
   const { vehicles, updateVehicle, theme } = useApp();
   const insets = useSafeAreaInsets();
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
+  const { showError, showConfirm } = useAlert();
 
   const vehicle = vehicles.find(v => v.id === vehicleId);
   const [photos, setPhotos] = useState<VehiclePhoto[]>(vehicle?.photos || []);
@@ -68,7 +69,7 @@ export default function VehiclePhotoScreen() {
       if (Platform.OS === 'web') {
         alert(t('vehiclePhoto.permissionGallery'));
       } else {
-        Alert.alert(t('vehiclePhoto.permissionRequired'), t('vehiclePhoto.permissionGallery'));
+        showError(t('vehiclePhoto.permissionRequired'), t('vehiclePhoto.permissionGallery'));
       }
       return;
     }
@@ -128,14 +129,10 @@ export default function VehiclePhotoScreen() {
     if (Platform.OS === 'web') {
       if (window.confirm(t('vehiclePhoto.deletePhotoConfirm'))) await confirmDelete();
     } else {
-      Alert.alert(
+      showConfirm(
         t('vehiclePhoto.deletePhoto'),
         t('vehiclePhoto.deletePhotoConfirm'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('common.delete'), style: 'destructive', onPress: confirmDelete },
-        ],
-        { cancelable: true }
+        confirmDelete
       );
     }
   };

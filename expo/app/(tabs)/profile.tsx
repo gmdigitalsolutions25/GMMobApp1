@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert, Image, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Image, TextInput, Platform } from 'react-native';
+import { useAlert } from '@/components/CustomAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { User as UserIcon, Languages, Moon, Sun, LogOut, Info, ChevronRight, Camera, Edit2, Home, Car } from 'lucide-react-native';
@@ -15,6 +16,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut, setLanguage, setTheme, theme, language, updateUser, defaultStartScreen, setDefaultStartScreen } = useApp();
   const { t, i18n } = useTranslation();
+  const { showAlert, showConfirm, showError } = useAlert();
   const insets = useSafeAreaInsets();
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
   const [refreshing, setRefreshing] = useState(false);
@@ -28,17 +30,13 @@ export default function ProfileScreen() {
       { code: 'ru', label: 'Русский' },
     ];
 
-    Alert.alert(
-      t('profile.language'),
-      'Choose language',
-      languages.map(lang => ({
-        text: lang.label,
-        onPress: async () => {
-          await setLanguage(lang.code);
-          await i18n.changeLanguage(lang.code);
-        },
-      }))
-    );
+    // Language selection — cycle through languages on tap
+    const currentIndex = languages.findIndex(l => l.code === language);
+    const nextIndex = (currentIndex + 1) % languages.length;
+    const nextLang = languages[nextIndex];
+    await setLanguage(nextLang.code);
+    await i18n.changeLanguage(nextLang.code);
+    showAlert(t('profile.language'), `${nextLang.label}`, 'success');
   };
 
   const handleThemeToggle = async () => {
@@ -47,42 +45,27 @@ export default function ProfileScreen() {
   };
 
   const handleDefaultStartScreenChange = async () => {
-    Alert.alert(
+    // Toggle between home and vehicles
+    const newScreen = defaultStartScreen === 'home' ? 'vehicles' : 'home';
+    await setDefaultStartScreen(newScreen);
+    showAlert(
       t('profile.defaultStartScreen'),
-      'Choose default start screen',
-      [
-        {
-          text: t('profile.home'),
-          onPress: async () => {
-            await setDefaultStartScreen('home');
-          },
-        },
-        {
-          text: t('profile.myGarage'),
-          onPress: async () => {
-            await setDefaultStartScreen('vehicles');
-          },
-        },
-        { text: t('common.cancel'), style: 'cancel' },
-      ]
+      newScreen === 'home' ? t('profile.home') : t('profile.myGarage'),
+      'success'
     );
   };
 
   const handleSignOut = () => {
-    Alert.alert(
+    showConfirm(
       t('profile.logout'),
-      'Are you sure you want to logout?',
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('profile.logout'),
-          style: 'destructive',
-          onPress: async () => {
-            await signOut();
-            router.replace('/auth');
-          },
-        },
-      ]
+      'Hesabdan çıxmaq istəyirsiniz?',
+      async () => {
+        await signOut();
+        router.replace('/auth');
+      },
+      undefined,
+      t('profile.logout'),
+      t('common.cancel')
     );
   };
 
@@ -91,9 +74,10 @@ export default function ProfileScreen() {
       if (Platform.OS !== 'web') {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert(
-            'Permission Required',
-            'Please grant camera roll permissions to change your profile picture.'
+          showAlert(
+            'İcazə tələb olunur',
+            'Profil şəklini dəyişmək üçün qalereyaya giriş icazəsi verin.',
+            'warning'
           );
           return;
         }
@@ -111,7 +95,7 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert(t('profile.errorUpdateProfile'), t('profile.errorUpdateProfileMessage'));
+      showError(t('profile.errorUpdateProfile'), t('profile.errorUpdateProfileMessage'));
     }
   };
 
@@ -120,7 +104,7 @@ export default function ProfileScreen() {
       await updateUser({ username: editedName.trim() });
       setIsEditingName(false);
     } else {
-      Alert.alert(t('profile.errorUpdateProfile'), t('profile.enterValidName'));
+      showError(t('profile.errorUpdateProfile'), t('profile.enterValidName'));
     }
   };
 

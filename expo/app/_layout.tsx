@@ -30,6 +30,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { KillSwitchScreen, isAppExpired } from '@/components/KillSwitch';
 import '@/constants/i18n';
 import { AppProvider, useApp } from '@/providers/AppProvider';
+import { AlertProvider } from '@/components/CustomAlert';
 import { getRequiredAuthLevel, getPhone, getToken } from '@/lib/authStore';
 import {
   configureNotifications,
@@ -158,9 +159,13 @@ function RootLayoutNav() {
 
       switch (authLevel) {
         case 'none':
-          // Fresh session — go straight to home
+          // Fresh session — check if onboarding profile is complete
           if (user) {
-            router.replace(`/(tabs)/${defaultStartScreen}`);
+            if (!user.onboardingCompleted && !user.firstName) {
+              router.replace('/onboarding');
+            } else {
+              router.replace(`/(tabs)/${defaultStartScreen}`);
+            }
           } else {
             // User data in AppProvider is stale — need PIN to refresh
             router.replace('/pin-login');
@@ -215,6 +220,7 @@ function RootLayoutNav() {
       <Stack.Screen name="welcome" />
       <Stack.Screen name="auth" />
       <Stack.Screen name="pin-login" />
+      <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="add-vehicle" options={{ presentation: 'modal' }} />
       <Stack.Screen name="notifications" />
@@ -236,9 +242,11 @@ export default function RootLayout() {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
           <AppProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
+            <AlertProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </AlertProvider>
           </AppProvider>
         </QueryClientProvider>
       </trpc.Provider>

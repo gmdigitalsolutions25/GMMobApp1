@@ -18,9 +18,10 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  Alert, Dimensions, Animated, ActivityIndicator,
+  Dimensions, Animated, ActivityIndicator,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
+import { useAlert } from '@/components/CustomAlert';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fingerprint, LogOut, ArrowLeft } from 'lucide-react-native';
@@ -46,6 +47,7 @@ export default function PinLoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn, signOut } = useApp();
   const { t } = useTranslation();
+  const { showInfo, showConfirm } = useAlert();
 
   const [pin, setPin] = useState(['', '', '', '']);
   const [pinError, setPinError] = useState<string | null>(null);
@@ -337,7 +339,7 @@ export default function PinLoginScreen() {
             await registerPushToken(result.user.phone, registerPushTokenMutation.mutateAsync);
           } catch (_) {}
 
-          Alert.alert(t('common.success'), t('auth.pinResetSuccess'));
+          showInfo(t('common.success'), t('auth.pinResetSuccess'));
           router.replace('/(tabs)/home');
         } else {
           setResetError((result as any).message || t('auth.pinResetFailed'));
@@ -380,21 +382,14 @@ export default function PinLoginScreen() {
 
   // ── Logout ────────────────────────────────────────────────────────────────
   const handleLogout = () => {
-    Alert.alert(
+    showConfirm(
       'Log Out',
       'You will need to verify your phone number again.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: async () => {
-            await clearAllAuthData();
-            await signOut();
-            router.replace('/auth');
-          },
-        },
-      ]
+      async () => {
+        await clearAllAuthData();
+        await signOut();
+        router.replace('/auth');
+      }
     );
   };
 

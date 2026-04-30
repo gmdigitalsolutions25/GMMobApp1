@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, Alert, Platform, TextInput, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, Platform, TextInput, Animated } from 'react-native';
+import { useAlert } from '@/components/CustomAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -163,38 +164,22 @@ export default function VehiclesScreen() {
     ]).start();
   };
 
+  const { showConfirm } = useAlert();
+
   const handleDeleteVehicle = () => {
     if (!selectedVehicle) return;
 
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        `${t('vehicles.deleteVehicleConfirm')} ${selectedVehicle.brand} ${selectedVehicle.model}?`
-      );
-      if (confirmed) {
+    showConfirm(
+      t('vehicles.deleteVehicle'),
+      `${t('vehicles.deleteVehicleConfirm')} ${selectedVehicle.brand} ${selectedVehicle.model}?`,
+      () => {
         deleteVehicle(selectedVehicle.id);
         setSelectedVehicleId(null);
-      }
-    } else {
-      Alert.alert(
-        t('vehicles.deleteVehicle'),
-        `${t('vehicles.deleteVehicleConfirm')} ${selectedVehicle.brand} ${selectedVehicle.model}?`,
-        [
-          {
-            text: t('common.cancel'),
-            style: 'cancel',
-          },
-          {
-            text: t('common.delete'),
-            style: 'destructive',
-            onPress: () => {
-              deleteVehicle(selectedVehicle.id);
-              setSelectedVehicleId(null);
-            },
-          },
-        ],
-        { cancelable: true }
-      );
-    }
+      },
+      undefined,
+      t('common.delete'),
+      t('common.cancel')
+    );
   };
 
   return (

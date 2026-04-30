@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, TextInput, Modal } from 'react-native';
+import { useAlert } from '@/components/CustomAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, ChevronDown, Car, ChevronLeft, ChevronRight, Check, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
@@ -169,29 +170,24 @@ export default function AppointmentsScreen() {
     return checkDate < today;
   };
 
+  const { showConfirm, showError } = useAlert();
+
   const handleCancelAppointment = (appointmentId: string) => {
-    Alert.alert(
+    showConfirm(
       t('appointments.cancelAppointment'),
       t('appointments.cancelAppointmentConfirm'),
-      [
-        {
-          text: t('appointments.no'),
-          style: 'cancel',
-        },
-        {
-          text: t('appointments.yesCancel'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await updateAppointment(appointmentId, { status: 'cancelled' });
-              setExpandedAppointmentId(null);
-            } catch (error) {
-              console.error('Failed to cancel appointment:', error);
-              Alert.alert(t('common.error'), t('appointments.failedToCancel'));
-            }
-          },
-        },
-      ],
+      async () => {
+        try {
+          await updateAppointment(appointmentId, { status: 'cancelled' });
+          setExpandedAppointmentId(null);
+        } catch (error) {
+          console.error('Failed to cancel appointment:', error);
+          showError(t('common.error'), t('appointments.failedToCancel'));
+        }
+      },
+      undefined,
+      t('appointments.yesCancel'),
+      t('appointments.no')
     );
   };
 

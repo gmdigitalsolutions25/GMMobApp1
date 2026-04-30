@@ -6,6 +6,26 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.2.5 (versionCode 35) — April 30, 2026
+
+### Added
+- **Onboarding flow** — dual-path onboarding screen for new and returning users
+  - Path A: Known customers confirm pre-filled data + fill missing fields
+  - Path B: New customers complete 3-step flow (name → vehicle+mileage → service center)
+- **Custom alert system** — `CustomAlert` component replacing all native `Alert.alert()` calls
+  - Styled modal with `showError`, `showConfirm`, `showInfo` methods
+  - Consistent branded UI across all popup dialogs
+- **Backend route** — `users.updateOnboarding` tRPC procedure for saving onboarding profile data
+- **DB migration 005** — adds `first_name`, `last_name`, `monthly_mileage`, `last_service_date`, `preferred_service_center`, `onboarding_completed` to users table
+
+### Changed
+- All native `Alert.alert()` calls replaced with `useAlert` hook across 6 screens:
+  - `auth.tsx`, `pin-login.tsx`, `appointments.tsx`, `vehicles.tsx`, `edit-vehicle.tsx`, `vehicle-photo.tsx`
+- Auth flow now routes to `/onboarding` for users with incomplete profiles
+- `_layout.tsx` routing logic updated to check onboarding status on fresh sessions
+
+---
+
 ## v1.2.4 (versionCode 34) — April 29, 2026
 
 ### Added
