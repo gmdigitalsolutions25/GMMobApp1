@@ -287,7 +287,7 @@ export default function AppointmentsScreen() {
                     </View>
 
                     <Text style={[styles.serviceType, { color: colors.text }]}>
-                      {appointment.serviceType}
+                      {Array.isArray(appointment.serviceTypes) ? appointment.serviceTypes.join(', ') : appointment.serviceTypes}
                     </Text>
 
                     <View style={styles.appointmentDetails}>

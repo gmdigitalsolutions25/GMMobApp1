@@ -93,7 +93,7 @@ export default function VehiclesScreen() {
       if (apt.vehicleId !== selectedVehicle.id) return false;
       if (apt.status === 'cancelled' || apt.status === 'completed') return false;
       
-      const aptServices = apt.serviceType.split(',').map(s => s.trim());
+      const aptServices = Array.isArray(apt.serviceTypes) ? apt.serviceTypes : [apt.serviceTypes];
       return recommendedServices.some(rs => aptServices.includes(rs));
     });
   }, [appointments, selectedVehicle, recommendedServices]);

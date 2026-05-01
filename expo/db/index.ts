@@ -13,6 +13,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
+import * as relations from './relations';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -28,7 +29,7 @@ if (DATABASE_URL) {
       connect_timeout: 10,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     });
-    db = drizzle(queryClient, { schema });
+    db = drizzle(queryClient, { schema: { ...schema, ...relations } });
     console.log('[DB] Connected to PostgreSQL via Drizzle ORM');
   } catch (error) {
     console.warn('[DB] Failed to initialize database connection:', error);

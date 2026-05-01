@@ -25,7 +25,6 @@ export interface StoredVehicle {
   vin: string;
   licensePlate: string;
   photos: { id: string; uri: string; isPrimary: boolean }[];
-  primaryPhotoId?: string;
   mileage?: number;
   color?: string;
   createdAt: string;

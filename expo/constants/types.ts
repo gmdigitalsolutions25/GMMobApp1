@@ -28,7 +28,6 @@ export interface Vehicle {
   vin: string;
   licensePlate: string;
   photos: VehiclePhoto[];
-  primaryPhotoId?: string;
   mileage?: number;
   color?: string;
   createdAt: string;
@@ -82,7 +81,7 @@ export interface CarForSale {
 export interface Appointment {
   id: string;
   vehicleId: string;
-  serviceType: string;
+  serviceTypes: string[];
   date: string;
   time: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';

@@ -20,7 +20,7 @@ export const createVehicleProcedure = publicProcedure
       vin: z.string().optional().default(""),
       licensePlate: z.string().optional().default(""),
       photos: z.array(vehiclePhotoSchema).optional().default([]),
-      primaryPhotoId: z.string().optional(),
+
       mileage: z.number().optional(),
       color: z.string().optional(),
     })
@@ -53,7 +53,6 @@ export const createVehicleProcedure = publicProcedure
           licensePlate: input.licensePlate ?? '',
           mileage: input.mileage,
           color: input.color,
-          primaryPhotoId: input.primaryPhotoId ?? null,
         })
         .returning();
 
