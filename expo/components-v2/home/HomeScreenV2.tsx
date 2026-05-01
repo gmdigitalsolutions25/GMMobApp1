@@ -104,31 +104,40 @@ export default function HomeScreenV2() {
                 Qaraj
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => router.push('/notifications')}
-              style={[styles.bellBtn, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)' }]}
-            >
-              <Bell size={20} color={theme === 'dark' ? '#FFF' : colors.text} />
-              {unreadCount > 0 && (
-                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Greeting */}
-          <View style={styles.heroContent}>
-            <Text style={[styles.greeting, { color: theme === 'dark' ? '#FFF' : colors.text }]}>
-              {t('home.greeting', { name: user?.firstName || '' })}
-            </Text>
-            {primaryVehicle && (
-              <Text style={[styles.carName, { color: theme === 'dark' ? 'rgba(255,255,255,0.8)' : colors.textSecondary }]}>
-                {primaryVehicle.brand} {primaryVehicle.model} · {primaryVehicle.year}
-              </Text>
-            )}
+            <View style={styles.headerRight}>
+              <Image
+                source={require('@/assets/images/groupmotors-logo.jpg')}
+                style={styles.gmLogoImage}
+                contentFit="contain"
+              />
+              <TouchableOpacity
+                onPress={() => router.push('/notifications')}
+                style={[styles.bellBtn, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)' }]}
+              >
+                <Bell size={20} color={theme === 'dark' ? '#FFF' : colors.text} />
+                {unreadCount > 0 && (
+                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </ImageBackground>
+
+        {/* ─── GREETING (below hero, does not overlap image) ─── */}
+        <View style={[styles.greetingSection, { backgroundColor: colors.background }]}>
+          <Text style={[styles.greetingText, { color: colors.text }]}>
+            {user?.firstName
+              ? t('home.greeting', { name: user.firstName })
+              : (t('home.greetingNoName') || 'Salam! 👋')}
+          </Text>
+          {primaryVehicle && (
+            <Text style={[styles.carNameText, { color: colors.textSecondary }]}>
+              {primaryVehicle.brand} {primaryVehicle.model} · {primaryVehicle.year}
+            </Text>
+          )}
+        </View>
 
         {/* ─── STATS ROW ─── */}
         <View style={styles.statsRow}>
@@ -142,15 +151,14 @@ export default function HomeScreenV2() {
             value="72%"
             label={t('home.health') || 'Sağlamlıq'}
             theme={theme}
-            onPress={() => {
-              // TODO: navigate to Health Detail screen
-            }}
+            onPress={() => router.push('/health-detail')}
           />
           <View style={{ width: 10 }} />
           <StatCard
             value="15 May"
             label={t('home.nextService') || 'Növbəti servis'}
             theme={theme}
+            onPress={() => router.push('/(tabs)/appointments')}
           />
         </View>
 
@@ -164,29 +172,25 @@ export default function HomeScreenV2() {
               icon={Calendar}
               label={t('home.bookService') || 'Servis yaz'}
               theme={theme}
-              onPress={() => router.push('/appointments')}
+              onPress={() => router.push('/(tabs)/appointments')}
             />
             <QuickAction
               icon={Car}
               label={t('home.myGarage') || 'Qarajım'}
               theme={theme}
-              onPress={() => router.push('/vehicles')}
+              onPress={() => router.push('/(tabs)/vehicles')}
             />
             <QuickAction
               icon={Gauge}
               label={t('home.diagnostics') || 'Diaqnostika'}
               theme={theme}
-              onPress={() => {
-                // TODO: navigate to diagnostics
-              }}
+              onPress={() => router.push('/service-details')}
             />
             <QuickAction
               icon={FileText}
               label={t('home.history') || 'Tarixçə'}
               theme={theme}
-              onPress={() => {
-                // TODO: navigate to history
-              }}
+              onPress={() => router.push('/(tabs)/appointments')}
             />
           </View>
         </View>
@@ -197,7 +201,7 @@ export default function HomeScreenV2() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               {t('home.serviceTimeline') || 'Servis xətti'}
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/appointments')}>
               <Text style={[styles.seeAll, { color: colors.primary }]}>
                 {t('common.seeAll') || 'Hamısı'}
               </Text>
@@ -276,7 +280,7 @@ export default function HomeScreenV2() {
               distance="2.3 km"
               rating="4.8"
               colors={colors}
-              onPress={() => {}}
+              onPress={() => router.push('/(tabs)/appointments')}
             />
             <View style={{ width: 10 }} />
             <ServiceCenterCard
@@ -284,7 +288,7 @@ export default function HomeScreenV2() {
               distance="5.1 km"
               rating="4.6"
               colors={colors}
-              onPress={() => {}}
+              onPress={() => router.push('/(tabs)/appointments')}
             />
           </View>
         </View>
@@ -393,22 +397,43 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  heroContent: {
-    gap: 4,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  greeting: {
-    fontSize: 26,
+  gmLogo: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  gmLogoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+
+  // Greeting below hero
+  greetingSection: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  greetingText: {
+    fontSize: 21,
     fontWeight: '700',
   },
-  carName: {
-    fontSize: 15,
+  carNameText: {
+    fontSize: 14,
+    marginTop: 2,
   },
 
   // Stats row
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    marginTop: -30,
+    marginTop: 8,
     marginBottom: 16,
   },
 

@@ -28,7 +28,7 @@ import { trpc } from '@/lib/trpc';
 import { useTranslation } from 'react-i18next';
 
 export default function VehiclesScreenRouter() {
-  const isV2 = useDesignV2();
+  const { isV2 } = useDesignV2();
   if (isV2) return <VehiclesScreenV2 />;
   return <VehiclesScreenV1 />;
 }

@@ -374,6 +374,7 @@ const resources = {
         airConditioningInclude6: 'Cabin air quality check',
         // v2 Home screen keys
         greeting: 'Hello, {{name}}',
+        greetingNoName: 'Hello!',
         km: 'km',
         health: 'Health',
         nextService: 'Next Service',
@@ -879,6 +880,7 @@ const resources = {
         airConditioningInclude6: 'Kabin havasının keyfiyyətinin yoxlanması',
         // v2 Home screen keys
         greeting: 'Salam, {{name}}',
+        greetingNoName: 'Salam!',
         km: 'km',
         health: 'Sağlamlıq',
         nextService: 'Növbəti Servis',
@@ -1383,6 +1385,7 @@ const resources = {
         airConditioningInclude6: 'Проверка качества воздуха в салоне',
         // v2 Home screen keys
         greeting: 'Привет, {{name}}',
+        greetingNoName: 'Привет!',
         km: 'км',
         health: 'Здоровье',
         nextService: 'След. Сервис',

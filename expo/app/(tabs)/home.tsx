@@ -52,7 +52,7 @@ import { getUnreadCount } from '@/lib/notifications';
 const { width } = Dimensions.get('window');
 
 export default function HomeScreenRouter() {
-  const isV2 = useDesignV2();
+  const { isV2 } = useDesignV2();
   if (isV2) return <HomeScreenV2 />;
   return <HomeScreenV1 />;
 }

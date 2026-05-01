@@ -14,7 +14,7 @@ import { trpc } from '@/lib/trpc';
 import { scheduleAppointmentReminders } from '@/lib/notifications';
 
 export default function AppointmentsScreenRouter() {
-  const isV2 = useDesignV2();
+  const { isV2 } = useDesignV2();
   if (isV2) return <AppointmentsScreenV2 />;
   return <AppointmentsScreenV1 />;
 }

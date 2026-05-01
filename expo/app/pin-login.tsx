@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fingerprint, LogOut, ArrowLeft } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
+import { useDesignV2 } from '@/hooks/useDesignV2';
 import { AppVersion } from '@/components/AppVersion';
 import { useTranslation } from 'react-i18next';
 import { trpc } from '@/lib/trpc';
@@ -48,6 +49,9 @@ export default function PinLoginScreen() {
   const { signIn, signOut } = useApp();
   const { t } = useTranslation();
   const { showInfo, showConfirm } = useAlert();
+  const { theme } = useDesignV2();
+  const c = Colors[theme] || Colors.dark;
+  const styles = createStyles(c);
 
   const [pin, setPin] = useState(['', '', '', '']);
   const [pinError, setPinError] = useState<string | null>(null);
@@ -457,12 +461,12 @@ export default function PinLoginScreen() {
 
             {pinError && <Text style={styles.errorText}>{pinError}</Text>}
 
-            {isLoading && <ActivityIndicator color={Colors.dark.primary} style={{ marginTop: 16 }} />}
+            {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
 
             {/* Biometric Button */}
             {showBiometric && !isLoading && (
               <TouchableOpacity style={styles.biometricButton} onPress={handleBiometricAuth}>
-                <Fingerprint size={32} color={Colors.dark.primary} strokeWidth={1.5} />
+                <Fingerprint size={32} color={c.primary} strokeWidth={1.5} />
                 <Text style={styles.biometricText}>Use Biometric</Text>
               </TouchableOpacity>
             )}
@@ -476,7 +480,7 @@ export default function PinLoginScreen() {
 
             {/* Logout */}
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <LogOut size={16} color={Colors.dark.textTertiary} />
+              <LogOut size={16} color={c.textTertiary} />
               <Text style={styles.logoutText}>Use a different number</Text>
             </TouchableOpacity>
           </>
@@ -486,7 +490,7 @@ export default function PinLoginScreen() {
         {resetStep === 'otp' && (
           <>
             <TouchableOpacity style={styles.backButton} onPress={handleCancelReset}>
-              <ArrowLeft size={20} color={Colors.dark.textSecondary} />
+              <ArrowLeft size={20} color={c.textSecondary} />
               <Text style={styles.backText}>{t('common.back')}</Text>
             </TouchableOpacity>
 
@@ -512,7 +516,7 @@ export default function PinLoginScreen() {
 
             {resetError && <Text style={styles.errorText}>{resetError}</Text>}
 
-            {isLoading && <ActivityIndicator color={Colors.dark.primary} style={{ marginTop: 16 }} />}
+            {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
 
             {/* Resend OTP */}
             {!isLoading && (
@@ -540,7 +544,7 @@ export default function PinLoginScreen() {
               setResetError(null);
               setTimeout(() => otpRefs.current[0]?.focus(), 300);
             }}>
-              <ArrowLeft size={20} color={Colors.dark.textSecondary} />
+              <ArrowLeft size={20} color={c.textSecondary} />
               <Text style={styles.backText}>{t('common.back')}</Text>
             </TouchableOpacity>
 
@@ -567,7 +571,7 @@ export default function PinLoginScreen() {
 
             {resetError && <Text style={styles.errorText}>{resetError}</Text>}
 
-            {isLoading && <ActivityIndicator color={Colors.dark.primary} style={{ marginTop: 16 }} />}
+            {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
 
             <Text style={styles.hintText}>{t('auth.pinHint')}</Text>
           </>
@@ -579,10 +583,10 @@ export default function PinLoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.background,
+    backgroundColor: c.background,
   },
   heroBackground: {
     position: 'absolute',
@@ -593,7 +597,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 120, height: 120, borderRadius: 60,
     top: 60, right: 30,
-    backgroundColor: `${Colors.dark.primary}08`,
+    backgroundColor: `${c.primary}08`,
     opacity: 0.5,
   },
   scrollContent: {
@@ -607,11 +611,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28, fontWeight: '700',
-    color: Colors.dark.text,
+    color: c.text,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16, color: Colors.dark.textSecondary,
+    fontSize: 16, color: c.textSecondary,
     marginBottom: 48,
     textAlign: 'center',
   },
@@ -620,56 +624,56 @@ const styles = StyleSheet.create({
   },
   pinInput: {
     width: 56, height: 64,
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 16, borderWidth: 2, borderColor: Colors.dark.border,
-    fontSize: 28, fontWeight: '700', color: Colors.dark.text, textAlign: 'center',
+    backgroundColor: c.surface,
+    borderRadius: 16, borderWidth: 2, borderColor: c.border,
+    fontSize: 28, fontWeight: '700', color: c.text, textAlign: 'center',
   },
   pinInputFilled: {
-    borderColor: Colors.dark.primary,
-    backgroundColor: `${Colors.dark.primary}15`,
+    borderColor: c.primary,
+    backgroundColor: `${c.primary}15`,
   },
   otpContainer: {
     flexDirection: 'row', justifyContent: 'center', gap: 10,
   },
   otpInput: {
     width: 44, height: 56,
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 12, borderWidth: 2, borderColor: Colors.dark.border,
-    fontSize: 22, fontWeight: '700', color: Colors.dark.text, textAlign: 'center',
+    backgroundColor: c.surface,
+    borderRadius: 12, borderWidth: 2, borderColor: c.border,
+    fontSize: 22, fontWeight: '700', color: c.text, textAlign: 'center',
   },
   otpInputFilled: {
-    borderColor: Colors.dark.primary,
-    backgroundColor: `${Colors.dark.primary}15`,
+    borderColor: c.primary,
+    backgroundColor: `${c.primary}15`,
   },
   errorText: {
-    fontSize: 14, color: Colors.dark.error,
+    fontSize: 14, color: c.error,
     textAlign: 'center', paddingVertical: 8, fontWeight: '500',
   },
   hintText: {
-    fontSize: 13, color: Colors.dark.textTertiary,
+    fontSize: 13, color: c.textTertiary,
     textAlign: 'center', marginTop: 24,
   },
   biometricButton: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     marginTop: 32, paddingVertical: 16, paddingHorizontal: 24,
-    backgroundColor: `${Colors.dark.primary}10`,
-    borderRadius: 16, borderWidth: 1, borderColor: `${Colors.dark.primary}30`,
+    backgroundColor: `${c.primary}10`,
+    borderRadius: 16, borderWidth: 1, borderColor: `${c.primary}30`,
   },
   biometricText: {
-    fontSize: 16, color: Colors.dark.primary, fontWeight: '600',
+    fontSize: 16, color: c.primary, fontWeight: '600',
   },
   forgotPinButton: {
     marginTop: 24, paddingVertical: 12,
   },
   forgotPinText: {
-    fontSize: 15, color: Colors.dark.primary, fontWeight: '500',
+    fontSize: 15, color: c.primary, fontWeight: '500',
   },
   logoutButton: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginTop: 24, paddingVertical: 12,
   },
   logoutText: {
-    fontSize: 14, color: Colors.dark.textTertiary,
+    fontSize: 14, color: c.textTertiary,
   },
   backButton: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -677,7 +681,7 @@ const styles = StyleSheet.create({
     marginBottom: 24, paddingVertical: 8,
   },
   backText: {
-    fontSize: 15, color: Colors.dark.textSecondary, fontWeight: '500',
+    fontSize: 15, color: c.textSecondary, fontWeight: '500',
   },
   resendButton: {
     marginTop: 24, paddingVertical: 12,
@@ -686,9 +690,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   resendText: {
-    fontSize: 15, color: Colors.dark.primary, fontWeight: '500',
+    fontSize: 15, color: c.primary, fontWeight: '500',
   },
   resendTextDisabled: {
-    color: Colors.dark.textTertiary,
+    color: c.textTertiary,
   },
 });

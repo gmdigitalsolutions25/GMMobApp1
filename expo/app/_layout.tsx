@@ -226,6 +226,7 @@ function RootLayoutNav() {
       <Stack.Screen name="notifications" />
       <Stack.Screen name="service-details" />
       <Stack.Screen name="vehicle-photo" />
+      <Stack.Screen name="health-detail" />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

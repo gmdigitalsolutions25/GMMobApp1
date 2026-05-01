@@ -134,10 +134,10 @@ export default function VehiclesScreenV2() {
               theme={theme}
               t={t}
               appointments={appointments}
-              onEdit={() => router.push(`/edit-vehicle?id=${vehicle.id}`)}
+              onEdit={() => router.push(`/edit-vehicle?vehicleId=${vehicle.id}`)}
               onDelete={() => handleDelete(vehicle.id, `${vehicle.brand} ${vehicle.model}`)}
-              onBook={() => router.push('/appointments')}
-              onPhoto={() => router.push(`/vehicle-photo?id=${vehicle.id}`)}
+              onBook={() => router.push('/(tabs)/appointments')}
+              onPhoto={() => router.push(`/vehicle-photo?vehicleId=${vehicle.id}`)}
             />
           ))
         )}

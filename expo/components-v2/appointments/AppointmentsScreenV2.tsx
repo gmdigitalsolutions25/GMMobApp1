@@ -67,7 +67,7 @@ export default function AppointmentsScreenV2() {
         </Text>
         <TouchableOpacity
           style={[styles.newBtn, { backgroundColor: colors.primary }]}
-          onPress={() => router.push('/appointments')}
+          onPress={() => router.push('/service-details')}
         >
           <Plus size={16} color="#FFF" />
           <Text style={styles.newBtnText}>{t('appointments.new') || 'Yeni'}</Text>

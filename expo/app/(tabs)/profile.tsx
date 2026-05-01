@@ -15,7 +15,7 @@ import { useState, useCallback } from 'react';
 import Constants from 'expo-constants';
 
 export default function ProfileScreenRouter() {
-  const isV2 = useDesignV2();
+  const { isV2 } = useDesignV2();
   if (isV2) return <ProfileScreenV2 />;
   return <ProfileScreenV1 />;
 }

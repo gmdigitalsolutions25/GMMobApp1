@@ -110,7 +110,7 @@ export default function HealthDetailScreen() {
         {/* CTA */}
         <TouchableOpacity
           style={[styles.ctaBtn, { backgroundColor: colors.primary }]}
-          onPress={() => router.push('/appointments')}
+          onPress={() => router.push('/(tabs)/appointments')}
         >
           <Calendar size={18} color="#FFF" />
           <Text style={styles.ctaText}>

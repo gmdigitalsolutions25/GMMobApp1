@@ -11,8 +11,16 @@
  *   const isV2 = useDesignV2();
  *   return isV2 ? <HomeScreenV2 /> : <HomeScreen />;
  */
-export function useDesignV2(): boolean {
-  return process.env.EXPO_PUBLIC_DESIGN_V2 === 'true';
+import { useApp } from '@/providers/AppProvider';
+
+export function useDesignV2(): { isV2: boolean; theme: 'light' | 'dark' } {
+  const isV2 = process.env.EXPO_PUBLIC_DESIGN_V2 === 'true';
+  // Get user's theme preference from AppProvider
+  // Falls back to 'light' for v2 builds, 'dark' for v1 builds
+  const defaultTheme: 'light' | 'dark' = isV2 ? 'light' : 'dark';
+  const { user } = useApp();
+  const theme = (user?.theme as 'light' | 'dark') || defaultTheme;
+  return { isV2, theme };
 }
 
 /**
