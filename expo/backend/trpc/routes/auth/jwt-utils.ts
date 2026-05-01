@@ -12,7 +12,10 @@
 
 import crypto from 'node:crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.QARAJ_API_KEY || 'qaraj-jwt-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  console.warn('[SECURITY] JWT_SECRET not set! Using random secret. All tokens will be invalidated on restart. Set JWT_SECRET in .env for production.');
+  return crypto.randomBytes(32).toString('hex');
+})();
 const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
 
 interface JwtPayload {
@@ -79,9 +82,11 @@ export function verifyToken(token: string): JwtPayload | null {
 
     const [header, payload, signature] = parts;
 
-    // Verify signature
+    // Verify signature (timing-safe comparison to prevent timing attacks)
     const expectedSignature = sign(payload, header);
-    if (signature !== expectedSignature) {
+    const sigBuf = Buffer.from(signature);
+    const expectedBuf = Buffer.from(expectedSignature);
+    if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
       console.log('[JWT] Invalid signature');
       return null;
     }

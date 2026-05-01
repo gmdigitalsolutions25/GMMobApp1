@@ -103,7 +103,7 @@ export const resolveErrorProcedure = publicProcedure
   .input(
     z.object({
       id: z.string().uuid(),
-      resolvedBy: z.string().min(1),
+      resolvedBy: z.string().min(1).max(100),
       notes: z.string().optional(),
     })
   )

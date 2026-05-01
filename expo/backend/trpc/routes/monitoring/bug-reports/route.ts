@@ -17,11 +17,11 @@ import { desc, eq, sql, and } from 'drizzle-orm';
 export const submitBugReportProcedure = publicProcedure
   .input(
     z.object({
-      reporterName: z.string().min(1),
+      reporterName: z.string().min(1).max(100),
       reporterPhone: z.string().optional(),
       reporterRole: z.enum(['user', 'tester', 'service_center', 'admin']).default('tester'),
       title: z.string().min(3).max(300),
-      description: z.string().min(10),
+      description: z.string().min(10).max(2000),
       stepsToReproduce: z.string().optional(),
       expectedBehavior: z.string().optional(),
       actualBehavior: z.string().optional(),
@@ -134,7 +134,7 @@ export const updateBugReportStatusProcedure = publicProcedure
 export const logClientErrorProcedure = publicProcedure
   .input(
     z.object({
-      message: z.string().min(1),
+      message: z.string().min(1).max(1000),
       stackTrace: z.string().optional(),
       severity: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
       userId: z.string().uuid().optional(),

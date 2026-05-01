@@ -13,19 +13,29 @@ import { z } from "zod";
 import { db } from "../../../../../db";
 import { pushTokens, users } from "../../../../../db/schema";
 import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
 export const sendPushProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
-      title: z.string().min(1),
-      body: z.string().min(1),
+      phone: z.string().min(7).max(20),
+      title: z.string().min(1).max(200),
+      body: z.string().min(1).max(2000),
       data: z.record(z.unknown()).optional(),
+      adminKey: z.string().min(1).max(500),
     })
   )
   .mutation(async ({ input }) => {
+    // SECURITY: Require admin key for sending push notifications
+    const expectedAdminKey = process.env.PUSH_ADMIN_KEY || process.env.QARAJ_API_KEY;
+    if (!expectedAdminKey || input.adminKey !== expectedAdminKey) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid admin key for push notifications',
+      });
+    }
     try {
       if (!db) {
         return { success: false, error: "Database not available" };

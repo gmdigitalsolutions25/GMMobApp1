@@ -15,7 +15,7 @@ import { eq } from "drizzle-orm";
 export const verifyOtpProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
+      phone: z.string().min(7).max(20),
       code: z.string().length(6),
     })
   )
@@ -43,8 +43,13 @@ export const verifyOtpProcedure = publicProcedure
       return { success: false, message: `Invalid OTP. ${5 - record.attempts} attempts remaining.` };
     }
 
-    // OTP verified — clean up
-    otpStore.delete(phone);
+    // OTP verified — mark as verified (setPin will check this flag)
+    // Keep record for 10 minutes so setPin can verify the session
+    record.code = ''; // Clear code but keep record
+    (record as any).verified = true;
+    (record as any).verifiedAt = Date.now();
+    // Auto-cleanup after 10 minutes
+    setTimeout(() => otpStore.delete(phone), 10 * 60 * 1000);
 
     // Check if user exists and has a PIN set
     let hasPin = false;
@@ -70,7 +75,7 @@ export const verifyOtpProcedure = publicProcedure
       success: true,
       message: "OTP verified successfully",
       hasPin,
-      userId,
+      // SECURITY: userId removed from response to prevent user enumeration
       // Client uses hasPin to decide: true → show PIN entry, false → show PIN setup
     };
   });

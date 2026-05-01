@@ -42,7 +42,7 @@ setInterval(() => {
 export const resetPinProcedure = publicProcedure
   .input(
     z.object({
-      phone: z.string().min(7),
+      phone: z.string().min(7).max(20),
       otpCode: z.string().length(6, "OTP must be exactly 6 digits"),
       newPin: z
         .string()

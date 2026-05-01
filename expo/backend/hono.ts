@@ -139,7 +139,8 @@ app.get("/monitoring", async (c) => {
 
   <script>
     var API = window.location.origin + '/api/trpc';
-    var API_KEY = 'qaraj-dev-key-2026';
+    // API key injected server-side for whitelisted IPs only (not exposed in source)
+    var API_KEY = '%%MONITORING_KEY%%';
 
     function trpcCall(procedure, input) {
       var url = input !== undefined
@@ -504,7 +505,9 @@ app.get("/monitoring", async (c) => {
   </script>
 </body>
 </html>`;
-  return c.html(html);
+  // Inject API key server-side (only visible to whitelisted IPs)
+  const apiKey = process.env.QARAJ_API_KEY || '';
+  return c.html(html.replace('%%MONITORING_KEY%%', apiKey));
 });
 
 // ── Static Car Images (no auth, cached by clients) ─────────────────────────────

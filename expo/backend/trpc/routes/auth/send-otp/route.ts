@@ -2,12 +2,12 @@
  * auth.sendOtp — Generate and send OTP to phone number
  *
  * Uses Softline SMS gateway when SMS_PROVIDER=softline in .env.
- * Falls back to mock mode (logs OTP to console + returns devCode).
+ * Falls back to mock mode (logs OTP to console) for local development.
  *
- * Softline config (.env):
+ * Required env vars for production:
  *   SMS_PROVIDER=softline
- *   SMS_USER=diamondapi
- *   SMS_PASSWORD=u6s0Wo52
+ *   SMS_USER=(from Softline account)
+ *   SMS_PASSWORD=(from Softline account)
  *   SMS_SENDER=Groupmotors
  */
 
@@ -17,7 +17,7 @@ import { otpStore, normalizePhone, generateOtp } from "../otp-store";
 import { sendOtpSms } from "../sms-provider";
 
 export const sendOtpProcedure = publicProcedure
-  .input(z.object({ phone: z.string().min(7) }))
+  .input(z.object({ phone: z.string().min(7).max(20) }))
   .mutation(async ({ input }) => {
     const phone = normalizePhone(input.phone);
     const existing = otpStore.get(phone);
@@ -46,14 +46,15 @@ export const sendOtpProcedure = publicProcedure
     }
 
     const isMockMode = (process.env.SMS_PROVIDER || 'mock') === 'mock';
+    const isDevEnvironment = process.env.NODE_ENV !== 'production' && isMockMode;
 
     return {
       success: true,
       message: smsResult.success
         ? "OTP sent successfully"
         : "OTP generated. SMS delivery may be delayed.",
-      // DEVELOPMENT ONLY — only return code in mock mode:
-      devCode: isMockMode ? code : undefined,
+      // Only return code in local dev with mock SMS (never in production):
+      ...(isDevEnvironment ? { devCode: code } : {}),
       // Include balance info for monitoring (only in non-mock mode):
       ...(smsResult.balance && !isMockMode ? { _smsBalance: smsResult.balance } : {}),
     };

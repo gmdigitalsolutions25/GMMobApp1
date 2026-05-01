@@ -7,6 +7,8 @@
  * In production with multiple server instances, replace with Redis.
  */
 
+import { randomInt } from 'node:crypto';
+
 export interface OtpRecord {
   code: string;
   expiresAt: number;
@@ -26,7 +28,7 @@ export function normalizePhone(phone: string): string {
 }
 
 export function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return randomInt(100000, 1000000).toString();
 }
 
 // Clean up expired OTPs every 5 minutes
