@@ -45,9 +45,14 @@ import ProfileCompletionBanner from '@/components-v2/shared/ProfileCompletionBan
 
 const { width } = Dimensions.get('window');
 
-// Placeholder hero images — will be replaced with real showroom photos
-const HERO_LIGHT = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80';
-const HERO_DARK = 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80';
+// Premium Toyota hero images — rotate on each visit
+const HERO_IMAGES = [
+  require('@/assets/images/hero-toyota-land-cruiser.jpg'),
+  require('@/assets/images/hero-toyota-camry.jpg'),
+  require('@/assets/images/hero-toyota-rav4.jpg'),
+  require('@/assets/images/hero-toyota-prado.jpg'),
+  require('@/assets/images/hero-toyota-corolla-cross.jpg'),
+];
 
 // Coming soon block images
 const CARS_SALE_IMG = 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&q=60';
@@ -80,7 +85,8 @@ export default function HomeScreenV2() {
   }, []);
 
   const primaryVehicle = vehicles[0];
-  const heroImage = theme === 'dark' ? HERO_DARK : HERO_LIGHT;
+  const [heroIdx] = useState(() => Math.floor(Math.random() * HERO_IMAGES.length));
+  const heroSource = HERO_IMAGES[heroIdx];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -92,7 +98,7 @@ export default function HomeScreenV2() {
         }
       >
         {/* ─── HERO SECTION ─── */}
-        <ImageBackground source={{ uri: heroImage }} style={[styles.hero, { paddingTop: insets.top }]}>
+        <ImageBackground source={heroSource} style={[styles.hero, { paddingTop: insets.top }]}>
           <View style={[styles.heroOverlay, { backgroundColor: colors.heroOverlay }]} />
 
           {/* Header bar */}
