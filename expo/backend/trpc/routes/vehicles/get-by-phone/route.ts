@@ -34,10 +34,10 @@ export const getVehiclesByPhoneProcedure = publicProcedure
         licensePlate: v.licensePlate ?? '',
         mileage: v.mileage ?? undefined,
         color: v.color ?? undefined,
-        photos: (v as any).photos?.map((p: any) => p.uri) ?? [],
+        photos: (v as any).photos?.map((p: any) => p.url) ?? [],
         primaryPhoto:
-          (v as any).photos?.find((p: any) => p.isPrimary)?.uri ??
-          (v as any).photos?.[0]?.uri ??
+          (v as any).photos?.find((p: any) => p.isPrimary)?.url ??
+          (v as any).photos?.[0]?.url ??
           undefined,
         createdAt: v.createdAt.toISOString(),
       }));

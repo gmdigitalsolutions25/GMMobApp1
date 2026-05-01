@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 const vehiclePhotoSchema = z.object({
   id: z.string(),
-  uri: z.string(),
+  url: z.string(),
   isPrimary: z.boolean(),
 });
 
@@ -61,7 +61,7 @@ export const createVehicleProcedure = publicProcedure
         await db.insert(vehiclePhotos).values(
           input.photos.map((p) => ({
             vehicleId: vehicle.id,
-            uri: p.uri,
+            url: p.url,
             isPrimary: p.isPrimary,
           }))
         );

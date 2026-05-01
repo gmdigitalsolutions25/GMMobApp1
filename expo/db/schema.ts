@@ -110,7 +110,7 @@ export const vehiclePhotos = pgTable(
     vehicleId: uuid('vehicle_id')
       .notNull()
       .references(() => vehicles.id, { onDelete: 'cascade' }),
-    uri: text('uri').notNull(),
+    url: text('url').notNull(),
     isPrimary: boolean('is_primary').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
