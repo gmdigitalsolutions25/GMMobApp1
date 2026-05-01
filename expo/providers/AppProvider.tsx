@@ -111,6 +111,18 @@ export const [AppProvider, useApp] = createContextHook(() => {
   const hydrateFromServer = useCallback(async (phone: string) => {
     try {
       console.log('[AppProvider] Hydrating from server for phone:', phone);
+
+      // Sync vehicles from DWH (CRM) before fetching profile
+      // This ensures any new cars from the dealer system appear in the garage
+      try {
+        const syncResult = await trpcUtils.dwh.syncVehicles.fetch({ phone });
+        if (syncResult.synced > 0) {
+          console.log(`[AppProvider] DWH sync: ${syncResult.synced} new vehicle(s) imported`);
+        }
+      } catch (syncError) {
+        console.warn('[AppProvider] DWH sync skipped (non-fatal):', syncError);
+      }
+
       const profile = await trpcUtils.users.getFullProfile.fetch({ phone });
 
       if (!profile || !profile.user) {

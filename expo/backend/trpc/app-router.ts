@@ -22,6 +22,7 @@ import { resetPinProcedure } from "./routes/auth/reset-pin/route";
 import { registerPushTokenProcedure } from "./routes/push-tokens/register/route";
 import { sendPushProcedure } from "./routes/push-tokens/send/route";
 import { listBrandsWithModelsProcedure, listModelsByBrandProcedure } from "./routes/brands-models/route";
+import { syncVehiclesProcedure } from "./routes/dwh/sync-vehicles/route";
 // Monitoring routes
 import { listErrorsProcedure, errorStatsProcedure, resolveErrorProcedure } from "./routes/monitoring/errors/route";
 import { submitBugReportProcedure, listBugReportsProcedure, updateBugReportStatusProcedure, logClientErrorProcedure } from "./routes/monitoring/bug-reports/route";
@@ -69,6 +70,9 @@ export const appRouter = createTRPCRouter({
   brandsModels: createTRPCRouter({
     list: listBrandsWithModelsProcedure,
     modelsByBrand: listModelsByBrandProcedure,
+  }),
+  dwh: createTRPCRouter({
+    syncVehicles: syncVehiclesProcedure,
   }),
   monitoring: createTRPCRouter({
     errors: createTRPCRouter({
