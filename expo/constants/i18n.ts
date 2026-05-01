@@ -267,6 +267,10 @@ const resources = {
         changePin: 'Change PIN',
         signOut: 'Sign Out',
         vehicles: 'vehicles',
+        completeProfile: 'Complete your profile',
+        completeBoth: 'Add your name and vehicle',
+        completeName: 'Add your name',
+        completeCar: 'Add your vehicle',
       },
       tabs: {
         home: 'Home',
@@ -773,6 +777,10 @@ const resources = {
         changePin: 'PIN Dəyiş',
         signOut: 'Çıxış',
         vehicles: 'avtomobil',
+        completeProfile: 'Profili tamamlayın',
+        completeBoth: 'Adınızı və avtomobilinizi əlavə edin',
+        completeName: 'Adınızı əlavə edin',
+        completeCar: 'Avtomobilinizi əlavə edin',
       },
       tabs: {
         home: 'Ana səhifə',
@@ -1278,6 +1286,10 @@ const resources = {
         changePin: 'Сменить PIN',
         signOut: 'Выйти',
         vehicles: 'автомобилей',
+        completeProfile: 'Завершите профиль',
+        completeBoth: 'Добавьте имя и автомобиль',
+        completeName: 'Добавьте ваше имя',
+        completeCar: 'Добавьте автомобиль',
       },
       tabs: {
         home: 'Главная',

@@ -143,7 +143,9 @@ export default function PinLoginScreen() {
           if (result.user) await registerPushToken(result.user.phone, registerPushTokenMutation.mutateAsync);
         } catch (_) {}
 
-        router.replace('/(tabs)/home');
+        // Route to onboarding if profile incomplete, otherwise home
+        const needsOnboarding = !result.user?.firstName;
+        router.replace(needsOnboarding ? '/onboarding' : '/(tabs)/home');
       } catch (e: any) {
         const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
         const msg = isNetworkError
@@ -200,7 +202,9 @@ export default function PinLoginScreen() {
             await registerPushToken(result.user.phone, registerPushTokenMutation.mutateAsync);
           } catch (_) {}
 
-          router.replace('/(tabs)/home');
+          // Route to onboarding if profile incomplete, otherwise home
+          const needsOnboarding = !result.user?.firstName;
+          router.replace(needsOnboarding ? '/onboarding' : '/(tabs)/home');
         } else {
           setPinError((result as any).message || t('auth.incorrectPin'));
           setPin(['', '', '', '']);
@@ -344,7 +348,8 @@ export default function PinLoginScreen() {
           } catch (_) {}
 
           showInfo(t('common.success'), t('auth.pinResetSuccess'));
-          router.replace('/(tabs)/home');
+          const needsOnboarding = !result.user?.firstName;
+          router.replace(needsOnboarding ? '/onboarding' : '/(tabs)/home');
         } else {
           setResetError((result as any).message || t('auth.pinResetFailed'));
           setNewPin(['', '', '', '']);

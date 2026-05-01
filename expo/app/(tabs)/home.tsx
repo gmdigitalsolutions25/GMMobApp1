@@ -47,6 +47,7 @@ import Colors from '@/constants/colors';
 import { getTranslatedServices, carsForSale, serviceCenters } from '@/constants/mockData';
 import { trpc } from '@/lib/trpc';
 import { getUnreadCount } from '@/lib/notifications';
+import ProfileCompletionBanner from '@/components-v2/shared/ProfileCompletionBanner';
 
 
 const { width } = Dimensions.get('window');
@@ -72,7 +73,7 @@ function HomeScreenV1() {
     const interval = setInterval(loadUnread, 30000); // every 30s
     return () => clearInterval(interval);
   }, []);
-  const { theme, vehicles } = useApp();
+  const { theme, vehicles, user } = useApp();
   const serviceTypes = getTranslatedServices(t);
   const insets = useSafeAreaInsets();
   const colors = theme === 'dark' ? Colors.dark : Colors.light;
@@ -145,8 +146,8 @@ function HomeScreenV1() {
 
   const menuItems = [
     { key: 'home', icon: Home, label: t('menu.home'), action: () => { closeMenu(); } },
-    { key: 'myGarage', icon: Car, label: t('menu.myGarage'), action: () => { closeMenu(); router.push('/vehicles'); } },
-    { key: 'appointments', icon: Calendar, label: t('menu.appointments'), action: () => { closeMenu(); router.push('/appointments'); } },
+    { key: 'myGarage', icon: Car, label: t('menu.myGarage'), action: () => { closeMenu(); router.push('/(tabs)/vehicles'); } },
+    { key: 'appointments', icon: Calendar, label: t('menu.appointments'), action: () => { closeMenu(); router.push('/(tabs)/appointments'); } },
     { key: 'spareParts', icon: Wrench, label: t('menu.spareParts'), action: () => {
       closeMenu();
       setTimeout(() => {
@@ -312,6 +313,14 @@ function HomeScreenV1() {
           />
         }
       >
+        {/* Profile completion banner */}
+        <ProfileCompletionBanner
+          user={user}
+          vehicles={vehicles}
+          colors={colors}
+          onComplete={() => router.push('/onboarding')}
+        />
+
         <View style={styles.heroSection}>
           <View style={styles.heroBackground}>
             <View style={[styles.diagonalStripe, styles.diagonalStripe1, { backgroundColor: `${colors.primary}08` }]} />
@@ -355,7 +364,7 @@ function HomeScreenV1() {
 
             <TouchableOpacity
               style={[styles.ctaButton, { backgroundColor: colors.primary }]}
-              onPress={() => router.push('/appointments')}
+              onPress={() => router.push('/(tabs)/appointments')}
             >
               <Text style={[styles.ctaButtonText, { color: '#000000' }]}>
                 {t('home.bookServiceNow')}
@@ -390,7 +399,7 @@ function HomeScreenV1() {
                     styles.secondaryButtonSmall,
                     { borderColor: colors.border, backgroundColor: colors.surface },
                   ]}
-                  onPress={() => router.push('/vehicles')}
+                  onPress={() => router.push('/(tabs)/vehicles')}
                 >
                   <Text style={[styles.secondaryButtonText, { color: colors.text }]}>
                     {t('home.myGarage')}

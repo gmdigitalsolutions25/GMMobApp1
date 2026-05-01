@@ -9,6 +9,9 @@
  *
  * Path A: Known customer (found in DB) — shows pre-filled data
  * Path B: Unknown customer — full flow
+ *
+ * v2: Theme-aware "Showroom Floor" design. Uses ColorsV2 when v2 flag is on,
+ *     falls back to white/light design for v1.
  */
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -25,8 +28,20 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Car,
+  Calendar,
+  Wrench,
+  BarChart3,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronRight,
+} from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
+import { useDesignV2, ColorsV2 } from '@/hooks/useDesignV2';
+import Colors from '@/constants/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -44,21 +59,19 @@ const LAST_SERVICE_OPTIONS = [
   { id: 4, value: 'unknown', label: 'Xatırlamıram' },
 ];
 
-const SERVICE_CENTERS = [
-  { id: '1', name: 'Toyota Abşeron Mərkəzi', address: 'Bakı-Sumqayıt şossesi 6-cı km' },
-  { id: '2', name: 'Mitsubishi Motors', address: 'Bakı-Sumqayıt şossesi 6-cı km' },
-  { id: '3', name: 'Mazda Azərbaycan', address: 'Bakı-Sumqayıt şossesi 6-cı km' },
-  { id: '4', name: 'Toyota Gəncə Mərkəzi', address: 'Gəncə şəhəri' },
-  { id: '5', name: 'BYD Abşeron Mərkəzi', address: 'Bakı-Sumqayıt şossesi' },
-];
-
 export default function OnboardingScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { user, updateUser, completeOnboarding, addVehicle } = useApp();
+  const { isV2, theme } = useDesignV2();
+
+  // Theme colors
+  const colors = isV2
+    ? (theme === 'dark' ? ColorsV2.dark : ColorsV2.light)
+    : (theme === 'dark' ? Colors.dark : Colors.light);
 
   // Determine if user is known (has data from DB)
-  // Don't count phone-as-username as "known"
   const usernameIsReal = user?.username && !/^[\+\d\s\-()]{7,}$/.test(user.username.trim());
   const isKnownUser = !!(user?.firstName || usernameIsReal);
 
@@ -70,7 +83,6 @@ export default function OnboardingScreen() {
   const [carYear, setCarYear] = useState('');
   const [selectedMileage, setSelectedMileage] = useState<number | null>(user?.monthlyMileage || null);
   const [selectedLastService, setSelectedLastService] = useState<string | null>(user?.lastServiceDate || null);
-  const [selectedCenter, setSelectedCenter] = useState<string | null>(user?.preferredServiceCenter || null);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -79,7 +91,6 @@ export default function OnboardingScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Pre-fill from username if firstName/lastName not set
-  // Skip if username looks like a phone number
   useEffect(() => {
     if (!firstName && !lastName && user?.username) {
       const looksLikePhone = /^[\+\d\s\-()]{7,}$/.test(user.username.trim());
@@ -147,11 +158,10 @@ export default function OnboardingScreen() {
           lastName: lastName.trim(),
           monthlyMileage: selectedMileage || undefined,
           lastServiceDate: selectedLastService || undefined,
-          preferredServiceCenter: selectedCenter || undefined,
         }),
       });
 
-      // Create vehicle if car info was provided — save to backend AND local state
+      // Create vehicle if car info was provided
       if (carBrand.trim()) {
         try {
           await fetch(`http://91.107.161.67:3000/api/trpc/vehicles.create`, {
@@ -171,7 +181,7 @@ export default function OnboardingScreen() {
         } catch (vehicleError) {
           console.error('[Onboarding] Vehicle backend save failed:', vehicleError);
         }
-        // Also save to local state so it appears in garage immediately
+        // Also save to local state
         try {
           await addVehicle({
             brand: carBrand.trim(),
@@ -194,7 +204,6 @@ export default function OnboardingScreen() {
         username: `${firstName.trim()} ${lastName.trim()}`,
         monthlyMileage: selectedMileage || undefined,
         lastServiceDate: selectedLastService || undefined,
-        preferredServiceCenter: selectedCenter || undefined,
         onboardingCompleted: true,
       });
 
@@ -202,7 +211,6 @@ export default function OnboardingScreen() {
       router.replace('/(tabs)/home');
     } catch (error) {
       console.error('[Onboarding] Error saving:', error);
-      // Still complete onboarding locally even if server fails
       await completeOnboarding();
       router.replace('/(tabs)/home');
     } finally {
@@ -212,7 +220,7 @@ export default function OnboardingScreen() {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 0: return true; // Welcome step — always can proceed
+      case 0: return true;
       case 1: return firstName.trim().length >= 2 && lastName.trim().length >= 2;
       case 2: return true; // Car info is optional
       case 3: return true; // Mileage & service are optional
@@ -220,209 +228,242 @@ export default function OnboardingScreen() {
     }
   };
 
-  // ─── Step 0: Welcome ─────────────────────────────────────────────────────────
+  // ─── Step 0: Welcome ───────────────────────────────────────────────────────
   const renderWelcomeStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.welcomeHeader}>
-        <View style={styles.welcomeIconContainer}>
-          <Ionicons name="car-sport" size={48} color="#F24141" />
+        <View style={[styles.welcomeIconContainer, { backgroundColor: `${colors.primary}15` }]}>
+          <Car size={48} color={colors.primary} />
         </View>
-        <Text style={styles.welcomeTitle}>{'Qaraj-a xoş gəlmisiniz!'}</Text>
-        <Text style={styles.welcomeSubtitle}>
-          {'Avtomobilinizin baxım tarixçəsini izləyin, servis vaxtlarını planlaşdırın və ehtiyat hissələrini asanlıqla tapın.'}
+        <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+          {t('onboarding.welcomeTitle') || 'Qaraj-a xoş gəlmisiniz!'}
+        </Text>
+        <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>
+          {t('onboarding.welcomeSubtitle') || 'Avtomobilinizin baxım tarixçəsini izləyin, servis vaxtlarını planlaşdırın və ehtiyat hissələrini asanlıqla tapın.'}
         </Text>
       </View>
 
       <View style={styles.welcomeFeatures}>
-        <View style={styles.featureRow}>
-          <View style={styles.featureIcon}>
-            <Ionicons name="calendar-outline" size={22} color="#F24141" />
+        {[
+          { icon: Calendar, title: t('onboarding.feature1Title') || 'Servis planlaşdırma', desc: t('onboarding.feature1Desc') || 'Vaxtında xatırlatmalar alın' },
+          { icon: Wrench, title: t('onboarding.feature2Title') || 'Ehtiyat hissələri', desc: t('onboarding.feature2Desc') || 'AI ilə hissə axtarışı' },
+          { icon: BarChart3, title: t('onboarding.feature3Title') || 'Xərc izləmə', desc: t('onboarding.feature3Desc') || 'Baxım xərclərini nəzarətdə saxlayın' },
+        ].map((feature, i) => (
+          <View key={i} style={[styles.featureRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.featureIcon, { backgroundColor: `${colors.primary}12` }]}>
+              <feature.icon size={20} color={colors.primary} />
+            </View>
+            <View style={styles.featureTextContainer}>
+              <Text style={[styles.featureTitle, { color: colors.text }]}>{feature.title}</Text>
+              <Text style={[styles.featureDesc, { color: colors.textSecondary }]}>{feature.desc}</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textTertiary} />
           </View>
-          <View style={styles.featureTextContainer}>
-            <Text style={styles.featureTitle}>{'Servis planlaşdırma'}</Text>
-            <Text style={styles.featureDesc}>{'Vaxtında xatırlatmalar alın'}</Text>
-          </View>
-        </View>
-        <View style={styles.featureRow}>
-          <View style={styles.featureIcon}>
-            <Ionicons name="construct-outline" size={22} color="#F24141" />
-          </View>
-          <View style={styles.featureTextContainer}>
-            <Text style={styles.featureTitle}>{'Ehtiyat hissələri'}</Text>
-            <Text style={styles.featureDesc}>{'AI ilə hissə axtarışı'}</Text>
-          </View>
-        </View>
-        <View style={styles.featureRow}>
-          <View style={styles.featureIcon}>
-            <Ionicons name="analytics-outline" size={22} color="#F24141" />
-          </View>
-          <View style={styles.featureTextContainer}>
-            <Text style={styles.featureTitle}>{'Xərc izləmə'}</Text>
-            <Text style={styles.featureDesc}>{'Baxım xərclərini nəzarətdə saxlayın'}</Text>
-          </View>
-        </View>
+        ))}
       </View>
 
-      <View style={styles.welcomeNote}>
-        <Ionicons name="information-circle-outline" size={18} color="#666" />
-        <Text style={styles.welcomeNoteText}>
-          {'Sizə daha yaxşı xidmət göstərmək üçün bir neçə sual soruşacağıq. Bu, 1 dəqiqədən az vaxt alacaq.'}
+      <View style={[styles.welcomeNote, { backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}20` }]}>
+        <Text style={[styles.welcomeNoteText, { color: colors.textSecondary }]}>
+          {t('onboarding.noteText') || 'Sizə daha yaxşı xidmət göstərmək üçün bir neçə sual soruşacağıq. Bu, 1 dəqiqədən az vaxt alacaq.'}
         </Text>
       </View>
     </View>
   );
 
-  // ─── Step 1: Name ───────────────────────────────────────────────────────────
+  // ─── Step 1: Name ──────────────────────────────────────────────────────────
   const renderNameStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
-        <Text style={styles.stepEmoji}>{'👋'}</Text>
-        <Text style={styles.stepTitle}>{'Tanışlıq'}</Text>
-        <Text style={styles.stepSubtitle}>
+        <Text style={[styles.stepTitle, { color: colors.text }]}>
+          {t('onboarding.nameTitle') || 'Tanışlıq'}
+        </Text>
+        <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
           {isKnownUser
-            ? 'Məlumatlarınızı yoxlayın'
-            : 'Adınızı daxil edin'}
+            ? (t('onboarding.nameSubtitleKnown') || 'Məlumatlarınızı yoxlayın')
+            : (t('onboarding.nameSubtitleNew') || 'Adınızı daxil edin')}
         </Text>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{'Ad'}</Text>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>
+          {t('onboarding.firstName') || 'Ad'}
+        </Text>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, {
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            color: colors.text,
+          }]}
           value={firstName}
           onChangeText={setFirstName}
-          placeholder="Adınız"
-          placeholderTextColor="#999"
+          placeholder={t('onboarding.firstNamePlaceholder') || 'Adınız'}
+          placeholderTextColor={colors.textTertiary}
           autoCapitalize="words"
           autoFocus={!isKnownUser}
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{'Soyad'}</Text>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>
+          {t('onboarding.lastName') || 'Soyad'}
+        </Text>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, {
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            color: colors.text,
+          }]}
           value={lastName}
           onChangeText={setLastName}
-          placeholder="Soyadınız"
-          placeholderTextColor="#999"
+          placeholder={t('onboarding.lastNamePlaceholder') || 'Soyadınız'}
+          placeholderTextColor={colors.textTertiary}
           autoCapitalize="words"
         />
       </View>
     </View>
   );
 
-  // ─── Step 2: Car Info ───────────────────────────────────────────────────────
+  // ─── Step 2: Car Info ──────────────────────────────────────────────────────
   const renderCarStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
-        <Text style={styles.stepEmoji}>{'🚗'}</Text>
-        <Text style={styles.stepTitle}>{'Avtomobiliniz'}</Text>
-        <Text style={styles.stepSubtitle}>
-          {'Əsas avtomobiliniz haqqında qısa məlumat (sonra dəyişə bilərsiniz)'}
+        <Text style={[styles.stepTitle, { color: colors.text }]}>
+          {t('onboarding.carTitle') || 'Avtomobiliniz'}
+        </Text>
+        <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+          {t('onboarding.carSubtitle') || 'Əsas avtomobiliniz haqqında qısa məlumat (sonra dəyişə bilərsiniz)'}
         </Text>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{'Marka'}</Text>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>
+          {t('onboarding.brand') || 'Marka'}
+        </Text>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, {
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            color: colors.text,
+          }]}
           value={carBrand}
           onChangeText={setCarBrand}
-          placeholder="məs. Toyota, BMW, Mercedes"
-          placeholderTextColor="#999"
+          placeholder={t('onboarding.brandPlaceholder') || 'məs. Toyota, BMW, Mercedes'}
+          placeholderTextColor={colors.textTertiary}
           autoCapitalize="words"
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{'Model'}</Text>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>
+          {t('onboarding.model') || 'Model'}
+        </Text>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, {
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            color: colors.text,
+          }]}
           value={carModel}
           onChangeText={setCarModel}
-          placeholder="məs. Camry, X5, E-Class"
-          placeholderTextColor="#999"
+          placeholder={t('onboarding.modelPlaceholder') || 'məs. Camry, X5, E-Class'}
+          placeholderTextColor={colors.textTertiary}
           autoCapitalize="words"
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{'İl'}</Text>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>
+          {t('onboarding.year') || 'İl'}
+        </Text>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, {
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            color: colors.text,
+          }]}
           value={carYear}
           onChangeText={setCarYear}
-          placeholder="məs. 2020"
-          placeholderTextColor="#999"
+          placeholder={t('onboarding.yearPlaceholder') || 'məs. 2020'}
+          placeholderTextColor={colors.textTertiary}
           keyboardType="number-pad"
           maxLength={4}
         />
       </View>
 
-      <Text style={styles.optionalHint}>
-        {'* Bu addımı keçə bilərsiniz, sonra əlavə edə bilərsiniz'}
+      <Text style={[styles.optionalHint, { color: colors.textTertiary }]}>
+        {t('onboarding.carOptional') || '* Bu addımı keçə bilərsiniz, sonra əlavə edə bilərsiniz'}
       </Text>
     </View>
   );
 
-  // ─── Step 3: Mileage & Service ──────────────────────────────────────────────
+  // ─── Step 3: Mileage & Service ─────────────────────────────────────────────
   const renderMileageServiceStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
-        <Text style={styles.stepEmoji}>{'🔧'}</Text>
-        <Text style={styles.stepTitle}>{'Sürüş və servis'}</Text>
-        <Text style={styles.stepSubtitle}>{'Təxmini aylıq neçə km sürürsünüz?'}</Text>
+        <Text style={[styles.stepTitle, { color: colors.text }]}>
+          {t('onboarding.mileageTitle') || 'Sürüş və servis'}
+        </Text>
+        <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+          {t('onboarding.mileageSubtitle') || 'Təxmini aylıq neçə km sürürsünüz?'}
+        </Text>
       </View>
 
       <View style={styles.optionsGrid}>
-        {MILEAGE_OPTIONS.map((option) => (
-          <TouchableOpacity
-            key={option.id}
-            style={[
-              styles.optionCard,
-              selectedMileage === option.value && styles.optionCardSelected,
-            ]}
-            onPress={() => setSelectedMileage(option.value)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.optionIcon}>{option.icon}</Text>
-            <Text style={[
-              styles.optionLabel,
-              selectedMileage === option.value && styles.optionLabelSelected,
-            ]}>
-              {option.label}
-            </Text>
-            <Text style={[
-              styles.optionSublabel,
-              selectedMileage === option.value && styles.optionSublabelSelected,
-            ]}>
-              {option.sublabel}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {MILEAGE_OPTIONS.map((option) => {
+          const isSelected = selectedMileage === option.value;
+          return (
+            <TouchableOpacity
+              key={option.id}
+              style={[
+                styles.optionCard,
+                {
+                  backgroundColor: isSelected ? `${colors.primary}12` : colors.surface,
+                  borderColor: isSelected ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => setSelectedMileage(option.value)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.optionIcon}>{option.icon}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.optionLabel, { color: isSelected ? colors.primary : colors.text }]}>
+                  {option.label}
+                </Text>
+                <Text style={[styles.optionSublabel, { color: isSelected ? colors.primary : colors.textTertiary }]}>
+                  {option.sublabel}
+                </Text>
+              </View>
+              {isSelected && <Check size={18} color={colors.primary} />}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      <Text style={[styles.sectionLabel, { marginTop: 20 }]}>{'Son servisiniz nə vaxt olub?'}</Text>
+      <Text style={[styles.sectionLabel, { color: colors.text }]}>
+        {t('onboarding.lastServiceQuestion') || 'Son servisiniz nə vaxt olub?'}
+      </Text>
       <View style={styles.lastServiceRow}>
-        {LAST_SERVICE_OPTIONS.map((option) => (
-          <TouchableOpacity
-            key={option.id}
-            style={[
-              styles.lastServiceChip,
-              selectedLastService === option.value && styles.lastServiceChipSelected,
-            ]}
-            onPress={() => setSelectedLastService(option.value)}
-            activeOpacity={0.7}
-          >
-            <Text style={[
-              styles.lastServiceChipText,
-              selectedLastService === option.value && styles.lastServiceChipTextSelected,
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {LAST_SERVICE_OPTIONS.map((option) => {
+          const isSelected = selectedLastService === option.value;
+          return (
+            <TouchableOpacity
+              key={option.id}
+              style={[
+                styles.lastServiceChip,
+                {
+                  backgroundColor: isSelected ? `${colors.primary}12` : colors.surface,
+                  borderColor: isSelected ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => setSelectedLastService(option.value)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.lastServiceChipText, { color: isSelected ? colors.primary : colors.textSecondary }]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
@@ -439,20 +480,31 @@ export default function OnboardingScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 16 }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Progress bar */}
       <View style={styles.progressContainer}>
         {Array.from({ length: totalSteps }).map((_, i) => (
           <View
             key={i}
             style={[
               styles.progressDot,
-              i <= currentStep && styles.progressDotActive,
+              { backgroundColor: i <= currentStep ? colors.primary : colors.border },
             ]}
           />
         ))}
       </View>
+
+      {/* Skip button (visible from step 2+) */}
+      {currentStep >= 2 && (
+        <TouchableOpacity style={styles.skipButton} onPress={handleSubmit}>
+          <Text style={[styles.skipButtonText, { color: colors.textTertiary }]}>
+            {t('onboarding.skip') || 'Keç'}
+          </Text>
+          <ArrowRight size={14} color={colors.textTertiary} />
+        </TouchableOpacity>
+      )}
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -469,66 +521,80 @@ export default function OnboardingScreen() {
         </Animated.View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      {/* Bottom navigation */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
         {currentStep > 0 ? (
-          <TouchableOpacity style={styles.backButton} onPress={goBack}>
-            <Ionicons name="arrow-back" size={20} color="#666" />
-            <Text style={styles.backButtonText}>{'Geri'}</Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={goBack}
+          >
+            <ArrowLeft size={18} color={colors.textSecondary} />
+            <Text style={[styles.backButtonText, { color: colors.textSecondary }]}>
+              {t('common.back') || 'Geri'}
+            </Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.backButton} />
         )}
 
         <TouchableOpacity
-          style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
+          style={[
+            styles.nextButton,
+            { backgroundColor: canProceed() ? colors.primary : colors.border },
+          ]}
           onPress={goNext}
           disabled={!canProceed() || isSubmitting}
           activeOpacity={0.8}
         >
-          <Text style={styles.nextButtonText}>
+          <Text style={[styles.nextButtonText, { color: '#FFF' }]}>
             {currentStep === 0
-              ? 'Başlayaq'
+              ? (t('onboarding.start') || 'Başlayaq')
               : currentStep === totalSteps - 1
-                ? (isSubmitting ? 'Yüklənir...' : 'Tamamla')
-                : 'Davam et'}
+                ? (isSubmitting ? (t('common.loading') || 'Yüklənir...') : (t('onboarding.finish') || 'Tamamla'))
+                : (t('common.next') || 'Davam et')}
           </Text>
           {currentStep > 0 && currentStep < totalSteps - 1 && (
-            <Ionicons name="arrow-forward" size={18} color="#fff" />
+            <ArrowRight size={16} color="#FFF" />
           )}
         </TouchableOpacity>
       </View>
-
-      {currentStep >= 2 && (
-        <TouchableOpacity style={styles.skipButton} onPress={handleSubmit}>
-          <Text style={styles.skipButtonText}>{'Keç →'}</Text>
-        </TouchableOpacity>
-      )}
     </KeyboardAvoidingView>
   );
 }
 
+/* ─── STYLES ─── */
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingTop: 60,
   },
   progressContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingBottom: 16,
+    paddingBottom: 8,
     gap: 8,
   },
   progressDot: {
     flex: 1,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E0E0E0',
   },
-  progressDotActive: {
-    backgroundColor: '#F24141',
+  skipButton: {
+    position: 'absolute',
+    top: 16,
+    right: 24,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  skipButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   scrollContent: {
     flexGrow: 1,
@@ -540,51 +606,49 @@ const styles = StyleSheet.create({
   stepContainer: {
     flex: 1,
   },
-  // Welcome step styles
+
+  // Welcome step
   welcomeHeader: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
+    marginTop: 8,
   },
   welcomeIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFF0F0',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
   welcomeTitle: {
     fontSize: 26,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   welcomeSubtitle: {
     fontSize: 15,
-    color: '#666',
     textAlign: 'center',
     lineHeight: 22,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   welcomeFeatures: {
-    gap: 16,
-    marginBottom: 24,
+    gap: 10,
+    marginBottom: 20,
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    borderRadius: 12,
+    borderRadius: 14,
+    borderWidth: 0.5,
     padding: 14,
-    gap: 14,
+    gap: 12,
   },
   featureIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF0F0',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -594,111 +658,85 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1A1A',
     marginBottom: 2,
   },
   featureDesc: {
     fontSize: 13,
-    color: '#888',
   },
   welcomeNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
-    padding: 12,
-    gap: 8,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    padding: 14,
   },
   welcomeNoteText: {
-    flex: 1,
     fontSize: 13,
-    color: '#666',
-    lineHeight: 18,
+    lineHeight: 19,
   },
-  // Step styles
+
+  // Step header
   stepHeader: {
-    marginBottom: 32,
-  },
-  stepEmoji: {
-    fontSize: 40,
-    marginBottom: 12,
+    marginBottom: 28,
+    marginTop: 8,
   },
   stepTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontSize: 26,
+    fontWeight: '800',
     marginBottom: 8,
   },
   stepSubtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 15,
     lineHeight: 22,
   },
+
+  // Inputs
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 18,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
   },
   textInput: {
     borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#1A1A1A',
-    backgroundColor: '#FAFAFA',
   },
   optionalHint: {
     fontSize: 13,
-    color: '#999',
     fontStyle: 'italic',
     marginTop: 8,
   },
+
+  // Mileage options
   optionsGrid: {
-    gap: 12,
+    gap: 10,
+    marginBottom: 24,
   },
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F8F8',
     borderRadius: 14,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    padding: 14,
+    borderWidth: 1.5,
     gap: 12,
   },
-  optionCardSelected: {
-    borderColor: '#F24141',
-    backgroundColor: '#FFF5F5',
-  },
   optionIcon: {
-    fontSize: 28,
+    fontSize: 26,
   },
   optionLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#333',
-    flex: 1,
-  },
-  optionLabelSelected: {
-    color: '#F24141',
   },
   optionSublabel: {
     fontSize: 13,
-    color: '#999',
-  },
-  optionSublabelSelected: {
-    color: '#F24141',
+    marginTop: 1,
   },
   sectionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 12,
   },
   lastServiceRow: {
@@ -711,65 +749,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#F0F0F0',
     borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  lastServiceChipSelected: {
-    borderColor: '#F24141',
-    backgroundColor: '#FFF5F5',
   },
   lastServiceChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#555',
   },
-  lastServiceChipTextSelected: {
-    color: '#F24141',
-  },
+
+  // Bottom bar
   bottomBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 16,
-    paddingBottom: 32,
+    paddingTop: 12,
+    gap: 12,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    minWidth: 60,
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+    minWidth: 90,
   },
   backButtonText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 15,
+    fontWeight: '500',
   },
   nextButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F24141',
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 25,
+    justifyContent: 'center',
+    paddingVertical: 15,
+    borderRadius: 14,
     gap: 8,
-  },
-  nextButtonDisabled: {
-    backgroundColor: '#CCC',
   },
   nextButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  skipButton: {
-    position: 'absolute',
-    top: 60,
-    right: 24,
-  },
-  skipButtonText: {
-    fontSize: 15,
-    color: '#999',
-    fontWeight: '500',
+    fontWeight: '700',
   },
 });

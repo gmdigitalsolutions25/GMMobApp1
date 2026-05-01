@@ -41,6 +41,7 @@ import { QuickAction } from '@/components-v2/shared/QuickAction';
 import { ServiceTimelineItem } from '@/components-v2/shared/ServiceTimelineItem';
 import { ComingSoonBlock } from '@/components-v2/shared/ComingSoonBlock';
 import { getUnreadCount } from '@/lib/notifications';
+import ProfileCompletionBanner from '@/components-v2/shared/ProfileCompletionBanner';
 
 const { width } = Dimensions.get('window');
 
@@ -138,6 +139,14 @@ export default function HomeScreenV2() {
             </Text>
           )}
         </View>
+
+        {/* ─── PROFILE COMPLETION BANNER ─── */}
+        <ProfileCompletionBanner
+          user={user}
+          vehicles={vehicles}
+          colors={colors}
+          onComplete={() => router.push('/onboarding')}
+        />
 
         {/* ─── STATS ROW ─── */}
         <View style={styles.statsRow}>

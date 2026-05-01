@@ -364,7 +364,7 @@ function VehiclesScreenV1() {
                     ]}
                     onPress={() => {
                       router.push({
-                        pathname: '/appointments',
+                        pathname: '/(tabs)/appointments',
                         params: {
                           serviceTypes: hasScheduledService ? '' : JSON.stringify(recommendedServices),
                           date: hasScheduledService ? '' : (predictedDate || ''),
@@ -476,7 +476,7 @@ function VehiclesScreenV1() {
                   style={[styles.bookServiceButton, { backgroundColor: colors.primary }]}
                   onPress={() => {
                     router.push({
-                      pathname: '/appointments',
+                      pathname: '/(tabs)/appointments',
                       params: {
                         serviceTypes: hasScheduledService ? '' : JSON.stringify(recommendedServices),
                         date: hasScheduledService ? '' : (predictedDate || ''),
