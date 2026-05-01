@@ -2,6 +2,16 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build from'
+        required: false
+        default: 'main'
+      design_v2:
+        description: 'Enable v2 design'
+        type: boolean
+        required: false
+        default: false
 
 defaults:
   run:
@@ -16,6 +26,8 @@ jobs:
       # ── 1. Checkout ──────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
       # ── 2. Set build date for kill switch ────────────────────────────────────
       - name: Set build date
@@ -67,6 +79,7 @@ jobs:
           EXPO_PUBLIC_API_BASE_URL: http://91.107.161.67:3000
           EXPO_PUBLIC_API_KEY: qaraj-dev-key-2026
           EXPO_PUBLIC_BUILD_DATE: ${{ env.BUILD_DATE }}
+          EXPO_PUBLIC_DESIGN_V2: ${{ github.event.inputs.design_v2 == 'true' && 'true' || '' }}
 
       # ── 10. Force JS bundle into debug APK ──────────────────────────────────────
       # expo prebuild --clean regenerates build.gradle from scratch every time.
@@ -108,6 +121,7 @@ jobs:
           EXPO_PUBLIC_API_BASE_URL: http://91.107.161.67:3000
           EXPO_PUBLIC_API_KEY: qaraj-dev-key-2026
           EXPO_PUBLIC_BUILD_DATE: ${{ env.BUILD_DATE }}
+          EXPO_PUBLIC_DESIGN_V2: ${{ github.event.inputs.design_v2 == 'true' && 'true' || '' }}
 
       # ── 14. Find and rename APK ──────────────────────────────────────────────
       - name: Locate and rename APK
