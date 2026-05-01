@@ -6,6 +6,25 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.2.8 (versionCode 42) — May 1, 2026
+
+### Fixed
+- **Drizzle relations** — added `db/relations.ts` so vehicle photos load correctly on login
+- **serviceTypes mismatch** — frontend now uses `serviceTypes[]` array matching the DB schema
+- **Removed dead `primaryPhotoId`** from schema, types, and create route
+
+### Changed
+- **Language default** changed from `en` to `az` for new users
+- **Deploy script** — `deploy-backend.bat` for one-click server deployment
+- **`.gitattributes`** — forces CRLF for `.bat` files on Windows checkout
+
+### Added
+- **CRM integration fields** — `crm_customer_id` on users, `crm_vehicle_id` + `source` on vehicles
+- **Service center fields** — `image_url` and `updated_at` columns
+- **Migration 006** — `006_schema_cleanup_crm.sql`
+
+---
+
 ## v1.2.7 (versionCode 40) — May 1, 2026
 
 ### Security
