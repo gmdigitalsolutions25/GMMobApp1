@@ -26,6 +26,18 @@
         "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000"
       }
     },
+    "preview-v2": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "autoIncrement": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000",
+        "EXPO_PUBLIC_DESIGN_V2": "true"
+      }
+    },
     "production": {
       "distribution": "store",
       "android": {

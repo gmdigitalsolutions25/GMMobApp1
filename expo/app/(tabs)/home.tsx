@@ -1,3 +1,5 @@
+import { useDesignV2 } from '@/hooks/useDesignV2';
+import HomeScreenV2 from '@/components-v2/home/HomeScreenV2';
 import {
   View,
   Text,
@@ -49,7 +51,13 @@ import { getUnreadCount } from '@/lib/notifications';
 
 const { width } = Dimensions.get('window');
 
-export default function HomeScreen() {
+export default function HomeScreenRouter() {
+  const isV2 = useDesignV2();
+  if (isV2) return <HomeScreenV2 />;
+  return <HomeScreenV1 />;
+}
+
+function HomeScreenV1() {
   const { t } = useTranslation();
   const [unreadCount, setUnreadCount] = useState(0);
 
