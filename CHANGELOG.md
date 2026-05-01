@@ -6,6 +6,42 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.2.7 (versionCode 40) — May 1, 2026
+
+### Security
+- **13 security hardening fixes** merged from `security/hardening` branch:
+  - `crypto.randomInt` for OTP generation (replaces `Math.random`)
+  - PIN bypass fix — requires OTP verified flag before `setPin` is allowed
+  - `devCode` removed from production OTP responses
+  - `userId` removed from `verifyOtp` response body
+  - Zod max-length constraints on all string inputs
+  - Timing-safe JWT comparison
+  - SMS credentials removed from code comments
+  - Rate-limit tightening on auth endpoints
+
+### Fixed
+- **Car placeholder** — dark-mode image properly cropped (red silhouette on black, full car visible with padding)
+- Light-mode placeholder saved for future use (`car-placeholder-light.png`)
+
+### Changed
+- Repo cleanup: deleted 3 stale branches (`feature/dashboard`, `feature/dashboard-mysql-archive`, `security/hardening`)
+- Only `main` + `develop` branches remain
+
+---
+
+## v1.2.6 (versionCode 36–39) — April 30, 2026
+
+### Fixed
+- **`state.user` crash** — `useApp()` returns flat object, not nested `{state: {user}}`; fixed destructuring across all screens
+- **Phone in name field** — phone number no longer pre-fills the name input during onboarding
+- **Car not saving** — onboarding car now saves to both backend and local `addVehicle()` store
+- **Car placeholder** — added red silhouette on dark background (`car-placeholder.png`)
+
+### Changed
+- EAS `autoIncrement` enabled for `versionCode` in preview and production profiles
+
+---
+
 ## v1.2.5 (versionCode 35) — April 30, 2026
 
 ### Added
