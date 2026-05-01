@@ -19,6 +19,7 @@ const resources = {
         next: 'Next',
         done: 'Done',
         close: 'Close',
+        seeAll: 'See All',
       },
       welcome: {
         title: 'Welcome to Qaraj',
@@ -129,6 +130,12 @@ const resources = {
         mileageAlreadyPastService: 'Current mileage is already at or past service mileage',
         serviceCenter: 'Service Center',
         notes: 'Notes',
+        // v2 Garage screen keys
+        book: 'Book',
+        noService: 'No Service',
+        remaining: 'remaining',
+        recommended: 'Recommended',
+        addFirst: 'Add your first vehicle',
       },
       services: {
         serviceHistory: 'Service History',
@@ -218,6 +225,11 @@ const resources = {
         fillRequiredFields: 'Please fill in all required fields.',
         filterReplacement: 'Filter Replacement',
         filterReplacementDesc: 'Air & cabin filter service',
+        // v2 Appointments screen keys
+        title: 'Appointments',
+        new: 'New Appointment',
+        noUpcoming: 'No upcoming appointments',
+        noPast: 'No past appointments',
       },
       profile: {
         profile: 'Profile',
@@ -245,6 +257,16 @@ const resources = {
         cancel: 'Cancel',
         enterYourName: 'Enter your name',
         save: 'Save',
+        // v2 Profile screen keys
+        title: 'Profile',
+        preferences: 'Preferences',
+        darkMode: 'Dark Mode',
+        notifications: 'Notifications',
+        security: 'Security',
+        biometric: 'Biometric Login',
+        changePin: 'Change PIN',
+        signOut: 'Sign Out',
+        vehicles: 'vehicles',
       },
       tabs: {
         home: 'Home',
@@ -350,6 +372,22 @@ const resources = {
         airConditioningInclude4: 'Filter replacement',
         airConditioningInclude5: 'System performance test',
         airConditioningInclude6: 'Cabin air quality check',
+        // v2 Home screen keys
+        greeting: 'Hello, {{name}}',
+        km: 'km',
+        health: 'Health',
+        nextService: 'Next Service',
+        quickActions: 'Quick Actions',
+        bookService: 'Book Service',
+        diagnostics: 'Diagnostics',
+        history: 'History',
+        serviceTimeline: 'Service Timeline',
+        oilChange: 'Oil Change',
+        fullInspection: 'Full Inspection',
+        tireChange: 'Tire Change',
+        waiting: 'Waiting',
+        serviceHistory: 'Service History',
+        nearbyServiceCenters: 'Nearby Service Centers',
       },
       menu: {
         title: 'Menu',
@@ -461,6 +499,12 @@ const resources = {
         noLibraryImages: 'No library images',
         noLibraryImagesDesc: 'No preset images available for this vehicle brand.',
       },
+      // v2 Health Detail screen
+      health: {
+        title: 'Vehicle Health',
+        overall: 'Overall Health',
+        orderInspection: 'Order Full Inspection',
+      },
     },
   },
   az: {
@@ -480,6 +524,7 @@ const resources = {
         next: 'Növbəti',
         done: 'Hazır',
         close: 'Bağla',
+        seeAll: 'Hamısı',
       },
       welcome: {
         title: 'Qaraj-a xoş gəlmisiniz',
@@ -590,6 +635,12 @@ const resources = {
         mileageAlreadyPastService: 'Cari kilometraj artıq xidmət kilometrajında və ya ondan keçmişdir',
         serviceCenter: 'Servis Mərkəzi',
         notes: 'Qeydlər',
+        // v2 Garage screen keys
+        book: 'Rezerv et',
+        noService: 'Servis yoxdur',
+        remaining: 'qalıb',
+        recommended: 'Tövsiyə olunan',
+        addFirst: 'İlk avtomobilinizi əlavə edin',
       },
       services: {
         serviceHistory: 'Xidmət tarixçəsi',
@@ -679,6 +730,11 @@ const resources = {
         fillRequiredFields: 'Bütün tələb olunan sahələri doldurun.',
         filterReplacement: 'Filtr Dəyişdirilməsi',
         filterReplacementDesc: 'Hava və kabin filtr xidməti',
+        // v2 Appointments screen keys
+        title: 'Təyinatlar',
+        new: 'Yeni Təyinat',
+        noUpcoming: 'Gələcək təyinat yoxdur',
+        noPast: 'Keçmiş təyinat yoxdur',
       },
       profile: {
         profile: 'Profil',
@@ -705,7 +761,17 @@ const resources = {
         errorUpdateProfileMessage: 'Şəkil seçilə bilmədi. Yenidən cəhd edin.',
         cancel: 'Ləğv et',
         enterYourName: 'Adınızı daxil edin',
-        save: 'Saxla',
+        save: 'Yadda saxla',
+        // v2 Profile screen keys
+        title: 'Profil',
+        preferences: 'Üstünlüklər',
+        darkMode: 'Qaranlıq Rejim',
+        notifications: 'Bildirişlər',
+        security: 'Təhlükəsizlik',
+        biometric: 'Biometrik Giriş',
+        changePin: 'PIN Dəyiş',
+        signOut: 'Çıxış',
+        vehicles: 'avtomobil',
       },
       tabs: {
         home: 'Ana səhifə',
@@ -811,6 +877,22 @@ const resources = {
         airConditioningInclude4: 'Filtr dəyişdirilməsi',
         airConditioningInclude5: 'Sistem performans testi',
         airConditioningInclude6: 'Kabin havasının keyfiyyətinin yoxlanması',
+        // v2 Home screen keys
+        greeting: 'Salam, {{name}}',
+        km: 'km',
+        health: 'Sağlamlıq',
+        nextService: 'Növbəti Servis',
+        quickActions: 'Sürətli Əməliyyatlar',
+        bookService: 'Servis Yaz',
+        diagnostics: 'Diaqnostika',
+        history: 'Tarixçə',
+        serviceTimeline: 'Servis Xətti',
+        oilChange: 'Yağ Dəyişimi',
+        fullInspection: 'Tam Yoxlama',
+        tireChange: 'Təkər Dəyişimi',
+        waiting: 'Gözləyir',
+        serviceHistory: 'Servis Tarixçəsi',
+        nearbyServiceCenters: 'Yaxın Servis Mərkəzləri',
       },
       menu: {
         title: 'Menyu',
@@ -921,6 +1003,12 @@ const resources = {
         noLibraryImages: 'Kitabxana şəkilləri yoxdur',
         noLibraryImagesDesc: 'Bu avtomobil markası üçün hazır şəkillər mövcud deyil.',
       },
+      // v2 Health Detail screen
+      health: {
+        title: 'Avtomobil Sağlamlığı',
+        overall: 'Ümumi Sağlamlıq',
+        orderInspection: 'Tam Yoxlama Sifariş Et',
+      },
     },
   },
   ru: {
@@ -940,6 +1028,7 @@ const resources = {
         next: 'Далее',
         done: 'Готово',
         close: 'Закрыть',
+        seeAll: 'Все',
       },
       welcome: {
         title: 'Добро пожаловать в Qaraj',
@@ -1050,6 +1139,12 @@ const resources = {
         mileageAlreadyPastService: 'Текущий пробег уже достиг или превысил сервисный пробег',
         serviceCenter: 'Сервисный Центр',
         notes: 'Заметки',
+        // v2 Garage screen keys
+        book: 'Записать',
+        noService: 'Нет сервиса',
+        remaining: 'осталось',
+        recommended: 'Рекомендуемые',
+        addFirst: 'Добавьте первый автомобиль',
       },
       services: {
         serviceHistory: 'История обслуживания',
@@ -1139,6 +1234,11 @@ const resources = {
         fillRequiredFields: 'Заполните все обязательные поля.',
         filterReplacement: 'Замена Фильтра',
         filterReplacementDesc: 'Обслуживание воздушного и салонного фильтра',
+        // v2 Appointments screen keys
+        title: 'Записи',
+        new: 'Новая Запись',
+        noUpcoming: 'Нет предстоящих записей',
+        noPast: 'Нет прошлых записей',
       },
       profile: {
         profile: 'Профиль',
@@ -1166,6 +1266,16 @@ const resources = {
         cancel: 'Отмена',
         enterYourName: 'Введите ваше имя',
         save: 'Сохранить',
+        // v2 Profile screen keys
+        title: 'Профиль',
+        preferences: 'Настройки',
+        darkMode: 'Тёмная Тема',
+        notifications: 'Уведомления',
+        security: 'Безопасность',
+        biometric: 'Биометрический Вход',
+        changePin: 'Сменить PIN',
+        signOut: 'Выйти',
+        vehicles: 'автомобилей',
       },
       tabs: {
         home: 'Главная',
@@ -1271,6 +1381,22 @@ const resources = {
         airConditioningInclude4: 'Замена фильтра',
         airConditioningInclude5: 'Тест производительности системы',
         airConditioningInclude6: 'Проверка качества воздуха в салоне',
+        // v2 Home screen keys
+        greeting: 'Привет, {{name}}',
+        km: 'км',
+        health: 'Здоровье',
+        nextService: 'След. Сервис',
+        quickActions: 'Быстрые Действия',
+        bookService: 'Запись на сервис',
+        diagnostics: 'Диагностика',
+        history: 'История',
+        serviceTimeline: 'Хронология Сервиса',
+        oilChange: 'Замена Масла',
+        fullInspection: 'Полный Осмотр',
+        tireChange: 'Замена Шин',
+        waiting: 'Ожидание',
+        serviceHistory: 'История Сервиса',
+        nearbyServiceCenters: 'Ближайшие Сервисные Центры',
       },
       menu: {
         title: 'Меню',
@@ -1381,6 +1507,12 @@ const resources = {
         availablePhotos: 'доступных фото',
         noLibraryImages: 'Нет изображений в библиотеке',
         noLibraryImagesDesc: 'Для этой марки автомобиля нет готовых изображений.',
+      },
+      // v2 Health Detail screen
+      health: {
+        title: 'Здоровье Автомобиля',
+        overall: 'Общее Здоровье',
+        orderInspection: 'Заказать Полный Осмотр',
       },
     },
   },
