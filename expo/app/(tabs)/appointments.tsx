@@ -1,3 +1,5 @@
+import { useDesignV2 } from '@/hooks/useDesignV2';
+import AppointmentsScreenV2 from '@/components-v2/appointments/AppointmentsScreenV2';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { useAlert } from '@/components/CustomAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,7 +13,13 @@ import { useLocalSearchParams } from 'expo-router';
 import { trpc } from '@/lib/trpc';
 import { scheduleAppointmentReminders } from '@/lib/notifications';
 
-export default function AppointmentsScreen() {
+export default function AppointmentsScreenRouter() {
+  const isV2 = useDesignV2();
+  if (isV2) return <AppointmentsScreenV2 />;
+  return <AppointmentsScreenV1 />;
+}
+
+function AppointmentsScreenV1() {
   const params = useLocalSearchParams<{ serviceTypes?: string; date?: string; vehicleId?: string }>();
   const { appointments, theme, vehicles, addAppointment, updateAppointment } = useApp();
   const { t } = useTranslation();

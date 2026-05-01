@@ -1,3 +1,5 @@
+import { useDesignV2 } from '@/hooks/useDesignV2';
+import VehiclesScreenV2 from '@/components-v2/garage/VehiclesScreenV2';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, Platform, TextInput, Animated } from 'react-native';
 import { useAlert } from '@/components/CustomAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +27,13 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useTranslation } from 'react-i18next';
 
-export default function VehiclesScreen() {
+export default function VehiclesScreenRouter() {
+  const isV2 = useDesignV2();
+  if (isV2) return <VehiclesScreenV2 />;
+  return <VehiclesScreenV1 />;
+}
+
+function VehiclesScreenV1() {
   const router = useRouter();
   const { t } = useTranslation();
   const { vehicles, theme, deleteVehicle, appointments, user, addVehicle } = useApp();

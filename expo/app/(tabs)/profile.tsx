@@ -1,3 +1,5 @@
+import { useDesignV2 } from '@/hooks/useDesignV2';
+import ProfileScreenV2 from '@/components-v2/profile/ProfileScreenV2';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Image, TextInput, Platform } from 'react-native';
 import { useAlert } from '@/components/CustomAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +14,13 @@ import type { Language, Theme } from '@/constants/types';
 import { useState, useCallback } from 'react';
 import Constants from 'expo-constants';
 
-export default function ProfileScreen() {
+export default function ProfileScreenRouter() {
+  const isV2 = useDesignV2();
+  if (isV2) return <ProfileScreenV2 />;
+  return <ProfileScreenV1 />;
+}
+
+function ProfileScreenV1() {
   const router = useRouter();
   const { user, signOut, setLanguage, setTheme, theme, language, updateUser, defaultStartScreen, setDefaultStartScreen } = useApp();
   const { t, i18n } = useTranslation();
