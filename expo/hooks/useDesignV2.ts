@@ -53,7 +53,7 @@ export const ColorsV2 = {
     info: '#F24141',
 
     // V2-specific
-    heroOverlay: 'rgba(0,0,0,0.4)',
+    heroOverlay: 'rgba(0,0,0,0.25)',
     cardGlow: 'rgba(242,65,65,0.1)',
     gaugeGreen: '#22C55E',
     gaugeAmber: '#F59E0B',
@@ -84,7 +84,7 @@ export const ColorsV2 = {
     info: '#F24141',
 
     // V2-specific
-    heroOverlay: 'rgba(255,255,255,0.7)',
+    heroOverlay: 'rgba(255,255,255,0.2)',
     cardGlow: 'rgba(242,65,65,0.05)',
     gaugeGreen: '#22C55E',
     gaugeAmber: '#F59E0B',
