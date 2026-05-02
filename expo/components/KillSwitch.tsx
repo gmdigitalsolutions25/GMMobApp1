@@ -14,11 +14,12 @@
  * with each release.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Linking, TouchableOpacity } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 
 // Build date injected at build time, or fallback to current hardcoded date
-const BUILD_DATE = process.env.EXPO_PUBLIC_BUILD_DATE || '2026-04-25';
+const BUILD_DATE = process.env.EXPO_PUBLIC_BUILD_DATE || '2026-05-02';
 const KILL_AFTER_DAYS = 7;
 
 function getDaysRemaining(): number {
@@ -43,6 +44,11 @@ interface KillSwitchScreenProps {
 
 export function KillSwitchScreen({ buildDate }: KillSwitchScreenProps) {
   const displayDate = buildDate || BUILD_DATE;
+
+  // Hide the native splash so the kill switch screen is visible
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
 
   return (
     <View style={styles.container}>
