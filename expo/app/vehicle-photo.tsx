@@ -75,8 +75,7 @@ export default function VehiclePhotoScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [16, 10],
+      allowsEditing: false,
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
@@ -245,7 +244,7 @@ export default function VehiclePhotoScreen() {
                   <Image
                     source={{ uri: photo.uri }}
                     style={styles.photoImage}
-                    contentFit="cover"
+                    contentFit="contain"
                     placeholder={{ uri: FALLBACK_CAR_IMAGE }}
                   />
                   {photo.isPrimary && (

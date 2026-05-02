@@ -172,7 +172,7 @@ function VehicleCard({ vehicle, colors, theme, t, appointments, onEdit, onDelete
       <View style={styles.cardTop}>
         <TouchableOpacity onPress={onPhoto} style={styles.photoContainer}>
           {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.vehiclePhoto} contentFit="cover" />
+            <Image source={{ uri: photoUri }} style={styles.vehiclePhoto} contentFit="contain" />
           ) : (
             <View style={[styles.photoPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
               <Car size={40} color={colors.textTertiary} />
