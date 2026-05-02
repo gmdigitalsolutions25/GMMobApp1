@@ -517,6 +517,14 @@ const resources = {
         title: 'Vehicle Health',
         overall: 'Overall Health',
         orderInspection: 'Order Full Inspection',
+        engine: 'Engine',
+        tires: 'Tires',
+        oil: 'Oil',
+        battery: 'Battery',
+        brakes: 'Brakes',
+        goodCondition: 'Good condition',
+        checkNeeded: 'Check needed',
+        monthsLeft: '{{count}} months left',
       },
       // Onboarding flow
       onboarding: {
@@ -1068,6 +1076,14 @@ const resources = {
         title: 'Avtomobil Sağlamlığı',
         overall: 'Ümumi Sağlamlıq',
         orderInspection: 'Tam Yoxlama Sifariş Et',
+        engine: 'Mühərrik',
+        tires: 'Təkərlər',
+        oil: 'Yağ',
+        battery: 'Akkumulyator',
+        brakes: 'Əyləclər',
+        goodCondition: 'Yaxşı vəziyyət',
+        checkNeeded: 'Yoxlama lazımdır',
+        monthsLeft: '{{count}} ay qalıb',
       },
       // Onboarding flow
       onboarding: {
@@ -1620,6 +1636,14 @@ const resources = {
         title: 'Здоровье Автомобиля',
         overall: 'Общее Здоровье',
         orderInspection: 'Заказать Полный Осмотр',
+        engine: 'Двигатель',
+        tires: 'Шины',
+        oil: 'Масло',
+        battery: 'Аккумулятор',
+        brakes: 'Тормоза',
+        goodCondition: 'Хорошее состояние',
+        checkNeeded: 'Нужна проверка',
+        monthsLeft: '{{count}} мес. осталось',
       },
       // Onboarding flow
       onboarding: {

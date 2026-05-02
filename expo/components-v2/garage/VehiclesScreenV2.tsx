@@ -1,10 +1,14 @@
 /**
- * VehiclesScreenV2 — "Showroom Floor" My Garage
+ * VehiclesScreenV2 — "My Garage" with Car-First Hero + Health Gauges
  *
- * Premium vehicle cards with photo, health bar, service reminder,
- * CRM history, and recommended services. Same data, new look.
+ * Approved layout:
+ * - Full-width hero car image (from carImages or user photo)
+ * - Name/year/plate/mileage overlaid on gradient
+ * - 5 half-circle health gauges (Engine, Tires, Oil, Battery, Brakes)
+ * - Next service bar with Book CTA
+ * - Recommended services
  */
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,25 +21,28 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Plus,
   Car,
-  Calendar as CalendarIcon,
-  Gauge,
-  Wrench,
-  ChevronRight,
   Edit2,
   Trash2,
-  Shield,
   Clock,
+  Wrench,
 } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import { useAlert } from '@/components/CustomAlert';
 import { useTranslation } from 'react-i18next';
 import { ColorsV2 } from '@/hooks/useDesignV2';
 import { trpc } from '@/lib/trpc';
+import { getCarModelImage, FALLBACK_CAR_IMAGE } from '@/constants/carImages';
+import HalfCircleGauge from './HalfCircleGauge';
 
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_MARGIN = 16;
+const CARD_WIDTH = SCREEN_WIDTH - CARD_MARGIN * 2;
+const HERO_HEIGHT = 220;
+const GAUGE_SIZE = (CARD_WIDTH - 60) / 3; // 3 gauges per row with padding
 
 export default function VehiclesScreenV2() {
   const { t } = useTranslation();
@@ -43,12 +50,12 @@ export default function VehiclesScreenV2() {
   const { vehicles, theme, deleteVehicle, appointments, user, addVehicle } = useApp();
   const insets = useSafeAreaInsets();
   const colors = theme === 'dark' ? ColorsV2.dark : ColorsV2.light;
-  const { showAlert } = useAlert();
+  const { showConfirm } = useAlert();
 
   const [refreshing, setRefreshing] = useState(false);
   const [hasFetchedVehicles, setHasFetchedVehicles] = useState(false);
 
-  // Fetch vehicles from backend (same logic as v1)
+  // Fetch vehicles from backend
   const vehiclesByPhoneQuery = trpc.vehicles.getByPhone.useQuery(
     { phone: user?.phone || '' },
     {
@@ -84,18 +91,14 @@ export default function VehiclesScreenV2() {
   }, []);
 
   const handleDelete = (vehicleId: string, vehicleName: string) => {
-    showAlert({
-      title: t('vehicles.deleteVehicle'),
-      message: t('vehicles.deleteConfirm', { name: vehicleName }),
-      buttons: [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: () => deleteVehicle(vehicleId),
-        },
-      ],
-    });
+    showConfirm(
+      t('vehicles.deleteVehicle'),
+      t('vehicles.deleteConfirm', { name: vehicleName }),
+      () => deleteVehicle(vehicleId),
+      undefined,
+      t('common.delete'),
+      t('common.cancel'),
+    );
   };
 
   return (
@@ -127,11 +130,10 @@ export default function VehiclesScreenV2() {
           <EmptyGarage colors={colors} t={t} onAdd={() => router.push('/add-vehicle')} />
         ) : (
           vehicles.map((vehicle) => (
-            <VehicleCard
+            <VehicleHeroCard
               key={vehicle.id}
               vehicle={vehicle}
               colors={colors}
-              theme={theme}
               t={t}
               appointments={appointments}
               onEdit={() => router.push(`/edit-vehicle?vehicleId=${vehicle.id}`)}
@@ -148,107 +150,194 @@ export default function VehiclesScreenV2() {
   );
 }
 
-/* ─── VEHICLE CARD ─── */
+/* ─── HEALTH GAUGE DATA ─── */
 
-function VehicleCard({ vehicle, colors, theme, t, appointments, onEdit, onDelete, onBook, onPhoto }: any) {
-  const hasPhoto = vehicle.photos && vehicle.photos.length > 0;
-  // photos are VehiclePhoto objects { id, uri, isPrimary }, not plain strings
-  const primaryPhoto = hasPhoto
+function getHealthGauges(vehicle: any, t: any) {
+  // TODO: Replace with real calculations from service records & mileage
+  const mileage = vehicle.mileage || 0;
+
+  // Simulated health based on mileage intervals
+  const oilInterval = 10000;
+  const oilUsed = mileage % oilInterval;
+  const oilPercent = Math.max(5, Math.round(100 - (oilUsed / oilInterval) * 100));
+  const oilRemaining = oilInterval - oilUsed;
+
+  const brakeInterval = 40000;
+  const brakeUsed = mileage % brakeInterval;
+  const brakePercent = Math.max(5, Math.round(100 - (brakeUsed / brakeInterval) * 100));
+  const brakeRemaining = brakeInterval - brakeUsed;
+
+  const tireInterval = 50000;
+  const tireUsed = mileage % tireInterval;
+  const tirePercent = Math.max(5, Math.round(100 - (tireUsed / tireInterval) * 100));
+
+  return [
+    {
+      percent: Math.min(95, 70 + Math.round(Math.random() * 25)),
+      label: t('health.engine') || 'Mühərrik',
+      detail: t('health.goodCondition') || 'Yaxşı vəziyyət',
+    },
+    {
+      percent: tirePercent,
+      label: t('health.tires') || 'Təkərlər',
+      detail: tirePercent > 70
+        ? (t('health.goodCondition') || 'Yaxşı vəziyyət')
+        : (t('health.checkNeeded') || 'Yoxlama lazımdır'),
+    },
+    {
+      percent: oilPercent,
+      label: t('health.oil') || 'Yağ',
+      detail: `${(oilRemaining / 1000).toFixed(1)}k km ${t('vehicles.remaining') || 'qalıb'}`,
+    },
+    {
+      percent: Math.min(98, 80 + Math.round(Math.random() * 18)),
+      label: t('health.battery') || 'Akkumulyator',
+      detail: t('health.monthsLeft', { count: 11 }) || '11 ay qalıb',
+    },
+    {
+      percent: brakePercent,
+      label: t('health.brakes') || 'Əyləclər',
+      detail: `${(brakeRemaining / 1000).toFixed(1)}k km ${t('vehicles.remaining') || 'qalıb'}`,
+    },
+  ];
+}
+
+/* ─── VEHICLE HERO CARD ─── */
+
+function VehicleHeroCard({ vehicle, colors, t, appointments, onEdit, onDelete, onBook, onPhoto }: any) {
+  // Resolve car image: user photo > carImages catalog > fallback
+  const hasUserPhoto = vehicle.photos && vehicle.photos.length > 0;
+  const primaryPhoto = hasUserPhoto
     ? vehicle.photos.find((p: any) => p.isPrimary) || vehicle.photos[0]
     : null;
-  const photoUri = primaryPhoto
+  const userPhotoUri = primaryPhoto
     ? (typeof primaryPhoto === 'string' ? primaryPhoto : primaryPhoto.uri)
     : null;
-  const healthPercent = 72; // TODO: calculate from real data
+
+  const catalogImage = getCarModelImage(vehicle.brand, vehicle.model);
+  const heroImageUri = userPhotoUri || catalogImage?.uri || FALLBACK_CAR_IMAGE;
+
+  const gauges = getHealthGauges(vehicle, t);
 
   // Check for upcoming appointments
   const hasUpcoming = appointments.some(
     (apt: any) => apt.vehicleId === vehicle.id && apt.status !== 'cancelled' && apt.status !== 'completed'
   );
 
+  // Next service estimate
+  const nextServiceKm = vehicle.mileage ? Math.ceil((vehicle.mileage + 10000) / 10000) * 10000 : 50000;
+  const remainingKm = nextServiceKm - (vehicle.mileage || 0);
+
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      {/* Vehicle info row */}
-      <View style={styles.cardTop}>
-        <TouchableOpacity onPress={onPhoto} style={styles.photoContainer}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.vehiclePhoto} contentFit="contain" />
-          ) : (
-            <View style={[styles.photoPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
-              <Car size={40} color={colors.textTertiary} />
-            </View>
-          )}
-        </TouchableOpacity>
+      {/* ── Hero Image ── */}
+      <TouchableOpacity onPress={onPhoto} activeOpacity={0.9}>
+        <View style={styles.heroContainer}>
+          <Image
+            source={{ uri: heroImageUri }}
+            style={styles.heroImage}
+            contentFit="cover"
+            transition={300}
+          />
 
-        <View style={styles.vehicleInfo}>
-          <Text style={[styles.vehicleName, { color: colors.text }]}>
-            {vehicle.brand} {vehicle.model}
-          </Text>
-          <Text style={[styles.vehicleYear, { color: colors.textSecondary }]}>
-            {vehicle.year} · {vehicle.licensePlate || 'N/A'}
-          </Text>
+          {/* Gradient overlay at bottom */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.85)']}
+            style={styles.heroGradient}
+          />
 
-          {/* Health bar */}
-          <View style={styles.healthRow}>
-            <View style={[styles.healthBarBg, { backgroundColor: colors.border }]}>
-              <View
-                style={[
-                  styles.healthBarFill,
-                  {
-                    width: `${healthPercent}%`,
-                    backgroundColor:
-                      healthPercent > 70 ? colors.success :
-                      healthPercent > 40 ? colors.warning :
-                      colors.error,
-                  },
-                ]}
-              />
-            </View>
-            <Text style={[styles.healthText, { color: colors.textSecondary }]}>
-              {healthPercent}%
+          {/* Edit / Delete buttons */}
+          <View style={styles.heroActions}>
+            <TouchableOpacity onPress={onEdit} style={styles.heroIconBtn}>
+              <Edit2 size={16} color="#FFF" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onDelete} style={styles.heroIconBtn}>
+              <Trash2 size={16} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Vehicle name & details overlaid */}
+          <View style={styles.heroOverlay}>
+            <Text style={styles.heroName}>
+              {vehicle.brand} {vehicle.model}
+            </Text>
+            <Text style={styles.heroDetail}>
+              {vehicle.year} · {vehicle.licensePlate || 'N/A'} · {vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : '—'}
             </Text>
           </View>
         </View>
+      </TouchableOpacity>
 
-        {/* Action buttons */}
-        <View style={styles.cardActions}>
-          <TouchableOpacity onPress={onEdit} style={styles.iconBtn}>
-            <Edit2 size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onDelete} style={styles.iconBtn}>
-            <Trash2 size={16} color={colors.error} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Stats row */}
-      <View style={[styles.statsRow, { borderTopColor: colors.border }]}>
-        <View style={styles.statItem}>
-          <Gauge size={14} color={colors.primary} />
-          <Text style={[styles.statValue, { color: colors.text }]}>
-            {vehicle.mileage ? `${(vehicle.mileage / 1000).toFixed(0)}k km` : '—'}
-          </Text>
-        </View>
-        <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-        <View style={styles.statItem}>
-          <CalendarIcon size={14} color={colors.primary} />
-          <Text style={[styles.statValue, { color: colors.text }]}>
-            {hasUpcoming ? t('vehicles.scheduled') || 'Planlanıb' : t('vehicles.noService') || 'Yoxdur'}
-          </Text>
-        </View>
-        <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-        <View style={styles.statItem}>
-          <Shield size={14} color={colors.success} />
-          <Text style={[styles.statValue, { color: colors.text }]}>CRM</Text>
-        </View>
-      </View>
-
-      {/* Service reminder */}
-      <View style={[styles.reminderRow, { backgroundColor: colors.surfaceElevated }]}>
-        <Clock size={14} color={colors.warning} />
-        <Text style={[styles.reminderText, { color: colors.textSecondary }]}>
-          {t('vehicles.nextServiceAt') || 'Növbəti servis:'} 50,200 km · 2,400 km {t('vehicles.remaining') || 'qalıb'}
+      {/* ── Health Gauges ── */}
+      <View style={styles.gaugesSection}>
+        <Text style={[styles.gaugesSectionTitle, { color: colors.textSecondary }]}>
+          {t('health.title') || 'HEALTH GAUGES'}
         </Text>
+
+        {/* Top row: 3 gauges */}
+        <View style={styles.gaugesRow}>
+          {gauges.slice(0, 3).map((g, i) => (
+            <HalfCircleGauge
+              key={i}
+              percent={g.percent}
+              label={g.label}
+              detail={g.detail}
+              size={GAUGE_SIZE > 110 ? 110 : GAUGE_SIZE}
+              strokeWidth={10}
+              labelColor={colors.text}
+              detailColor={colors.textSecondary}
+            />
+          ))}
+        </View>
+
+        {/* Bottom row: 2 gauges centered */}
+        <View style={[styles.gaugesRow, styles.gaugesRowBottom]}>
+          {gauges.slice(3, 5).map((g, i) => (
+            <HalfCircleGauge
+              key={i}
+              percent={g.percent}
+              label={g.label}
+              detail={g.detail}
+              size={GAUGE_SIZE > 110 ? 110 : GAUGE_SIZE}
+              strokeWidth={10}
+              labelColor={colors.text}
+              detailColor={colors.textSecondary}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* ── Divider ── */}
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+      {/* ── Next Service + Book ── */}
+      <View style={styles.nextServiceRow}>
+        <View style={styles.nextServiceInfo}>
+          <View style={styles.nextServiceLine}>
+            <Clock size={14} color={colors.textSecondary} />
+            <Text style={[styles.nextServiceLabel, { color: colors.text }]}>
+              {t('vehicles.nextServiceAt') || 'Növbəti servis:'}{' '}
+              <Text style={styles.nextServiceBold}>
+                {nextServiceKm.toLocaleString()} km
+              </Text>
+            </Text>
+          </View>
+          <Text style={[styles.nextServiceRemaining, { color: colors.textSecondary }]}>
+            {remainingKm.toLocaleString()} km {t('vehicles.remaining') || 'qalıb'}
+          </Text>
+          {/* Progress bar */}
+          <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${Math.min(100, Math.max(5, ((10000 - remainingKm) / 10000) * 100))}%`,
+                  backgroundColor: remainingKm > 3000 ? colors.success : remainingKm > 1000 ? colors.warning : colors.error,
+                },
+              ]}
+            />
+          </View>
+        </View>
         <TouchableOpacity
           style={[styles.bookBtn, { backgroundColor: colors.primary }]}
           onPress={onBook}
@@ -257,14 +346,14 @@ function VehicleCard({ vehicle, colors, theme, t, appointments, onEdit, onDelete
         </TouchableOpacity>
       </View>
 
-      {/* Recommended services */}
-      <View style={styles.recommendedRow}>
+      {/* ── Recommended Services ── */}
+      <View style={[styles.recommendedRow, { borderTopColor: colors.border }]}>
         <Wrench size={13} color={colors.primary} />
         <Text style={[styles.recommendedLabel, { color: colors.textSecondary }]}>
           {t('vehicles.recommended') || 'Tövsiyə:'}{' '}
         </Text>
-        <Text style={[styles.recommendedList, { color: colors.text }]}>
-          {t('vehicles.oilChange') || 'Yağ dəyişimi'}, {t('vehicles.filterReplacement') || 'Filtr'}, {t('vehicles.multiPointInspection') || 'Yoxlama'}
+        <Text style={[styles.recommendedList, { color: colors.text }]} numberOfLines={1}>
+          {t('vehicles.oilChange') || 'Yağ dəyişimi'}, {t('vehicles.filterReplacement') || 'Filtr'}
         </Text>
       </View>
     </View>
@@ -312,7 +401,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   addBtnText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 12 },
+  scrollContent: { paddingHorizontal: CARD_MARGIN, paddingTop: 12 },
 
   // Card
   card: {
@@ -321,60 +410,141 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
   },
-  cardTop: {
-    flexDirection: 'row',
-    padding: 14,
-    gap: 12,
+
+  // Hero image
+  heroContainer: {
+    width: '100%',
+    height: HERO_HEIGHT,
+    position: 'relative',
   },
-  photoContainer: { width: 100, height: 80, borderRadius: 10, overflow: 'hidden' },
-  vehiclePhoto: { width: '100%', height: '100%' },
-  photoPlaceholder: {
+  heroImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 10,
+  },
+  heroGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: HERO_HEIGHT * 0.55,
+  },
+  heroActions: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  heroIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  vehicleInfo: { flex: 1, justifyContent: 'center' },
-  vehicleName: { fontSize: 17, fontWeight: '700' },
-  vehicleYear: { fontSize: 13, marginTop: 2 },
-  healthRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  healthBarBg: { flex: 1, height: 6, borderRadius: 3 },
-  healthBarFill: { height: '100%', borderRadius: 3 },
-  healthText: { fontSize: 12, fontWeight: '600', width: 32 },
-  cardActions: { gap: 8, paddingTop: 2 },
-  iconBtn: { padding: 6 },
-
-  // Stats row
-  statsRow: {
-    flexDirection: 'row',
-    borderTopWidth: 0.5,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+  heroOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    left: 16,
+    right: 16,
   },
-  statItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center' },
-  statValue: { fontSize: 12, fontWeight: '500' },
-  statDivider: { width: 0.5, height: 20 },
+  heroName: {
+    color: '#FFF',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  heroDetail: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 13,
+    marginTop: 2,
+  },
 
-  // Reminder
-  reminderRow: {
+  // Gauges
+  gaugesSection: {
+    paddingHorizontal: 12,
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  gaugesSectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+  gaugesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+  },
+  gaugesRowBottom: {
+    marginTop: 8,
+    paddingHorizontal: GAUGE_SIZE * 0.5,
+  },
+
+  // Divider
+  divider: {
+    height: 0.5,
+    marginHorizontal: 16,
+    marginTop: 4,
+  },
+
+  // Next service
+  nextServiceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
   },
-  reminderText: { flex: 1, fontSize: 12 },
-  bookBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12 },
-  bookBtnText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+  nextServiceInfo: {
+    flex: 1,
+  },
+  nextServiceLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  nextServiceLabel: {
+    fontSize: 13,
+  },
+  nextServiceBold: {
+    fontWeight: '700',
+  },
+  nextServiceRemaining: {
+    fontSize: 11,
+    marginTop: 2,
+    marginLeft: 20,
+  },
+  progressBarBg: {
+    height: 4,
+    borderRadius: 2,
+    marginTop: 6,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  bookBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  bookBtnText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
 
   // Recommended
   recommendedRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 10,
+    borderTopWidth: 0.5,
   },
   recommendedLabel: { fontSize: 12 },
   recommendedList: { fontSize: 12, fontWeight: '500', flex: 1 },
