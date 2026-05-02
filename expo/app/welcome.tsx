@@ -1,25 +1,47 @@
-import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated } from 'react-native';
+/**
+ * Qaraj GM — Welcome Screen (v2 Showroom Floor)
+ *
+ * First screen shown to new users. Allows language selection and
+ * introduces the app features before routing to auth.
+ */
+
+import { useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity,
+  ImageBackground, ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Car, Calendar, History, Shield } from 'lucide-react-native';
+import { Car, Calendar, History, Shield, Wrench } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
+import { useDesignV2, ColorsV2 } from '@/hooks/useDesignV2';
 import { AppVersion } from '@/components/AppVersion';
 import type { Language } from '@/constants/types';
 import { useTranslation } from 'react-i18next';
 
-const { width } = Dimensions.get('window');
+
+// Hero images — same set as other screens
+const HERO_IMAGES = [
+  require('@/assets/images/hero-toyota-land-cruiser.jpg'),
+  require('@/assets/images/hero-toyota-camry.jpg'),
+  require('@/assets/images/hero-toyota-rav4.jpg'),
+  require('@/assets/images/hero-toyota-prado.jpg'),
+  require('@/assets/images/hero-toyota-corolla-cross.jpg'),
+];
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { completeOnboarding, setLanguage } = useApp();
   const { t, i18n } = useTranslation();
+  const { isV2, theme } = useDesignV2();
+  const c = isV2 ? ColorsV2[theme] : (Colors[theme] || Colors.dark);
+  const styles = createStyles(c, theme);
+
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('en');
-  const float1 = useRef(new Animated.Value(0)).current;
-  const float2 = useRef(new Animated.Value(0)).current;
+  const [heroIdx] = useState(() => Math.floor(Math.random() * HERO_IMAGES.length));
 
   const handleLanguageSelect = async (lang: Language) => {
     setSelectedLanguage(lang);
@@ -38,55 +60,6 @@ export default function WelcomeScreen() {
     { code: 'ru', label: 'Russian', nativeLabel: 'Русский' },
   ];
 
-  useEffect(() => {
-    const floatAnimation1 = Animated.loop(
-      Animated.sequence([
-        Animated.timing(float1, {
-          toValue: 1,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(float1, {
-          toValue: 0,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    const floatAnimation2 = Animated.loop(
-      Animated.sequence([
-        Animated.timing(float2, {
-          toValue: 1,
-          duration: 5000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(float2, {
-          toValue: 0,
-          duration: 5000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    floatAnimation1.start();
-    floatAnimation2.start();
-
-    return () => {
-      floatAnimation1.stop();
-      floatAnimation2.stop();
-    };
-  }, [float1, float2]);
-
-  const float1Y = float1.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -30],
-  });
-
-  const float2Y = float2.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 40],
-  });
 
   const features = [
     { icon: Car, title: t('welcome.vehicleManagement'), desc: t('welcome.vehicleManagementDesc') },
@@ -97,53 +70,36 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.backgroundContainer}>
-        <View style={styles.heroBackground}>
-          <View style={[styles.diagonalStripe, styles.diagonalStripe1]} />
-          <View style={[styles.diagonalStripe, styles.diagonalStripe2]} />
-          
-          <Animated.View
-            style={[
-              styles.floatingAccent1,
-              {
-                transform: [{ translateY: float1Y }],
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.floatingAccent2,
-              {
-                transform: [{ translateY: float2Y }],
-              },
-            ]}
-          />
+      {/* Hero background image */}
+      <ImageBackground
+        source={HERO_IMAGES[heroIdx]}
+        style={styles.heroImage}
+        resizeMode="cover"
+      >
+        <View style={styles.heroOverlay} />
+      </ImageBackground>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Logo */}
+        <View style={[styles.logoRow, { marginTop: insets.top + 16 }]}>
+          <View style={styles.logoIcon}>
+            <Wrench size={18} color="#FFF" />
+          </View>
+          <Text style={styles.logoText}>Qaraj</Text>
         </View>
-        
-        <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
-          <View style={styles.header}>
-            <View style={styles.compactLogoContainer}>
-              <Car size={32} color={Colors.dark.primary} strokeWidth={2} />
-            </View>
-            <Text style={styles.title}>{t('welcome.title')}</Text>
-          </View>
 
-          <View style={styles.ctaSection}>
-            <Text style={styles.ctaTitle}>{t('welcome.subtitle')}</Text>
-            <Text style={styles.ctaSubtitle}>{t('welcome.ctaDescription')}</Text>
-          </View>
+        {/* Glass card */}
+        <View style={styles.card}>
+          {/* Title */}
+          <Text style={styles.title}>{t('welcome.title')}</Text>
+          <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
+          <Text style={styles.description}>{t('welcome.ctaDescription')}</Text>
 
-          <TouchableOpacity style={styles.getStartedButton} onPress={handleGetStarted}>
-            <LinearGradient
-              colors={[Colors.dark.primary, Colors.dark.primaryDark]}
-              style={styles.getStartedGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <Text style={styles.getStartedText}>{t('welcome.getStarted')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
+          {/* Language selection */}
           <View style={styles.languageSection}>
             <Text style={styles.languageLabel}>{t('welcome.chooseLanguage')}</Text>
             <View style={styles.languageButtons}>
@@ -169,161 +125,115 @@ export default function WelcomeScreen() {
             </View>
           </View>
 
+          {/* CTA Button */}
+          <TouchableOpacity style={styles.getStartedButton} onPress={handleGetStarted}>
+            <LinearGradient
+              colors={[c.primary, c.primaryDark]}
+              style={styles.getStartedGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.getStartedText}>{t('welcome.getStarted')}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Features */}
           <View style={styles.featuresContainer}>
             <Text style={styles.featuresTitle}>{t('welcome.whatYouGet')}</Text>
             {features.map((feature, index) => (
               <View key={index} style={styles.featureCard}>
-                <feature.icon size={20} color={Colors.dark.primary} strokeWidth={2} />
+                <View style={styles.featureIconContainer}>
+                  <feature.icon size={18} color={c.primary} strokeWidth={2} />
+                </View>
                 <Text style={styles.featureTitle}>{feature.title}</Text>
               </View>
             ))}
           </View>
         </View>
-      </View>
+      </ScrollView>
       <AppVersion />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: any, theme: 'light' | 'dark') => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.background,
+    backgroundColor: c.background,
   },
-  backgroundContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  heroBackground: {
+  heroImage: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: Colors.dark.background,
-    overflow: 'hidden',
+    top: 0, left: 0, right: 0,
+    height: '38%',
   },
-  diagonalStripe: {
-    position: 'absolute',
-    width: width * 1.5,
-    height: 200,
-    backgroundColor: `${Colors.dark.primary}08`,
-    transform: [{ rotate: '-15deg' }],
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.2)',
   },
-  diagonalStripe1: {
-    top: -50,
-    left: -100,
-    opacity: 0.4,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
-  diagonalStripe2: {
-    top: 120,
-    right: -150,
-    backgroundColor: `${Colors.dark.primary}05`,
-    opacity: 0.3,
-  },
-  diagonalStripe3: {
-    bottom: 80,
-    left: -80,
-    height: 150,
-    backgroundColor: `${Colors.dark.primary}12`,
-    opacity: 0.5,
-  },
-
-  floatingAccent1: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    top: 60,
-    right: -30,
-    backgroundColor: `${Colors.dark.primary}10`,
-    opacity: 0.4,
-  },
-  floatingAccent2: {
-    position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    bottom: 120,
-    left: -20,
-    backgroundColor: `${Colors.dark.primary}08`,
-    opacity: 0.3,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
-  },
-  header: {
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    position: 'absolute',
+    top: 0, left: 24,
+    zIndex: 10,
   },
-  compactLogoContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: `${Colors.dark.primary}20`,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 2,
-    borderColor: `${Colors.dark.primary}40`,
+  logoIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: c.primary,
+    justifyContent: 'center', alignItems: 'center',
+    marginRight: 10,
+  },
+  logoText: {
+    fontSize: 22, fontWeight: '700',
+    color: '#FFF',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  card: {
+    backgroundColor: theme === 'dark' ? 'rgba(26,26,26,0.95)' : 'rgba(255,255,255,0.95)',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 36,
+    paddingBottom: 40,
+    minHeight: '66%',
+    // Glass effect
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '700' as const,
-    color: Colors.dark.text,
-    flex: 1,
-  },
-  ctaSection: {
-    marginBottom: 24,
-    paddingHorizontal: 8,
-  },
-  ctaTitle: {
-    fontSize: 20,
-    fontWeight: '600' as const,
-    color: Colors.dark.text,
+    fontSize: 28, fontWeight: '700',
+    color: c.text,
     marginBottom: 8,
-    lineHeight: 28,
   },
-  ctaSubtitle: {
-    fontSize: 15,
-    color: Colors.dark.textSecondary,
+  subtitle: {
+    fontSize: 18, fontWeight: '600',
+    color: c.text,
+    marginBottom: 8,
+    lineHeight: 26,
+  },
+  description: {
+    fontSize: 15, color: c.textSecondary,
     lineHeight: 22,
-  },
-  featuresContainer: {
-    marginTop: 24,
-  },
-  featuresTitle: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.dark.textSecondary,
-    marginBottom: 16,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 1,
-  },
-  featureCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    gap: 12,
-  },
-  featureTitle: {
-    fontSize: 15,
-    fontWeight: '500' as const,
-    color: Colors.dark.text,
+    marginBottom: 24,
   },
   languageSection: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   languageLabel: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.dark.textSecondary,
+    fontSize: 13, fontWeight: '600',
+    color: c.textTertiary,
     marginBottom: 12,
-    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   languageButtons: {
     flexDirection: 'row',
@@ -334,40 +244,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: Colors.dark.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
+    borderColor: c.border,
   },
   languageButtonActive: {
-    backgroundColor: Colors.dark.primary,
-    borderColor: Colors.dark.primary,
+    backgroundColor: c.primary,
+    borderColor: c.primary,
   },
   languageButtonText: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.dark.textSecondary,
+    fontSize: 14, fontWeight: '600',
+    color: c.textSecondary,
   },
   languageButtonTextActive: {
-    color: Colors.dark.text,
+    color: '#FFF',
   },
   getStartedButton: {
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 32,
-    shadowColor: Colors.dark.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    marginBottom: 28,
+    shadowColor: c.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   getStartedGradient: {
-    paddingVertical: 20,
+    paddingVertical: 18,
     alignItems: 'center',
   },
   getStartedText: {
-    fontSize: 17,
-    fontWeight: '700' as const,
-    color: Colors.dark.text,
+    fontSize: 17, fontWeight: '700',
+    color: '#FFF',
     letterSpacing: 0.5,
+  },
+  featuresContainer: {
+    marginTop: 4,
+  },
+  featuresTitle: {
+    fontSize: 13, fontWeight: '600',
+    color: c.textTertiary,
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  featureCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 12,
+  },
+  featureIconContainer: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: `${c.primary}12`,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  featureTitle: {
+    fontSize: 15, fontWeight: '500',
+    color: c.text,
   },
 });

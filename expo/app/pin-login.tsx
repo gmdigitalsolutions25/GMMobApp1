@@ -1,5 +1,5 @@
 /**
- * Qaraj GM — PIN Login Screen
+ * Qaraj GM — PIN Login Screen (v2 Showroom Floor)
  *
  * Shown to returning users who have a valid JWT but need to unlock.
  * Offers biometric first (if enabled), then falls back to PIN.
@@ -8,26 +8,21 @@
  *   Step 1: Send OTP to stored phone
  *   Step 2: Verify OTP
  *   Step 3: Set new PIN
- *   All via auth.resetPin (single backend call with OTP + new PIN)
- *
- * This screen is shown when:
- *   - App reopened after 1+ hours but within 7 days
- *   - User has a stored JWT token and phone number
  */
 
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  Dimensions, Animated, ActivityIndicator,
+  Dimensions, Animated, ActivityIndicator, ImageBackground,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useAlert } from '@/components/CustomAlert';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Fingerprint, LogOut, ArrowLeft } from 'lucide-react-native';
+import { Fingerprint, LogOut, ArrowLeft, Wrench } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
-import { useDesignV2 } from '@/hooks/useDesignV2';
+import { useDesignV2, ColorsV2 } from '@/hooks/useDesignV2';
 import { AppVersion } from '@/components/AppVersion';
 import { useTranslation } from 'react-i18next';
 import { trpc } from '@/lib/trpc';
@@ -37,9 +32,17 @@ import {
 } from '@/lib/authStore';
 import { authenticateWithBiometric, checkBiometricAvailability } from '@/lib/biometric';
 import { requestNotificationPermissions, registerPushToken } from '@/lib/notifications';
-// Constants import removed — no longer needed for push token registration
 
 const { width } = Dimensions.get('window');
+
+// Hero images — same set as home screen
+const HERO_IMAGES = [
+  require('@/assets/images/hero-toyota-land-cruiser.jpg'),
+  require('@/assets/images/hero-toyota-camry.jpg'),
+  require('@/assets/images/hero-toyota-rav4.jpg'),
+  require('@/assets/images/hero-toyota-prado.jpg'),
+  require('@/assets/images/hero-toyota-corolla-cross.jpg'),
+];
 
 type ResetStep = 'none' | 'otp' | 'newPin';
 
@@ -49,35 +52,35 @@ export default function PinLoginScreen() {
   const { signIn, signOut } = useApp();
   const { t } = useTranslation();
   const { showInfo, showConfirm } = useAlert();
-  const { theme } = useDesignV2();
-  const c = Colors[theme] || Colors.dark;
-  const styles = createStyles(c);
+  const { isV2, theme } = useDesignV2();
+  const c = isV2 ? ColorsV2[theme] : (Colors[theme] || Colors.dark);
+  const styles = createStyles(c, theme);
 
   const [pin, setPin] = useState(['', '', '', '']);
   const [pinError, setPinError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showBiometric, setShowBiometric] = useState(false);
   const [phone, setPhone] = useState<string>('');
-
-  // ── Forgot PIN state ──────────────────────────────────────────────────────
   const [resetStep, setResetStep] = useState<ResetStep>('none');
   const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
   const [newPin, setNewPin] = useState(['', '', '', '']);
   const [resetError, setResetError] = useState<string | null>(null);
   const [otpCountdown, setOtpCountdown] = useState(0);
+  const [heroIdx] = useState(() => Math.floor(Math.random() * HERO_IMAGES.length));
 
   const pinRefs = useRef<(TextInput | null)[]>([]);
   const otpRefs = useRef<(TextInput | null)[]>([]);
   const newPinRefs = useRef<(TextInput | null)[]>([]);
   const float1 = useRef(new Animated.Value(0)).current;
 
+  // tRPC mutations
   const verifyPinMutation = trpc.auth.verifyPin.useMutation();
   const refreshTokenMutation = trpc.auth.refreshToken.useMutation();
   const sendOtpMutation = trpc.auth.sendOtp.useMutation();
   const resetPinMutation = trpc.auth.resetPin.useMutation();
-  const registerPushTokenMutation = trpc.pushTokens.register.useMutation();
+  const registerPushTokenMutation = trpc.notifications.registerPushToken.useMutation();
 
-  // ── Initialize ────────────────────────────────────────────────────────────
+  // ── Init ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       const storedPhone = await getPhone();
@@ -116,23 +119,25 @@ export default function PinLoginScreen() {
       setIsLoading(true);
       try {
         const token = await getToken();
-        if (token) {
-          const result = await refreshTokenMutation.mutateAsync({ token });
-          if (result.success && result.token) {
-            await saveToken(result.token);
-            if (result.user) {
-              await saveUserData(result.user);
-              await signIn({
-                id: result.user.id,
-                username: result.user.username,
-                phone: result.user.phone,
-                email: result.user.email,
-                avatar: result.user.avatar,
-                language: (result.user.language as 'en' | 'az' | 'ru') || 'en',
-                theme: (result.user.theme as 'light' | 'dark') || 'dark',
-                createdAt: result.user.createdAt,
-              });
-            }
+        if (!token) {
+          router.replace('/auth');
+          return;
+        }
+        const result = await refreshTokenMutation.mutateAsync({ token });
+        if (result.success && result.token) {
+          await saveToken(result.token);
+          if (result.user) {
+            await saveUserData(result.user);
+            await signIn({
+              id: result.user.id,
+              username: result.user.username,
+              phone: result.user.phone,
+              email: result.user.email,
+              avatar: result.user.avatar,
+              language: (result.user.language as 'en' | 'az' | 'ru') || 'en',
+              theme: (result.user.theme as 'light' | 'dark') || 'dark',
+              createdAt: result.user.createdAt,
+            });
           }
         }
         await updateLastActivity();
@@ -166,16 +171,18 @@ export default function PinLoginScreen() {
   const handlePinChange = async (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;
 
-    const newPinArr = [...pin];
-    newPinArr[index] = value;
-    setPin(newPinArr);
+    const updated = [...pin];
+    updated[index] = value;
+    setPin(updated);
+    setPinError(null);
 
     if (value && index < 3) {
       pinRefs.current[index + 1]?.focus();
     }
 
-    if (newPinArr.every(digit => digit !== '')) {
-      const pinCode = newPinArr.join('');
+    // When all 4 digits entered, verify
+    if (updated.every(digit => digit !== '')) {
+      const pinCode = updated.join('');
       setIsLoading(true);
 
       try {
@@ -212,10 +219,7 @@ export default function PinLoginScreen() {
         }
       } catch (e: any) {
         const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
-        const msg = isNetworkError
-          ? t('auth.networkError')
-          : (e?.message || t('auth.networkError'));
-        setPinError(msg);
+        setPinError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.networkError')));
         setPin(['', '', '', '']);
         pinRefs.current[0]?.focus();
       } finally {
@@ -308,25 +312,21 @@ export default function PinLoginScreen() {
     const updated = [...newPin];
     updated[index] = value;
     setNewPin(updated);
+    setResetError(null);
 
     if (value && index < 3) {
       newPinRefs.current[index + 1]?.focus();
     }
 
-    // When all 4 digits entered, call resetPin
+    // When all 4 digits entered, submit reset
     if (updated.every(digit => digit !== '')) {
-      const pinCode = updated.join('');
-      const otp = otpCode.join('');
       setIsLoading(true);
-      setResetError(null);
-
       try {
         const result = await resetPinMutation.mutateAsync({
           phone,
-          otpCode: otp,
-          newPin: pinCode,
+          otp: otpCode.join(''),
+          newPin: updated.join(''),
         });
-
         if (result.success && result.token && result.user) {
           await saveToken(result.token);
           await saveUserData(result.user);
@@ -359,7 +359,7 @@ export default function PinLoginScreen() {
         const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
         setResetError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.pinResetFailed')));
         // If OTP was invalid, go back to OTP step
-        if (e?.message?.includes('OTP') || e?.message?.includes('expired')) {
+        if (/otp|code|expired/i.test(e?.message || '')) {
           setResetStep('otp');
           setOtpCode(['', '', '', '', '', '']);
           setTimeout(() => otpRefs.current[0]?.focus(), 300);
@@ -414,8 +414,6 @@ export default function PinLoginScreen() {
     return () => anim.stop();
   }, [float1]);
 
-  const float1Y = float1.interpolate({ inputRange: [0, 1], outputRange: [0, -20] });
-
   // Mask phone for display: +994-XX-***-**-67
   const maskedPhone = phone.length >= 9
     ? `+994-${phone.slice(-9, -7)}-***-**-${phone.slice(-2)}`
@@ -426,202 +424,250 @@ export default function PinLoginScreen() {
   // ═══════════════════════════════════════════════════════════════════════════
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top + 20 }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.heroBackground}>
-        <Animated.View style={[styles.floatingAccent, { transform: [{ translateY: float1Y }] }]} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
+    <View style={styles.container}>
+      {/* Hero background image */}
+      <ImageBackground
+        source={HERO_IMAGES[heroIdx]}
+        style={styles.heroImage}
+        resizeMode="cover"
       >
-        <View style={styles.content}>
-        {/* ── Normal PIN Login ──────────────────────────────────────────── */}
-        {resetStep === 'none' && (
-          <>
-            <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>{maskedPhone}</Text>
+        <View style={styles.heroOverlay} />
+      </ImageBackground>
 
-            {/* PIN Input */}
-            <View style={styles.pinContainer}>
-              {pin.map((digit, index) => (
-                <TextInput
-                  key={index}
-                  ref={ref => { pinRefs.current[index] = ref; }}
-                  style={[styles.pinInput, digit && styles.pinInputFilled]}
-                  value={digit}
-                  onChangeText={(value) => handlePinChange(value, index)}
-                  onKeyPress={({ nativeEvent }) => handlePinKeyPress(nativeEvent.key, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  secureTextEntry
-                  selectTextOnFocus
-                />
-              ))}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          {/* Logo */}
+          <View style={[styles.logoRow, { marginTop: insets.top + 16 }]}>
+            <View style={styles.logoIcon}>
+              <Wrench size={18} color="#FFF" />
             </View>
+            <Text style={styles.logoText}>Qaraj</Text>
+          </View>
 
-            {pinError && <Text style={styles.errorText}>{pinError}</Text>}
+          {/* Glass card */}
+          <View style={styles.card}>
+            {/* ── Normal PIN Login ──────────────────────────────────────────── */}
+            {resetStep === 'none' && (
+              <>
+                <Text style={styles.title}>{t('auth.welcomeBack') || 'Welcome back'}</Text>
+                <Text style={styles.subtitle}>{maskedPhone}</Text>
 
-            {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
+                {/* PIN Input */}
+                <View style={styles.pinContainer}>
+                  {pin.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={ref => { pinRefs.current[index] = ref; }}
+                      style={[styles.pinInput, digit && styles.pinInputFilled]}
+                      value={digit}
+                      onChangeText={(value) => handlePinChange(value, index)}
+                      onKeyPress={({ nativeEvent }) => handlePinKeyPress(nativeEvent.key, index)}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      secureTextEntry
+                      selectTextOnFocus
+                    />
+                  ))}
+                </View>
 
-            {/* Biometric Button */}
-            {showBiometric && !isLoading && (
-              <TouchableOpacity style={styles.biometricButton} onPress={handleBiometricAuth}>
-                <Fingerprint size={32} color={c.primary} strokeWidth={1.5} />
-                <Text style={styles.biometricText}>Use Biometric</Text>
-              </TouchableOpacity>
+                {pinError && <Text style={styles.errorText}>{pinError}</Text>}
+
+                {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
+
+                {/* Biometric Button */}
+                {showBiometric && !isLoading && (
+                  <TouchableOpacity style={styles.biometricButton} onPress={handleBiometricAuth}>
+                    <Fingerprint size={28} color={c.primary} strokeWidth={1.5} />
+                    <Text style={styles.biometricText}>{t('auth.useBiometric') || 'Use Biometric'}</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Forgot PIN */}
+                {!isLoading && (
+                  <TouchableOpacity style={styles.forgotPinButton} onPress={handleForgotPin}>
+                    <Text style={styles.forgotPinText}>{t('auth.forgotPin')}</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Logout */}
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                  <LogOut size={16} color={c.textTertiary} />
+                  <Text style={styles.logoutText}>{t('auth.useDifferentNumber') || 'Use a different number'}</Text>
+                </TouchableOpacity>
+              </>
             )}
 
-            {/* Forgot PIN */}
-            {!isLoading && (
-              <TouchableOpacity style={styles.forgotPinButton} onPress={handleForgotPin}>
-                <Text style={styles.forgotPinText}>{t('auth.forgotPin')}</Text>
-              </TouchableOpacity>
+            {/* ── Reset Step 1: Enter OTP ──────────────────────────────────── */}
+            {resetStep === 'otp' && (
+              <>
+                <TouchableOpacity style={styles.backButton} onPress={handleCancelReset}>
+                  <ArrowLeft size={20} color={c.textSecondary} />
+                  <Text style={styles.backText}>{t('common.back')}</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.title}>{t('auth.resetPinTitle')}</Text>
+                <Text style={styles.subtitle}>{t('auth.enterCodeSent')} {maskedPhone}</Text>
+
+                {/* OTP Input — 6 boxes */}
+                <View style={styles.otpContainer}>
+                  {otpCode.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={ref => { otpRefs.current[index] = ref; }}
+                      style={[styles.otpInput, digit && styles.otpInputFilled]}
+                      value={digit}
+                      onChangeText={(value) => handleOtpChange(value, index)}
+                      onKeyPress={({ nativeEvent }) => handleOtpKeyPress(nativeEvent.key, index)}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      selectTextOnFocus
+                    />
+                  ))}
+                </View>
+
+                {resetError && <Text style={styles.errorText}>{resetError}</Text>}
+
+                {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
+
+                {/* Resend OTP */}
+                {!isLoading && (
+                  <TouchableOpacity
+                    style={[styles.resendButton, otpCountdown > 0 && styles.resendButtonDisabled]}
+                    onPress={handleResendOtp}
+                    disabled={otpCountdown > 0}
+                  >
+                    <Text style={[styles.resendText, otpCountdown > 0 && styles.resendTextDisabled]}>
+                      {otpCountdown > 0
+                        ? `${t('auth.resendCode')} (${otpCountdown}s)`
+                        : t('auth.resendCode')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </>
             )}
 
-            {/* Logout */}
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <LogOut size={16} color={c.textTertiary} />
-              <Text style={styles.logoutText}>Use a different number</Text>
-            </TouchableOpacity>
-          </>
-        )}
+            {/* ── Reset Step 2: Enter New PIN ──────────────────────────────── */}
+            {resetStep === 'newPin' && (
+              <>
+                <TouchableOpacity style={styles.backButton} onPress={() => {
+                  setResetStep('otp');
+                  setNewPin(['', '', '', '']);
+                  setResetError(null);
+                  setTimeout(() => otpRefs.current[0]?.focus(), 300);
+                }}>
+                  <ArrowLeft size={20} color={c.textSecondary} />
+                  <Text style={styles.backText}>{t('common.back')}</Text>
+                </TouchableOpacity>
 
-        {/* ── Reset Step 1: Enter OTP ──────────────────────────────────── */}
-        {resetStep === 'otp' && (
-          <>
-            <TouchableOpacity style={styles.backButton} onPress={handleCancelReset}>
-              <ArrowLeft size={20} color={c.textSecondary} />
-              <Text style={styles.backText}>{t('common.back')}</Text>
-            </TouchableOpacity>
+                <Text style={styles.title}>{t('auth.resetPinTitle')}</Text>
+                <Text style={styles.subtitle}>{t('auth.enterNewPin')}</Text>
 
-            <Text style={styles.title}>{t('auth.resetPinTitle')}</Text>
-            <Text style={styles.subtitle}>{t('auth.enterCodeSent')} {maskedPhone}</Text>
+                {/* New PIN Input — 4 boxes */}
+                <View style={styles.pinContainer}>
+                  {newPin.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={ref => { newPinRefs.current[index] = ref; }}
+                      style={[styles.pinInput, digit && styles.pinInputFilled]}
+                      value={digit}
+                      onChangeText={(value) => handleNewPinChange(value, index)}
+                      onKeyPress={({ nativeEvent }) => handleNewPinKeyPress(nativeEvent.key, index)}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      secureTextEntry
+                      selectTextOnFocus
+                    />
+                  ))}
+                </View>
 
-            {/* OTP Input — 6 boxes */}
-            <View style={styles.otpContainer}>
-              {otpCode.map((digit, index) => (
-                <TextInput
-                  key={index}
-                  ref={ref => { otpRefs.current[index] = ref; }}
-                  style={[styles.otpInput, digit && styles.otpInputFilled]}
-                  value={digit}
-                  onChangeText={(value) => handleOtpChange(value, index)}
-                  onKeyPress={({ nativeEvent }) => handleOtpKeyPress(nativeEvent.key, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  selectTextOnFocus
-                />
-              ))}
-            </View>
+                {resetError && <Text style={styles.errorText}>{resetError}</Text>}
 
-            {resetError && <Text style={styles.errorText}>{resetError}</Text>}
+                {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
 
-            {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
-
-            {/* Resend OTP */}
-            {!isLoading && (
-              <TouchableOpacity
-                style={[styles.resendButton, otpCountdown > 0 && styles.resendButtonDisabled]}
-                onPress={handleResendOtp}
-                disabled={otpCountdown > 0}
-              >
-                <Text style={[styles.resendText, otpCountdown > 0 && styles.resendTextDisabled]}>
-                  {otpCountdown > 0
-                    ? `${t('auth.resendCode')} (${otpCountdown}s)`
-                    : t('auth.resendCode')}
-                </Text>
-              </TouchableOpacity>
+                <Text style={styles.hintText}>{t('auth.pinHint')}</Text>
+              </>
             )}
-          </>
-        )}
-
-        {/* ── Reset Step 2: Enter New PIN ──────────────────────────────── */}
-        {resetStep === 'newPin' && (
-          <>
-            <TouchableOpacity style={styles.backButton} onPress={() => {
-              setResetStep('otp');
-              setNewPin(['', '', '', '']);
-              setResetError(null);
-              setTimeout(() => otpRefs.current[0]?.focus(), 300);
-            }}>
-              <ArrowLeft size={20} color={c.textSecondary} />
-              <Text style={styles.backText}>{t('common.back')}</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.title}>{t('auth.resetPinTitle')}</Text>
-            <Text style={styles.subtitle}>{t('auth.enterNewPin')}</Text>
-
-            {/* New PIN Input — 4 boxes */}
-            <View style={styles.pinContainer}>
-              {newPin.map((digit, index) => (
-                <TextInput
-                  key={index}
-                  ref={ref => { newPinRefs.current[index] = ref; }}
-                  style={[styles.pinInput, digit && styles.pinInputFilled]}
-                  value={digit}
-                  onChangeText={(value) => handleNewPinChange(value, index)}
-                  onKeyPress={({ nativeEvent }) => handleNewPinKeyPress(nativeEvent.key, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  secureTextEntry
-                  selectTextOnFocus
-                />
-              ))}
-            </View>
-
-            {resetError && <Text style={styles.errorText}>{resetError}</Text>}
-
-            {isLoading && <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />}
-
-            <Text style={styles.hintText}>{t('auth.pinHint')}</Text>
-          </>
-        )}
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <AppVersion />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
-const createStyles = (c: any) => StyleSheet.create({
+const createStyles = (c: any, theme: 'light' | 'dark') => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: c.background,
   },
-  heroBackground: {
+  heroImage: {
     position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    overflow: 'hidden',
+    top: 0, left: 0, right: 0,
+    height: '45%',
   },
-  floatingAccent: {
-    position: 'absolute',
-    width: 120, height: 120, borderRadius: 60,
-    top: 60, right: 30,
-    backgroundColor: `${c.primary}08`,
-    opacity: 0.5,
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.3)',
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
-  content: {
-    paddingHorizontal: 24,
-    paddingVertical: 40,
+  logoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    position: 'absolute',
+    top: 0, left: 24,
+    zIndex: 10,
+  },
+  logoIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: c.primary,
+    justifyContent: 'center', alignItems: 'center',
+    marginRight: 10,
+  },
+  logoText: {
+    fontSize: 22, fontWeight: '700',
+    color: '#FFF',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  card: {
+    backgroundColor: theme === 'dark' ? 'rgba(26,26,26,0.95)' : 'rgba(255,255,255,0.95)',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 40,
+    minHeight: '60%',
+    alignItems: 'center',
+    // Glass effect
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   title: {
-    fontSize: 28, fontWeight: '700',
+    fontSize: 26, fontWeight: '700',
     color: c.text,
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16, color: c.textSecondary,
-    marginBottom: 48,
+    fontSize: 15, color: c.textSecondary,
+    marginBottom: 40,
     textAlign: 'center',
   },
   pinContainer: {
@@ -660,7 +706,7 @@ const createStyles = (c: any) => StyleSheet.create({
   },
   biometricButton: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    marginTop: 32, paddingVertical: 16, paddingHorizontal: 24,
+    marginTop: 32, paddingVertical: 14, paddingHorizontal: 24,
     backgroundColor: `${c.primary}10`,
     borderRadius: 16, borderWidth: 1, borderColor: `${c.primary}30`,
   },

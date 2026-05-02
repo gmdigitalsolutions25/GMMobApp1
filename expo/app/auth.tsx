@@ -1,5 +1,5 @@
 /**
- * Qaraj GM — Auth Screen
+ * Qaraj GM — Auth Screen (v2 Showroom Floor)
  *
  * Flow:
  *   Phone → OTP → PIN (set or verify) → Biometric prompt (first time) → Home
@@ -13,16 +13,16 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   KeyboardAvoidingView, Platform, ScrollView,
-  Dimensions, Animated, ActivityIndicator, Keyboard,
+  Dimensions, Animated, ActivityIndicator, Keyboard, ImageBackground,
 } from 'react-native';
 import { useAlert } from '@/components/CustomAlert';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Phone, ArrowLeft, Check, Car, Wrench, Fingerprint } from 'lucide-react-native';
+import { Phone, ArrowLeft, Check, Wrench, Fingerprint } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
-import { useDesignV2 } from '@/hooks/useDesignV2';
+import { useDesignV2, ColorsV2 } from '@/hooks/useDesignV2';
 import { useTranslation } from 'react-i18next';
 import { formatPhoneNumber, unformatPhoneNumber, PHONE_PLACEHOLDER } from '@/constants/phoneUtils';
 import { trpc } from '@/lib/trpc';
@@ -33,7 +33,6 @@ import {
 } from '@/lib/authStore';
 import { checkBiometricAvailability, getBiometricLabel } from '@/lib/biometric';
 import { requestNotificationPermissions, registerPushToken } from '@/lib/notifications';
-// Constants import removed — no longer needed for push token registration
 
 import type { User as UserType } from '@/constants/types';
 
@@ -41,15 +40,24 @@ type AuthStep = 'phone' | 'otp' | 'pin' | 'biometric-prompt';
 
 const { width } = Dimensions.get('window');
 
+// Hero images — same set as home/pin screens
+const HERO_IMAGES = [
+  require('@/assets/images/hero-toyota-land-cruiser.jpg'),
+  require('@/assets/images/hero-toyota-camry.jpg'),
+  require('@/assets/images/hero-toyota-rav4.jpg'),
+  require('@/assets/images/hero-toyota-prado.jpg'),
+  require('@/assets/images/hero-toyota-corolla-cross.jpg'),
+];
+
 export default function AuthScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signIn, hydrateFromServer, user: appUser } = useApp();
   const { t } = useTranslation();
   const { showError } = useAlert();
-  const { theme } = useDesignV2();
-  const c = Colors[theme] || Colors.dark;
-  const styles = createStyles(c);
+  const { isV2, theme } = useDesignV2();
+  const c = isV2 ? ColorsV2[theme] : (Colors[theme] || Colors.dark);
+  const styles = createStyles(c, theme);
 
   const [step, setStep] = useState<AuthStep>('phone');
   const [phone, setPhone] = useState('');
@@ -58,95 +66,61 @@ export default function AuthScreen() {
   const [isNewUser, setIsNewUser] = useState(false);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSentMessage, setOtpSentMessage] = useState<string | null>(null);
   const [pinError, setPinError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [biometricType, setBiometricType] = useState<string>('Biometric');
+  const [biometricType, setBiometricType] = useState('Biometric');
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [otpSentMessage, setOtpSentMessage] = useState<string | null>(null);
+  const [heroIdx] = useState(() => Math.floor(Math.random() * HERO_IMAGES.length));
 
   const otpRefs = useRef<(TextInput | null)[]>([]);
   const pinRefs = useRef<(TextInput | null)[]>([]);
   const float1 = useRef(new Animated.Value(0)).current;
-  const float2 = useRef(new Animated.Value(0)).current;
-  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ── Resend Cooldown Timer ─────────────────────────────────────────────────
-  const startCooldown = (seconds: number = 60) => {
-    setResendCooldown(seconds);
-    if (cooldownRef.current) clearInterval(cooldownRef.current);
-    cooldownRef.current = setInterval(() => {
-      setResendCooldown((prev) => {
-        if (prev <= 1) {
-          if (cooldownRef.current) clearInterval(cooldownRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (cooldownRef.current) clearInterval(cooldownRef.current);
-    };
-  }, []);
-
+  // tRPC mutations
   const sendOtpMutation = trpc.auth.sendOtp.useMutation();
   const verifyOtpMutation = trpc.auth.verifyOtp.useMutation();
   const setPinMutation = trpc.auth.setPin.useMutation();
   const verifyPinMutation = trpc.auth.verifyPin.useMutation();
-  const registerPushTokenMutation = trpc.pushTokens.register.useMutation();
+  const registerPushTokenMutation = trpc.notifications.registerPushToken.useMutation();
+
+  // ── Resend cooldown timer ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // ── Phone Submit ──────────────────────────────────────────────────────────
   const handlePhoneSubmit = async () => {
-    const unformatted = unformatPhoneNumber(phone);
-    if (unformatted.length < 12) {
-      showError(t('common.error'), t('auth.invalidPhone'));
+    const raw = unformatPhoneNumber(phone);
+    if (!raw || raw.length < 9) {
+      showError(t('auth.invalidPhone'), t('auth.enterValidPhone'));
       return;
     }
-    setIsLoading(true);
-    try {
-      const result = await sendOtpMutation.mutateAsync({ phone: unformatted });
-      if (result.devCode) {
-        setDevOtp(result.devCode);
-      }
-      setOtpError(null);
-      setOtpSentMessage(t('auth.codeSent'));
-      setStep('otp');
-      startCooldown(60);
-    } catch (e: any) {
-      // Show translated error to user instead of silently falling back to dev mode
-      const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
-      const msg = isNetworkError
-        ? t('auth.networkError')
-        : (e?.message || t('auth.networkError'));
-      showError(t('common.error'), msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  // ── Resend OTP ────────────────────────────────────────────────────────────
-  const handleResendOtp = async () => {
-    if (resendCooldown > 0 || isLoading) return;
-    const unformatted = unformatPhoneNumber(phone);
     setIsLoading(true);
+    setOtpError(null);
+    setOtpSentMessage(null);
+
     try {
-      const result = await sendOtpMutation.mutateAsync({ phone: unformatted });
-      if (result.devCode) {
-        setDevOtp(result.devCode);
+      const result = await sendOtpMutation.mutateAsync({ phone: raw });
+      if (result.success) {
+        await savePhone(raw);
+        setIsNewUser(result.isNewUser || false);
+        setDevOtp(result.devOtp || null);
+        setStep('otp');
+        setOtp(['', '', '', '', '', '']);
+        setResendCooldown(60);
+        setOtpSentMessage(t('auth.codeSent'));
+      } else {
+        showError(t('common.error'), (result as any).message || t('auth.networkError'));
       }
-      setOtpError(null);
-      setOtpSentMessage(t('auth.codeResent'));
-      setOtp(['', '', '', '', '', '']);
-      otpRefs.current[0]?.focus();
-      startCooldown(60);
     } catch (e: any) {
       const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
-      const msg = isNetworkError
-        ? t('auth.networkError')
-        : (e?.message || t('auth.networkError'));
-      setOtpError(msg);
+      showError(t('common.error'), isNetworkError ? t('auth.networkError') : (e?.message || t('auth.networkError')));
     } finally {
       setIsLoading(false);
     }
@@ -159,38 +133,35 @@ export default function AuthScreen() {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    setOtpError(null);
 
     if (value && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
 
+    // When all 6 digits entered, verify
     if (newOtp.every(digit => digit !== '')) {
-      const code = newOtp.join('');
+      Keyboard.dismiss();
+      const otpCode = newOtp.join('');
+      const raw = unformatPhoneNumber(phone);
       setIsLoading(true);
+
       try {
-        const result = await verifyOtpMutation.mutateAsync({
-          phone: unformatPhoneNumber(phone),
-          code,
-        });
+        const result = await verifyOtpMutation.mutateAsync({ phone: raw, otp: otpCode });
         if (result.success) {
-          setOtpError(null);
-          // Server tells us if user has a PIN already
-          setIsNewUser(!result.hasPin);
-          setTimeout(() => setStep('pin'), 300);
+          setStep('pin');
+          setPin(['', '', '', '']);
+          setPinError(null);
         } else {
-          setOtpError(result.message || t('auth.invalidOtp'));
+          setOtpError((result as any).message || t('auth.invalidOtp'));
           setOtp(['', '', '', '', '', '']);
-          otpRefs.current[0]?.focus();
+          setTimeout(() => otpRefs.current[0]?.focus(), 100);
         }
       } catch (e: any) {
-        // Show translated error to user — don't silently accept dev codes
         const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
-        const msg = isNetworkError
-          ? t('auth.networkError')
-          : (e?.message || t('auth.networkError'));
-        setOtpError(msg);
+        setOtpError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.invalidOtp')));
         setOtp(['', '', '', '', '', '']);
-        otpRefs.current[0]?.focus();
+        setTimeout(() => otpRefs.current[0]?.focus(), 100);
       } finally {
         setIsLoading(false);
       }
@@ -203,56 +174,74 @@ export default function AuthScreen() {
     }
   };
 
+  // ── Resend OTP ────────────────────────────────────────────────────────────
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || isLoading) return;
+    const raw = unformatPhoneNumber(phone);
+    setIsLoading(true);
+    setOtpError(null);
+
+    try {
+      const result = await sendOtpMutation.mutateAsync({ phone: raw });
+      if (result.success) {
+        setResendCooldown(60);
+        setDevOtp(result.devOtp || null);
+        setOtpSentMessage(t('auth.codeSent'));
+        setOtp(['', '', '', '', '', '']);
+        setTimeout(() => otpRefs.current[0]?.focus(), 100);
+      }
+    } catch (e: any) {
+      const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+      setOtpError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.networkError')));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // ── PIN Input ─────────────────────────────────────────────────────────────
   const handlePinChange = async (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;
 
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
+    const updated = [...pin];
+    updated[index] = value;
+    setPin(updated);
+    setPinError(null);
 
     if (value && index < 3) {
       pinRefs.current[index + 1]?.focus();
     }
 
-    if (newPin.every(digit => digit !== '')) {
-      const pinCode = newPin.join('');
-      const unformatted = unformatPhoneNumber(phone);
+    // When all 4 digits entered, set or verify PIN
+    if (updated.every(digit => digit !== '')) {
+      Keyboard.dismiss();
+      const pinCode = updated.join('');
+      const raw = unformatPhoneNumber(phone);
       setIsLoading(true);
 
       try {
+        let result: any;
         if (isNewUser) {
-          // New user — set PIN
-          const result = await setPinMutation.mutateAsync({ phone: unformatted, pin: pinCode });
-          if (result.success && result.token && result.user) {
-            setPinError(null);
-            await handleAuthSuccess(result.token, result.user, true);
-          } else {
-            setPinError(t('auth.failedSetPin'));
-            setPin(['', '', '', '']);
-            pinRefs.current[0]?.focus();
-          }
+          result = await setPinMutation.mutateAsync({ phone: raw, pin: pinCode });
         } else {
-          // Returning user — verify PIN
-          const result = await verifyPinMutation.mutateAsync({ phone: unformatted, pin: pinCode });
-          if (result.success && result.token && result.user) {
-            setPinError(null);
-            await handleAuthSuccess(result.token, result.user, false);
-          } else {
-            setPinError((result as any).message || t('auth.incorrectPin'));
-            setPin(['', '', '', '']);
-            pinRefs.current[0]?.focus();
-          }
+          result = await verifyPinMutation.mutateAsync({ phone: raw, pin: pinCode });
+        }
+
+        if (result.success && result.token && result.user) {
+          await saveToken(result.token);
+          await saveUserData(result.user);
+          await setPinStatus(true);
+          await updateLastActivity();
+          await handlePostAuth(result.user, isNewUser);
+        } else {
+          setPinError((result as any).message || t('auth.incorrectPin'));
+          setPin(['', '', '', '']);
+          setTimeout(() => pinRefs.current[0]?.focus(), 100);
         }
       } catch (e: any) {
-        // Show translated error to user — don't silently create fallback user
         const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
-        const msg = isNetworkError
-          ? t('auth.networkError')
-          : (e?.message || t('auth.networkError'));
-        setPinError(msg);
+        setPinError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.incorrectPin')));
         setPin(['', '', '', '']);
-        pinRefs.current[0]?.focus();
+        setTimeout(() => pinRefs.current[0]?.focus(), 100);
       } finally {
         setIsLoading(false);
       }
@@ -265,19 +254,8 @@ export default function AuthScreen() {
     }
   };
 
-  // ── Auth Success Handler ──────────────────────────────────────────────────
-  const handleAuthSuccess = async (
-    token: string,
-    serverUser: { id: string; phone: string; username: string; email?: string; avatar?: string; language: string; theme: string; createdAt: string },
-    isFirstTime: boolean,
-  ) => {
-    // Save JWT token and user data to SecureStore
-    await saveToken(token);
-    await savePhone(serverUser.phone);
-    await saveUserData(serverUser);
-    await setPinStatus(true);
-    await updateLastActivity();
-
+  // ── Post-Auth Flow ────────────────────────────────────────────────────────
+  const handlePostAuth = async (serverUser: any, isFirstTime: boolean) => {
     // Map server user to app User type
     const mappedUser: UserType = {
       id: serverUser.id,
@@ -314,7 +292,7 @@ export default function AuthScreen() {
       }
     }
 
-    // Check if onboarding is needed — use provider user (appUser) which has full profile
+    // Check if onboarding is needed
     if (isFirstTime || (!appUser?.onboardingCompleted && !appUser?.firstName)) {
       router.replace('/onboarding');
     } else {
@@ -365,305 +343,349 @@ export default function AuthScreen() {
 
   // ── Floating animation ────────────────────────────────────────────────────
   useEffect(() => {
-    const floatAnimation1 = Animated.loop(
+    const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(float1, { toValue: 1, duration: 4000, useNativeDriver: true }),
         Animated.timing(float1, { toValue: 0, duration: 4000, useNativeDriver: true }),
       ])
     );
-    const floatAnimation2 = Animated.loop(
-      Animated.sequence([
-        Animated.timing(float2, { toValue: 1, duration: 5000, useNativeDriver: true }),
-        Animated.timing(float2, { toValue: 0, duration: 5000, useNativeDriver: true }),
-      ])
-    );
-    floatAnimation1.start();
-    floatAnimation2.start();
-    return () => { floatAnimation1.stop(); floatAnimation2.stop(); };
-  }, [float1, float2]);
+    anim.start();
+    return () => anim.stop();
+  }, [float1]);
 
-  const float1Y = float1.interpolate({ inputRange: [0, 1], outputRange: [0, -30] });
-  const float2Y = float2.interpolate({ inputRange: [0, 1], outputRange: [0, 40] });
+  // ── Progress indicator ────────────────────────────────────────────────────
+  const stepIndex = step === 'phone' ? 0 : step === 'otp' ? 1 : 2;
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
+
   return (
     <View style={styles.container}>
-      <View style={styles.backgroundContainer}>
-        <View style={styles.heroBackground}>
-          <View style={[styles.diagonalStripe, styles.diagonalStripe1]} />
-          <View style={[styles.diagonalStripe, styles.diagonalStripe2]} />
-          <View style={[styles.diagonalStripe, styles.diagonalStripe3]} />
-          <View style={[styles.carSilhouette, styles.carSilhouette1]}>
-            <Car size={140} color={`${c.primary}12`} strokeWidth={1} />
-          </View>
-          <View style={[styles.carSilhouette, styles.carSilhouette2]}>
-            <Car size={100} color={`${c.primary}08`} strokeWidth={0.8} />
-          </View>
-          <View style={[styles.carSilhouette, styles.carSilhouette3]}>
-            <Wrench size={80} color={`${c.primary}10`} strokeWidth={1} />
-          </View>
-          <Animated.View style={[styles.floatingAccent1, { transform: [{ translateY: float1Y }] }]} />
-          <Animated.View style={[styles.floatingAccent2, { transform: [{ translateY: float2Y }] }]} />
-        </View>
+      {/* Hero background image */}
+      <ImageBackground
+        source={HERO_IMAGES[heroIdx]}
+        style={styles.heroImage}
+        resizeMode="cover"
+      >
+        <View style={styles.heroOverlay} />
+      </ImageBackground>
 
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+          showsVerticalScrollIndicator={false}
         >
-          <ScrollView 
-            contentContainerStyle={[styles.scrollContent, (step === 'pin' || step === 'otp') && { justifyContent: 'flex-start' }]} 
-            keyboardShouldPersistTaps="handled"
-            bounces={false}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={[styles.content, { paddingTop: (step === 'pin' || step === 'otp') ? insets.top + 20 : insets.top + 60 }]}>
+          {/* Logo */}
+          <View style={[styles.logoRow, { marginTop: insets.top + 16 }]}>
+            <View style={styles.logoIcon}>
+              <Wrench size={18} color="#FFF" />
+            </View>
+            <Text style={styles.logoText}>Qaraj</Text>
+          </View>
+
+          {/* Glass card */}
+          <View style={styles.card}>
+            {/* Progress dots */}
+            <View style={styles.progressContainer}>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={styles.progressRow}>
+                  <View style={[styles.progressDot, stepIndex >= i && styles.progressDotActive]} />
+                  {i < 2 && <View style={[styles.progressLine, stepIndex > i && styles.progressLineActive]} />}
+                </View>
+              ))}
+            </View>
+
+            {/* Back button */}
             {(step === 'otp' || step === 'pin') && (
               <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                <ArrowLeft size={24} color={c.text} />
+                <ArrowLeft size={20} color={c.textSecondary} />
               </TouchableOpacity>
             )}
 
-            <View style={styles.header}>
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressDot, step === 'phone' && styles.progressDotActive]} />
-                <View style={[styles.progressLine, (step === 'otp' || step === 'pin' || step === 'biometric-prompt') && styles.progressLineActive]} />
-                <View style={[styles.progressDot, step === 'otp' && styles.progressDotActive]} />
-                <View style={[styles.progressLine, (step === 'pin' || step === 'biometric-prompt') && styles.progressLineActive]} />
-                <View style={[styles.progressDot, (step === 'pin' || step === 'biometric-prompt') && styles.progressDotActive]} />
-              </View>
+            {/* Title */}
+            <Text style={styles.title}>
+              {step === 'phone' ? t('auth.enterPhone')
+                : step === 'otp' ? t('auth.verifyOtp')
+                : step === 'pin' ? (isNewUser ? t('auth.createPin') : t('auth.enterPin'))
+                : step === 'biometric-prompt' ? `Enable ${biometricType}?`
+                : ''}
+            </Text>
+            <Text style={styles.subtitle}>
+              {step === 'phone' ? t('auth.sendVerificationCode')
+                : step === 'otp' ? `${t('auth.enterOtpCode')} ${phone}`
+                : step === 'pin' ? (isNewUser ? t('auth.createPinDesc') : t('auth.enterPinDesc'))
+                : step === 'biometric-prompt' ? `Unlock Qaraj quickly with ${biometricType} next time`
+                : ''}
+            </Text>
 
-              <Text style={styles.title}>
-                {step === 'phone' ? t('auth.enterPhone')
-                  : step === 'otp' ? t('auth.verifyOtp')
-                  : step === 'pin' ? (isNewUser ? t('auth.createPin') : t('auth.enterPin'))
-                  : step === 'biometric-prompt' ? `Enable ${biometricType}?`
-                  : ''}
-              </Text>
-              <Text style={styles.subtitle}>
-                {step === 'phone' ? t('auth.sendVerificationCode')
-                  : step === 'otp' ? `${t('auth.enterOtpCode')} ${phone}`
-                  : step === 'pin' ? (isNewUser ? t('auth.createPinDesc') : t('auth.enterPinDesc'))
-                  : step === 'biometric-prompt' ? `Unlock Qaraj quickly with ${biometricType} next time`
-                  : ''}
-              </Text>
-            </View>
-
-            <View style={styles.form}>
-              {/* ── Phone Step ── */}
-              {step === 'phone' && (
-                <>
-                  <View style={styles.inputContainer}>
-                    <View style={styles.inputIcon}>
-                      <Phone size={20} color={c.textSecondary} />
-                    </View>
-                    <TextInput
-                      style={styles.input}
-                      placeholder={PHONE_PLACEHOLDER}
-                      placeholderTextColor={c.textTertiary}
-                      value={phone}
-                      onChangeText={(text) => setPhone(formatPhoneNumber(text))}
-                      keyboardType="phone-pad"
-                      autoFocus
-                      maxLength={19}
-                    />
+            {/* ── Phone Step ── */}
+            {step === 'phone' && (
+              <View style={styles.form}>
+                <View style={styles.inputContainer}>
+                  <View style={styles.inputIcon}>
+                    <Phone size={20} color={c.textSecondary} />
                   </View>
-                  <TouchableOpacity
-                    style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
-                    onPress={handlePhoneSubmit}
-                    disabled={isLoading}
-                  >
-                    <LinearGradient
-                      colors={[c.primary, c.primaryDark]}
-                      style={styles.submitGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                    >
-                      {isLoading ? (
-                        <ActivityIndicator color={c.text} />
-                      ) : (
-                        <Text style={styles.submitText}>{t('auth.sendCode')}</Text>
-                      )}
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </>
-              )}
-
-              {/* ── OTP Step ── */}
-              {step === 'otp' && (
-                <>
-                  <View style={styles.otpContainer}>
-                    {otp.map((digit, index) => (
-                      <TextInput
-                        key={index}
-                        ref={ref => { otpRefs.current[index] = ref; }}
-                        style={[styles.otpInput, digit && styles.otpInputFilled]}
-                        value={digit}
-                        onChangeText={(value) => handleOtpChange(value, index)}
-                        onKeyPress={({ nativeEvent }) => handleOtpKeyPress(nativeEvent.key, index)}
-                        keyboardType="number-pad"
-                        maxLength={1}
-                        selectTextOnFocus
-                      />
-                    ))}
-                  </View>
-
-                  {otpSentMessage && !otpError && (
-                    <Text style={styles.successText}>{otpSentMessage}</Text>
-                  )}
-
-                  {otpError && (
-                    <Text style={styles.errorText}>{otpError}</Text>
-                  )}
-
-                  <TouchableOpacity
-                    style={[styles.resendButton, resendCooldown > 0 && styles.resendButtonDisabled]}
-                    onPress={handleResendOtp}
-                    disabled={resendCooldown > 0 || isLoading}
-                  >
-                    <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
-                      {resendCooldown > 0
-                        ? `${t('auth.resendCode')} (${resendCooldown}s)`
-                        : t('auth.resendCode')}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {devOtp && (
-                    <View style={styles.mockHint}>
-                      <Text style={styles.mockHintText}>Dev: Use OTP {devOtp}</Text>
-                    </View>
-                  )}
-
-                  {isLoading && (
-                    <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />
-                  )}
-                </>
-              )}
-
-              {/* ── PIN Step ── */}
-              {step === 'pin' && (
-                <>
-                  <View style={styles.pinContainer}>
-                    {pin.map((digit, index) => (
-                      <TextInput
-                        key={index}
-                        ref={ref => { pinRefs.current[index] = ref; }}
-                        style={[styles.pinInput, digit && styles.pinInputFilled]}
-                        value={digit}
-                        onChangeText={(value) => handlePinChange(value, index)}
-                        onKeyPress={({ nativeEvent }) => handlePinKeyPress(nativeEvent.key, index)}
-                        keyboardType="number-pad"
-                        maxLength={1}
-                        secureTextEntry
-                        selectTextOnFocus
-                      />
-                    ))}
-                  </View>
-
-                  {pinError && (
-                    <Text style={styles.errorText}>{pinError}</Text>
-                  )}
-
-                  {isNewUser && (
-                    <View style={styles.pinHint}>
-                      <Check size={16} color={c.success} />
-                      <Text style={styles.pinHintText}>{t('auth.pinHint')}</Text>
-                    </View>
-                  )}
-
-                  {isLoading && (
-                    <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />
-                  )}
-                </>
-              )}
-
-              {/* ── Biometric Prompt Step ── */}
-              {step === 'biometric-prompt' && (
-                <View style={styles.biometricContainer}>
-                  <View style={styles.biometricIcon}>
-                    <Fingerprint size={64} color={c.primary} strokeWidth={1.5} />
-                  </View>
-
-                  <TouchableOpacity style={styles.submitButton} onPress={handleEnableBiometric}>
-                    <LinearGradient
-                      colors={[c.primary, c.primaryDark]}
-                      style={styles.submitGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                    >
-                      <Text style={styles.submitText}>Enable {biometricType}</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.skipButton} onPress={handleSkipBiometric}>
-                    <Text style={styles.skipText}>Skip for now</Text>
-                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={PHONE_PLACEHOLDER}
+                    placeholderTextColor={c.textTertiary}
+                    value={phone}
+                    onChangeText={(text) => setPhone(formatPhoneNumber(text))}
+                    keyboardType="phone-pad"
+                    autoFocus
+                    maxLength={19}
+                  />
                 </View>
-              )}
-            </View>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
+                <TouchableOpacity
+                  style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+                  onPress={handlePhoneSubmit}
+                  disabled={isLoading}
+                >
+                  <LinearGradient
+                    colors={[c.primary, c.primaryDark]}
+                    style={styles.submitGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="#FFF" />
+                    ) : (
+                      <Text style={styles.submitText}>{t('auth.sendCode')}</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* ── OTP Step ── */}
+            {step === 'otp' && (
+              <View style={styles.form}>
+                <View style={styles.otpContainer}>
+                  {otp.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={ref => { otpRefs.current[index] = ref; }}
+                      style={[styles.otpInput, digit && styles.otpInputFilled]}
+                      value={digit}
+                      onChangeText={(value) => handleOtpChange(value, index)}
+                      onKeyPress={({ nativeEvent }) => handleOtpKeyPress(nativeEvent.key, index)}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      selectTextOnFocus
+                    />
+                  ))}
+                </View>
+
+                {otpSentMessage && !otpError && (
+                  <Text style={styles.successText}>{otpSentMessage}</Text>
+                )}
+
+                {otpError && (
+                  <Text style={styles.errorText}>{otpError}</Text>
+                )}
+
+                <TouchableOpacity
+                  style={[styles.resendButton, resendCooldown > 0 && styles.resendButtonDisabled]}
+                  onPress={handleResendOtp}
+                  disabled={resendCooldown > 0 || isLoading}
+                >
+                  <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
+                    {resendCooldown > 0
+                      ? `${t('auth.resendCode')} (${resendCooldown}s)`
+                      : t('auth.resendCode')}
+                  </Text>
+                </TouchableOpacity>
+
+                {devOtp && (
+                  <View style={styles.mockHint}>
+                    <Text style={styles.mockHintText}>Dev: Use OTP {devOtp}</Text>
+                  </View>
+                )}
+
+                {isLoading && (
+                  <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />
+                )}
+              </View>
+            )}
+
+            {/* ── PIN Step ── */}
+            {step === 'pin' && (
+              <View style={styles.form}>
+                <View style={styles.pinContainer}>
+                  {pin.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={ref => { pinRefs.current[index] = ref; }}
+                      style={[styles.pinInput, digit && styles.pinInputFilled]}
+                      value={digit}
+                      onChangeText={(value) => handlePinChange(value, index)}
+                      onKeyPress={({ nativeEvent }) => handlePinKeyPress(nativeEvent.key, index)}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      secureTextEntry
+                      selectTextOnFocus
+                    />
+                  ))}
+                </View>
+
+                {pinError && (
+                  <Text style={styles.errorText}>{pinError}</Text>
+                )}
+
+                {isNewUser && (
+                  <View style={styles.pinHint}>
+                    <Check size={16} color={c.success} />
+                    <Text style={styles.pinHintText}>{t('auth.pinHint')}</Text>
+                  </View>
+                )}
+
+                {isLoading && (
+                  <ActivityIndicator color={c.primary} style={{ marginTop: 16 }} />
+                )}
+              </View>
+            )}
+
+            {/* ── Biometric Prompt Step ── */}
+            {step === 'biometric-prompt' && (
+              <View style={styles.biometricContainer}>
+                <View style={styles.biometricIcon}>
+                  <Fingerprint size={56} color={c.primary} strokeWidth={1.5} />
+                </View>
+
+                <TouchableOpacity style={styles.submitButton} onPress={handleEnableBiometric}>
+                  <LinearGradient
+                    colors={[c.primary, c.primaryDark]}
+                    style={styles.submitGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.submitText}>Enable {biometricType}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.skipButton} onPress={handleSkipBiometric}>
+                  <Text style={styles.skipText}>Skip for now</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <AppVersion />
     </View>
   );
 }
 
-const createStyles = (c: any) => StyleSheet.create({
+const createStyles = (c: any, theme: 'light' | 'dark') => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: c.background,
   },
-  backgroundContainer: {
+  heroImage: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: '40%',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.3)',
+  },
+  keyboardView: {
     flex: 1,
-    position: 'relative',
   },
-  heroBackground: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: c.background,
-    overflow: 'hidden',
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
-  diagonalStripe: {
-    position: 'absolute',
-    width: width * 1.5,
-    height: 200,
-    backgroundColor: `${c.primary}08`,
-    transform: [{ rotate: '-15deg' }],
-  },
-  diagonalStripe1: { top: -50, left: -100, opacity: 0.4 },
-  diagonalStripe2: { top: 120, right: -150, backgroundColor: `${c.primary}05`, opacity: 0.3 },
-  diagonalStripe3: { bottom: 80, left: -80, height: 150, backgroundColor: `${c.primary}12`, opacity: 0.5 },
-  carSilhouette: {
-    position: 'absolute',
-    justifyContent: 'center',
+  logoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
-    borderRadius: 20,
-    borderColor: `${c.primary}08`,
+    position: 'absolute',
+    top: 0, left: 24,
+    zIndex: 10,
   },
-  carSilhouette1: { top: -20, right: -40, width: 180, height: 180, transform: [{ rotate: '12deg' }] },
-  carSilhouette2: { bottom: 30, left: -30, width: 130, height: 130, transform: [{ rotate: '-8deg' }], borderColor: `${c.primary}06` },
-  carSilhouette3: { top: 160, right: 30, width: 110, height: 110, transform: [{ rotate: '20deg' }], borderColor: `${c.primary}10` },
-  floatingAccent1: { position: 'absolute', width: 80, height: 80, borderRadius: 40, top: 80, left: 40, backgroundColor: `${c.primary}10`, opacity: 0.6 },
-  floatingAccent2: { position: 'absolute', width: 60, height: 60, borderRadius: 30, bottom: 100, right: 60, backgroundColor: `${c.primary}08`, opacity: 0.5 },
-  scrollContent: { flexGrow: 1, justifyContent: 'center' },
-  content: { paddingHorizontal: 24, paddingTop: 100, paddingBottom: 40 },
+  logoIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: c.primary,
+    justifyContent: 'center', alignItems: 'center',
+    marginRight: 10,
+  },
+  logoText: {
+    fontSize: 22, fontWeight: '700',
+    color: '#FFF',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  card: {
+    backgroundColor: theme === 'dark' ? 'rgba(26,26,26,0.95)' : 'rgba(255,255,255,0.95)',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 40,
+    minHeight: '65%',
+    // Glass effect
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 60,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  progressDot: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: c.border,
+  },
+  progressDotActive: {
+    backgroundColor: c.primary,
+    width: 12, height: 12, borderRadius: 6,
+  },
+  progressLine: {
+    flex: 1, height: 2,
+    backgroundColor: c.border,
+    marginHorizontal: 6,
+  },
+  progressLineActive: {
+    backgroundColor: c.primary,
+  },
   backButton: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: c.surface,
     justifyContent: 'center', alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
+    borderWidth: 1, borderColor: c.border,
   },
-  header: { marginBottom: 32, alignItems: 'center' },
-  progressContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 32, paddingHorizontal: 40 },
-  progressDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: c.border },
-  progressDotActive: { backgroundColor: c.primary, width: 14, height: 14, borderRadius: 7 },
-  progressLine: { flex: 1, height: 2, backgroundColor: c.border, marginHorizontal: 8 },
-  progressLineActive: { backgroundColor: c.primary },
-  title: { fontSize: 32, fontWeight: '700', color: c.text, marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: 16, color: c.textSecondary, lineHeight: 24, textAlign: 'center' },
-  form: { gap: 24 },
+  title: {
+    fontSize: 26, fontWeight: '700',
+    color: c.text,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15, color: c.textSecondary,
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  form: {
+    gap: 20,
+  },
   inputContainer: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: c.surface,
@@ -672,15 +694,15 @@ const createStyles = (c: any) => StyleSheet.create({
   },
   inputIcon: { marginRight: 12 },
   input: { flex: 1, paddingVertical: 18, fontSize: 16, color: c.text },
-  otpContainer: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 8 },
+  otpContainer: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   otpInput: {
-    width: 48, height: 56,
+    width: 46, height: 56,
     backgroundColor: c.surface,
     borderRadius: 12, borderWidth: 2, borderColor: c.border,
-    fontSize: 24, fontWeight: '700', color: c.text, textAlign: 'center',
+    fontSize: 22, fontWeight: '700', color: c.text, textAlign: 'center',
   },
   otpInputFilled: { borderColor: c.primary, backgroundColor: `${c.primary}15` },
-  pinContainer: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 8 },
+  pinContainer: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
   pinInput: {
     width: 56, height: 64,
     backgroundColor: c.surface,
@@ -688,36 +710,36 @@ const createStyles = (c: any) => StyleSheet.create({
     fontSize: 28, fontWeight: '700', color: c.text, textAlign: 'center',
   },
   pinInputFilled: { borderColor: c.primary, backgroundColor: `${c.primary}15` },
+  submitButton: { borderRadius: 16, overflow: 'hidden' },
+  submitButtonDisabled: { opacity: 0.7 },
+  submitGradient: { paddingVertical: 18, alignItems: 'center' },
+  submitText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
   resendButton: { alignItems: 'center', paddingVertical: 12 },
   resendButtonDisabled: { opacity: 0.5 },
   resendText: { fontSize: 14, color: c.primary, fontWeight: '600' },
   resendTextDisabled: { color: c.textTertiary },
-  pinHint: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 12, paddingHorizontal: 16,
-    backgroundColor: `${c.success}15`, borderRadius: 12,
-  },
-  pinHintText: { fontSize: 14, color: c.success, fontWeight: '500' },
   successText: {
     fontSize: 14, color: c.success, textAlign: 'center',
-    paddingVertical: 8, fontWeight: '500',
+    paddingVertical: 4, fontWeight: '500',
   },
   errorText: {
     fontSize: 14, color: c.error, textAlign: 'center',
-    paddingVertical: 8, fontWeight: '500',
+    paddingVertical: 4, fontWeight: '500',
   },
   mockHint: {
     alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16,
     backgroundColor: `${c.warning}15`, borderRadius: 8,
   },
   mockHintText: { fontSize: 12, color: c.warning, fontWeight: '500' },
-  submitButton: { borderRadius: 16, overflow: 'hidden', marginTop: 8 },
-  submitButtonDisabled: { opacity: 0.7 },
-  submitGradient: { paddingVertical: 18, alignItems: 'center' },
-  submitText: { fontSize: 16, fontWeight: '700', color: c.text },
+  pinHint: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 12, paddingHorizontal: 16,
+    backgroundColor: `${c.success}15`, borderRadius: 12,
+  },
+  pinHintText: { fontSize: 14, color: c.success, fontWeight: '500' },
   biometricContainer: { alignItems: 'center', gap: 24, paddingTop: 16 },
   biometricIcon: {
-    width: 120, height: 120, borderRadius: 60,
+    width: 110, height: 110, borderRadius: 55,
     backgroundColor: `${c.primary}15`,
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 16,
