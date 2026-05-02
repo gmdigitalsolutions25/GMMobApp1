@@ -147,7 +147,7 @@ export default function AuthScreen() {
       setIsLoading(true);
 
       try {
-        const result = await verifyOtpMutation.mutateAsync({ phone: raw, otp: otpCode });
+        const result = await verifyOtpMutation.mutateAsync({ phone: raw, code: otpCode });
         if (result.success) {
           setStep('pin');
           setPin(['', '', '', '']);
