@@ -152,7 +152,13 @@ export default function VehiclesScreenV2() {
 
 function VehicleCard({ vehicle, colors, theme, t, appointments, onEdit, onDelete, onBook, onPhoto }: any) {
   const hasPhoto = vehicle.photos && vehicle.photos.length > 0;
-  const photoUri = hasPhoto ? vehicle.photos[0] : null;
+  // photos are VehiclePhoto objects { id, uri, isPrimary }, not plain strings
+  const primaryPhoto = hasPhoto
+    ? vehicle.photos.find((p: any) => p.isPrimary) || vehicle.photos[0]
+    : null;
+  const photoUri = primaryPhoto
+    ? (typeof primaryPhoto === 'string' ? primaryPhoto : primaryPhoto.uri)
+    : null;
   const healthPercent = 72; // TODO: calculate from real data
 
   // Check for upcoming appointments
