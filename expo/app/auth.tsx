@@ -149,6 +149,8 @@ export default function AuthScreen() {
       try {
         const result = await verifyOtpMutation.mutateAsync({ phone: raw, code: otpCode });
         if (result.success) {
+          // hasPin=false means user doesn't exist or has no PIN → new user flow (setPin)
+          setIsNewUser(!(result as any).hasPin);
           setStep('pin');
           setPin(['', '', '', '']);
           setPinError(null);
