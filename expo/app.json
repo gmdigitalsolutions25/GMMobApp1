@@ -28,7 +28,7 @@
       },
       "package": "az.qaraj.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 50,
+      "versionCode": 52,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
