@@ -78,7 +78,7 @@ export default function PinLoginScreen() {
   const refreshTokenMutation = trpc.auth.refreshToken.useMutation();
   const sendOtpMutation = trpc.auth.sendOtp.useMutation();
   const resetPinMutation = trpc.auth.resetPin.useMutation();
-  const registerPushTokenMutation = trpc.notifications.registerPushToken.useMutation();
+  const registerPushTokenMutation = trpc.pushTokens.register.useMutation();
 
   // ── Init ─────────────────────────────────────────────────────────────────
   useEffect(() => {

@@ -82,7 +82,7 @@ export default function AuthScreen() {
   const verifyOtpMutation = trpc.auth.verifyOtp.useMutation();
   const setPinMutation = trpc.auth.setPin.useMutation();
   const verifyPinMutation = trpc.auth.verifyPin.useMutation();
-  const registerPushTokenMutation = trpc.notifications.registerPushToken.useMutation();
+  const registerPushTokenMutation = trpc.pushTokens.register.useMutation();
 
   // ── Resend cooldown timer ─────────────────────────────────────────────────
   useEffect(() => {
