@@ -5,6 +5,7 @@
  * language/theme pickers, biometric option, sign out.
  */
 import React from 'react';
+import Constants from 'expo-constants';
 import {
   View,
   Text,
@@ -179,7 +180,7 @@ export default function ProfileScreenV2() {
                 {t('profile.about') || 'Haqqında'}
               </Text>
             </View>
-            <Text style={[styles.settingValue, { color: colors.textTertiary }]}>v1.2.8</Text>
+            <Text style={[styles.settingValue, { color: colors.textTertiary }]}>v{Constants.expoConfig?.version || '1.0.0'} ({Constants.expoConfig?.android?.versionCode || '?'})</Text>
           </TouchableOpacity>
         </View>
 
