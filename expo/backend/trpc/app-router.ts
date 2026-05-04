@@ -21,6 +21,7 @@ import { refreshTokenProcedure } from "./routes/auth/refresh-token/route";
 import { resetPinProcedure } from "./routes/auth/reset-pin/route";
 import { registerPushTokenProcedure } from "./routes/push-tokens/register/route";
 import { sendPushProcedure } from "./routes/push-tokens/send/route";
+import { deletePushTokenProcedure } from "./routes/push-tokens/delete/route";
 import { listBrandsWithModelsProcedure, listModelsByBrandProcedure } from "./routes/brands-models/route";
 import { syncVehiclesProcedure } from "./routes/dwh/sync-vehicles/route";
 // Monitoring routes
@@ -66,6 +67,7 @@ export const appRouter = createTRPCRouter({
   pushTokens: createTRPCRouter({
     register: registerPushTokenProcedure,
     send: sendPushProcedure,
+    delete: deletePushTokenProcedure,
   }),
   brandsModels: createTRPCRouter({
     list: listBrandsWithModelsProcedure,

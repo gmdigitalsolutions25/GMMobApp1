@@ -22,6 +22,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
+import * as TaskManager from 'expo-task-manager';
 import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -38,6 +39,33 @@ import {
   storeNotification,
   type StoredNotification,
 } from '@/lib/notifications';
+
+// ── Background notification task ──────────────────────────────────────────────
+const BACKGROUND_NOTIFICATION_TASK = 'BACKGROUND_NOTIFICATION_TASK';
+
+TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, ({ data, error }) => {
+  if (error) {
+    console.log('[Notifications] Background task error:', error);
+    return;
+  }
+  // data contains { notification } when a push arrives in the background
+  const notification = (data as any)?.notification;
+  if (notification) {
+    const { title, body, data: payload } = notification.request?.content || {};
+    if (title) {
+      const stored: StoredNotification = {
+        id: notification.request?.identifier || `bg-${Date.now()}`,
+        title: title || '',
+        body: body || '',
+        data: payload as Record<string, unknown>,
+        type: getNotificationType(payload as Record<string, unknown>),
+        read: false,
+        receivedAt: new Date().toISOString(),
+      };
+      storeNotification(stored);
+    }
+  }
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -90,9 +118,30 @@ function RootLayoutNav() {
       }
     });
 
+    // Register background notification task
+    Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK).catch((e) => {
+      // May fail if already registered or on unsupported platform — non-fatal
+      console.log('[Notifications] Background task registration:', (e as Error).message);
+    });
+
     // Listener: user tapped on a notification
     const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as Record<string, unknown> | undefined;
+      // Store the notification when tapped (covers background-received pushes)
+      const { title, body, data: respData } = response.notification.request.content;
+      if (title) {
+        const stored: StoredNotification = {
+          id: response.notification.request.identifier,
+          title: title || '',
+          body: body || '',
+          data: respData as Record<string, unknown>,
+          type: getNotificationType(respData as Record<string, unknown>),
+          read: false,
+          receivedAt: new Date().toISOString(),
+        };
+        storeNotification(stored);
+      }
+
+      const data = respData as Record<string, unknown> | undefined;
       if (!data) {
         router.push('/notifications');
         return;
