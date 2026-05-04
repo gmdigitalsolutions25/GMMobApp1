@@ -287,12 +287,12 @@ function HomeScreenV1() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push('/notifications')}
-            style={[styles.notifButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            style={[styles.notifButton, { backgroundColor: colors.primary }]}
           >
-            <Bell size={20} color={colors.primary} />
+            <Bell size={20} color="#FFFFFF" />
             {unreadCount > 0 && (
-              <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
-                <Text style={styles.notifBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+              <View style={[styles.notifBadge, { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: colors.primary }]}>
+                <Text style={[styles.notifBadgeText, { color: colors.primary }]}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -1155,7 +1155,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
