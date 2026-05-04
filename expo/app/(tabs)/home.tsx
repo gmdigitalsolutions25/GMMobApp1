@@ -280,10 +280,12 @@ function HomeScreenV1() {
       >
         <View style={styles.headerTop}>
           <TouchableOpacity style={styles.logoContainer} onPress={openMenu} activeOpacity={0.7}>
-            <View style={[styles.logoIcon, { backgroundColor: colors.primary }]}>
-              <Wrench size={20} color={colors.background} />
-            </View>
-            <Text style={[styles.logoText, { color: colors.text }]}>Qaraj</Text>
+            <Image
+              source={require('@/assets/images/groupmotors-logo.jpg')}
+              style={styles.logoImage}
+              contentFit="contain"
+            />
+            <Text style={[styles.logoText, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }]}>Qaraj</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push('/notifications')}
@@ -1140,12 +1142,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  logoIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+  logoImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   logoText: {
     fontSize: 24,
