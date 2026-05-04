@@ -4,7 +4,7 @@
  * Approved layout:
  * - Full-width hero car image (from carImages or user photo)
  * - Name/year/plate/mileage overlaid on gradient
- * - 5 half-circle health gauges (Engine, Tires, Oil, Battery, Brakes)
+ * - 5 thin-ring health gauges in a single row (Engine, Tires, Oil, Battery, Brakes)
  * - Next service bar with Book CTA
  * - Recommended services
  */
@@ -36,13 +36,13 @@ import { useTranslation } from 'react-i18next';
 import { ColorsV2 } from '@/hooks/useDesignV2';
 import { trpc } from '@/lib/trpc';
 import { getCarModelImage, FALLBACK_CAR_IMAGE } from '@/constants/carImages';
-import HalfCircleGauge from './HalfCircleGauge';
+import ThinRingGauge from './ThinRingGauge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = 16;
 const CARD_WIDTH = SCREEN_WIDTH - CARD_MARGIN * 2;
 const HERO_HEIGHT = 220;
-const GAUGE_SIZE = (CARD_WIDTH - 60) / 3; // 3 gauges per row with padding
+const RING_SIZE = 52; // Thin ring diameter for Option D layout
 
 export default function VehiclesScreenV2() {
   const { t } = useTranslation();
@@ -268,40 +268,24 @@ function VehicleHeroCard({ vehicle, colors, t, appointments, onEdit, onDelete, o
         </View>
       </TouchableOpacity>
 
-      {/* ── Health Gauges ── */}
+      {/* ── Health Gauges (Option D: Thin Rings Row) ── */}
       <View style={styles.gaugesSection}>
         <Text style={[styles.gaugesSectionTitle, { color: colors.textSecondary }]}>
           {t('health.title') || 'HEALTH GAUGES'}
         </Text>
 
-        {/* Top row: 3 gauges */}
         <View style={styles.gaugesRow}>
-          {gauges.slice(0, 3).map((g, i) => (
-            <HalfCircleGauge
+          {gauges.map((g, i) => (
+            <ThinRingGauge
               key={i}
               percent={g.percent}
               label={g.label}
               detail={g.detail}
-              size={GAUGE_SIZE > 110 ? 110 : GAUGE_SIZE}
-              strokeWidth={10}
+              size={RING_SIZE}
+              strokeWidth={5}
               labelColor={colors.text}
               detailColor={colors.textSecondary}
-            />
-          ))}
-        </View>
-
-        {/* Bottom row: 2 gauges centered */}
-        <View style={[styles.gaugesRow, styles.gaugesRowBottom]}>
-          {gauges.slice(3, 5).map((g, i) => (
-            <HalfCircleGauge
-              key={i}
-              percent={g.percent}
-              label={g.label}
-              detail={g.detail}
-              size={GAUGE_SIZE > 110 ? 110 : GAUGE_SIZE}
-              strokeWidth={10}
-              labelColor={colors.text}
-              detailColor={colors.textSecondary}
+              trackColor={colors.border}
             />
           ))}
         </View>
@@ -475,12 +459,9 @@ const styles = StyleSheet.create({
   },
   gaugesRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
-  },
-  gaugesRowBottom: {
-    marginTop: 8,
-    paddingHorizontal: GAUGE_SIZE * 0.5,
+    paddingHorizontal: 4,
   },
 
   // Divider
