@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import * as Notifications from 'expo-notifications';
 import {
   View,
   Text,
@@ -17,6 +18,7 @@ import Colors from '@/constants/colors';
 import { useTranslation } from 'react-i18next';
 import {
   getStoredNotifications,
+  storeNotification,
   markNotificationRead,
   markAllNotificationsRead,
   type StoredNotification,
@@ -109,6 +111,36 @@ export default function NotificationsScreen() {
   ]);
 
   const loadNotifications = useCallback(async () => {
+    // Sync any notifications still in the system tray (covers app-killed scenario)
+    try {
+      const presented = await Notifications.getPresentedNotificationsAsync();
+      const stored = await getStoredNotifications();
+      const storedIds = new Set(stored.map((n) => n.id));
+
+      for (const notif of presented) {
+        const id = notif.request.identifier;
+        if (!storedIds.has(id) && notif.request.content.title) {
+          const { title, body, data } = notif.request.content;
+          const type = (data as any)?.type;
+          const newNotif: StoredNotification = {
+            id,
+            title: title || '',
+            body: body || '',
+            data: data as Record<string, unknown>,
+            type: type === 'appointment' ? 'appointment'
+              : type === 'service' ? 'service'
+              : type === 'vehicle' ? 'vehicle'
+              : 'general',
+            read: false,
+            receivedAt: new Date(notif.date).toISOString(),
+          };
+          await storeNotification(newNotif);
+        }
+      }
+    } catch (e) {
+      console.log('[Notifications] Failed to sync presented notifications:', e);
+    }
+
     const stored = await getStoredNotifications();
     setNotifications(stored);
     setLoading(false);
