@@ -187,15 +187,23 @@ function RootLayoutNav() {
       hasNavigated.current = true;
       SplashScreen.hideAsync();
 
-      // Step 1: Onboarding check
-      if (!hasCompletedOnboarding) {
-        router.replace('/welcome');
-        return;
-      }
-
-      // Step 2: Check stored session
+      // Step 1: Check stored session first (SecureStore persists across reinstalls)
       const phone = await getPhone();
       const token = await getToken();
+
+      // Step 2: Onboarding check — only show welcome to truly new users
+      if (!hasCompletedOnboarding) {
+        if (phone && token) {
+          // Returning user after reinstall — skip welcome, auto-complete onboarding flag
+          // SecureStore persists across reinstalls, AsyncStorage does not
+          const AsyncStorageMod = await import('@react-native-async-storage/async-storage');
+          await AsyncStorageMod.default.setItem('@qaraj_onboarding', 'true');
+        } else {
+          // Truly new user — show welcome
+          router.replace('/welcome');
+          return;
+        }
+      }
 
       if (!phone || !token) {
         // No session — full auth flow
