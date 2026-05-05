@@ -98,22 +98,25 @@ export const syncVehiclesProcedure = publicProcedure
       }
 
       // 6. Fetch vehicles from stg_vehicles for all customer_nos
-      //    Use IN (...) instead of ANY() for better Drizzle/Neon compatibility
+      //    Table has generic column names (c1-c11) from CSV import:
+      //    c1=model_no, c2=vin, c3=license_no, c4=make_code, c5=model,
+      //    c6=vehicle_status, c7=customer_no, c8=date_of_sale, c9=mileage,
+      //    c10=model_code, c11=prod_year
       const stgVehiclesResult = await db.execute(sql`
         SELECT
-          sv.model_no,
-          sv.vin,
-          sv.license_no,
-          sv.make_code,
-          sv.model,
-          sv.vehicle_status,
-          sv.customer_no,
-          sv.mileage,
-          sv.model_code,
-          sv.prod_year,
-          sv.date_of_sale
-        FROM stg_vehicles sv
-        WHERE sv.customer_no IN (${sql.join(customerNos.map(n => sql`${n}`), sql`, `)})
+          c1 AS model_no,
+          c2 AS vin,
+          c3 AS license_no,
+          c4 AS make_code,
+          c5 AS model,
+          c6 AS vehicle_status,
+          c7 AS customer_no,
+          c8 AS date_of_sale,
+          c9 AS mileage,
+          c10 AS model_code,
+          c11 AS prod_year
+        FROM stg_vehicles
+        WHERE c7 IN (${sql.join(customerNos.map(n => sql`${n}`), sql`, `)})
       `);
 
       const stgVehicles: any[] = Array.isArray(stgVehiclesResult) ? stgVehiclesResult : (stgVehiclesResult as any).rows || [];
