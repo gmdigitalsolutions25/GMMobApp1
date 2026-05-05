@@ -98,8 +98,28 @@ export default function EditVehicleScreen() {
   const [brand, setBrand] = useState<string>(vehicle?.brand || '');
   const [model, setModel] = useState<string>(vehicle?.model || '');
   const [year, setYear] = useState<string>(vehicle?.year?.toString() || '');
-  const [vin, setVin] = useState<string>(vehicle?.vin || '');
-  const [licensePlate, setLicensePlate] = useState<string>(vehicle?.licensePlate || '');
+  const [vin, setVin] = useState<string>(() => {
+    const raw = vehicle?.vin || '';
+    return raw.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '').slice(0, 17);
+  });
+  const [licensePlate, setLicensePlate] = useState<string>(() => {
+    // Auto-format DWH plate data to NN-CC-NNN
+    const raw = (vehicle?.licensePlate || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+    let result = '';
+    let pos = 0;
+    for (let i = 0; i < 2 && pos < raw.length; pos++) {
+      if (/[0-9]/.test(raw[pos])) { result += raw[pos]; i++; }
+    }
+    for (let i = 0; i < 2 && pos < raw.length; pos++) {
+      if (/[A-Z]/.test(raw[pos])) { result += raw[pos]; i++; }
+    }
+    for (let i = 0; i < 3 && pos < raw.length; pos++) {
+      if (/[0-9]/.test(raw[pos])) { result += raw[pos]; i++; }
+    }
+    if (result.length <= 2) return result;
+    if (result.length <= 4) return `${result.slice(0, 2)}-${result.slice(2)}`;
+    return `${result.slice(0, 2)}-${result.slice(2, 4)}-${result.slice(4, 7)}`;
+  });
   const [mileage, setMileage] = useState<string>(vehicle?.mileage?.toString() || '');
   const [photos, setPhotos] = useState<VehiclePhoto[]>(vehicle?.photos || []);
 

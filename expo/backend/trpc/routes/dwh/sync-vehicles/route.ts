@@ -133,7 +133,25 @@ export const syncVehiclesProcedure = publicProcedure
         const brandName = sv.make_code || 'Unknown';
         const modelName = sv.model || sv.model_code || 'Unknown';
         const vin = (sv.vin || '').trim();
-        const licensePlate = (sv.license_no || '').trim();
+        // Format license plate to NN-CC-NNN (Azerbaijan standard)
+        const rawPlate = (sv.license_no || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+        let licensePlate = '';
+        let platePos = 0;
+        // First 2 digits
+        for (let i = 0; i < 2 && platePos < rawPlate.length; platePos++) {
+          if (/[0-9]/.test(rawPlate[platePos])) { licensePlate += rawPlate[platePos]; i++; }
+        }
+        // Next 2 letters
+        for (let i = 0; i < 2 && platePos < rawPlate.length; platePos++) {
+          if (/[A-Z]/.test(rawPlate[platePos])) { licensePlate += rawPlate[platePos]; i++; }
+        }
+        // Last 3 digits
+        for (let i = 0; i < 3 && platePos < rawPlate.length; platePos++) {
+          if (/[0-9]/.test(rawPlate[platePos])) { licensePlate += rawPlate[platePos]; i++; }
+        }
+        // Insert dashes: NN-CC-NNN
+        if (licensePlate.length > 4) licensePlate = `${licensePlate.slice(0, 2)}-${licensePlate.slice(2, 4)}-${licensePlate.slice(4, 7)}`;
+        else if (licensePlate.length > 2) licensePlate = `${licensePlate.slice(0, 2)}-${licensePlate.slice(2)}`;
         // prod_year may be a Date object, ISO string like "2008-01-01", or just "2008"
         const prodYearRaw = sv.prod_year;
         let year: number;
