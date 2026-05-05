@@ -97,26 +97,22 @@ export const syncVehiclesProcedure = publicProcedure
           .where(eq(users.id, user.id));
       }
 
-      // 6. Fetch vehicles from stg_vehicles for all customer_nos
-      //    Table has generic column names (c1-c11) from CSV import:
-      //    c1=model_no, c2=vin, c3=license_no, c4=make_code, c5=model,
-      //    c6=vehicle_status, c7=customer_no, c8=date_of_sale, c9=mileage,
-      //    c10=model_code, c11=prod_year
+      // 6. Fetch vehicles from clientdata.vehicles (DWH schema with 31k records)
       const stgVehiclesResult = await db.execute(sql`
         SELECT
-          c1 AS model_no,
-          c2 AS vin,
-          c3 AS license_no,
-          c4 AS make_code,
-          c5 AS model,
-          c6 AS vehicle_status,
-          c7 AS customer_no,
-          c8 AS date_of_sale,
-          c9 AS mileage,
-          c10 AS model_code,
-          c11 AS prod_year
-        FROM stg_vehicles
-        WHERE c7 IN (${sql.join(customerNos.map(n => sql`${n}`), sql`, `)})
+          model_no,
+          vin,
+          license_no,
+          make_code,
+          model,
+          vehicle_status,
+          customer_no,
+          date_of_sale,
+          mileage,
+          model_code,
+          prod_year
+        FROM clientdata.vehicles
+        WHERE customer_no IN (${sql.join(customerNos.map(n => sql`${n}`), sql`, `)})
       `);
 
       const stgVehicles: any[] = Array.isArray(stgVehiclesResult) ? stgVehiclesResult : (stgVehiclesResult as any).rows || [];
