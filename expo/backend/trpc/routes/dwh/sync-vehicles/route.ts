@@ -46,21 +46,25 @@ export const syncVehiclesProcedure = publicProcedure
       //    Normalize phone: strip non-digits, match last 9 digits (Azerbaijan mobile)
       const phoneDigits = input.phone.replace(/\D/g, '');
       const phoneSuffix = phoneDigits.slice(-9);
+      const likePattern = '%' + phoneSuffix;
 
       const clientRows = await db.execute(sql`
-        SELECT DISTINCT customer_no, full_name, first_name, last_name
+        SELECT DISTINCT customer_no, full_name
         FROM clients
-        WHERE REPLACE(REPLACE(REPLACE(mobile_phone_no, '+', ''), ' ', ''), '-', '') LIKE ${'%' + phoneSuffix}
-           OR REPLACE(REPLACE(REPLACE(phone_no, '+', ''), ' ', ''), '-', '') LIKE ${'%' + phoneSuffix}
+        WHERE REPLACE(REPLACE(REPLACE(mobile_phone_no, '+', ''), ' ', ''), '-', '') LIKE ${likePattern}
+           OR REPLACE(REPLACE(REPLACE(phone_no, '+', ''), ' ', ''), '-', '') LIKE ${likePattern}
         LIMIT 20
       `);
 
-      if (!clientRows || clientRows.length === 0) {
+      // Drizzle db.execute may return { rows: [...] } or directly an array
+      const clientList: any[] = Array.isArray(clientRows) ? clientRows : (clientRows as any).rows || [];
+
+      if (clientList.length === 0) {
         return { synced: 0, vehicles: [], error: 'Customer not found in DWH' };
       }
 
       // 3. Safety check: too many customer_nos = ambiguous phone (data quality issue)
-      const customerNos = [...new Set(clientRows.map((r: any) => r.customer_no))];
+      const customerNos = [...new Set(clientList.map((r: any) => r.customer_no))];
 
       if (customerNos.length > MAX_CUSTOMER_NOS) {
         console.warn(`[dwh.syncVehicles] Phone ${input.phone} maps to ${customerNos.length} customer_nos — skipping as ambiguous`);
@@ -79,18 +83,23 @@ export const syncVehiclesProcedure = publicProcedure
       }
 
       // 5. Enrich user name from DWH if missing
-      const firstClient: any = clientRows[0];
-      if (!user.firstName && firstClient.first_name) {
+      const firstClient: any = clientList[0];
+      if (!user.firstName && firstClient.full_name) {
+        // Split "Sultanova Naibe" into last + first (DWH stores as "LastName FirstName")
+        const nameParts = (firstClient.full_name || '').trim().split(/\s+/);
+        const lastName = nameParts[0] || '';
+        const firstName = nameParts.slice(1).join(' ') || nameParts[0] || '';
         await db.update(users)
           .set({
-            firstName: firstClient.first_name,
-            lastName: firstClient.last_name ?? undefined,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
           })
           .where(eq(users.id, user.id));
       }
 
       // 6. Fetch vehicles from stg_vehicles for all customer_nos
-      const stgVehicles = await db.execute(sql`
+      //    Use IN (...) instead of ANY() for better Drizzle/Neon compatibility
+      const stgVehiclesResult = await db.execute(sql`
         SELECT
           sv.model_no,
           sv.vin,
@@ -102,14 +111,14 @@ export const syncVehiclesProcedure = publicProcedure
           sv.mileage,
           sv.model_code,
           sv.prod_year,
-          sv.date_of_sale,
-          b.name AS brand_name
+          sv.date_of_sale
         FROM stg_vehicles sv
-        LEFT JOIN brands b ON UPPER(sv.make_code) = UPPER(b.name)
-        WHERE sv.customer_no = ANY(${customerNos})
+        WHERE sv.customer_no IN (${sql.join(customerNos.map(n => sql`${n}`), sql`, `)})
       `);
 
-      if (!stgVehicles || stgVehicles.length === 0) {
+      const stgVehicles: any[] = Array.isArray(stgVehiclesResult) ? stgVehiclesResult : (stgVehiclesResult as any).rows || [];
+
+      if (stgVehicles.length === 0) {
         // stg_vehicles is empty or no vehicles for this customer — not an error
         console.log(`[dwh.syncVehicles] Phone ${input.phone}: found ${customerNos.length} customer(s), 0 DWH vehicles`);
         return { synced: 0, vehicles: [], error: null };
@@ -119,8 +128,8 @@ export const syncVehiclesProcedure = publicProcedure
       const syncedVehicles: any[] = [];
       let syncCount = 0;
 
-      for (const sv of stgVehicles as any[]) {
-        const brandName = sv.brand_name || sv.make_code || 'Toyota';
+      for (const sv of stgVehicles) {
+        const brandName = sv.make_code || 'Unknown';
         const modelName = sv.model || sv.model_code || 'Unknown';
         const vin = (sv.vin || '').trim();
         const licensePlate = (sv.license_no || '').trim();
@@ -201,8 +210,9 @@ export const syncVehiclesProcedure = publicProcedure
         vehicles: syncedVehicles,
         error: null,
       };
-    } catch (error) {
-      console.error('[dwh.syncVehicles] Error:', error);
-      return { synced: 0, vehicles: [], error: 'Sync failed — check server logs' };
+    } catch (error: any) {
+      console.error('[dwh.syncVehicles] Error:', error?.message || error);
+      console.error('[dwh.syncVehicles] Stack:', error?.stack);
+      return { synced: 0, vehicles: [], error: `Sync failed: ${error?.message || 'unknown error'}` };
     }
   });
