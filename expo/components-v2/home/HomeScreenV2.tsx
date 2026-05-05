@@ -22,7 +22,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import {
-  Wrench,
   Calendar,
   Car,
   Bell,
@@ -104,31 +103,26 @@ export default function HomeScreenV2() {
           {/* Header bar */}
           <View style={styles.heroHeader}>
             <View style={styles.logoRow}>
-              <View style={[styles.logoIcon, { backgroundColor: colors.primary }]}>
-                <Wrench size={18} color="#FFF" />
-              </View>
-              <Text style={[styles.logoText, { color: theme === 'dark' ? '#FFF' : colors.text }]}>
+              <Image
+                source={require('@/assets/images/groupmotors-logo.jpg')}
+                style={styles.logoIcon}
+                contentFit="contain"
+              />
+              <Text style={[styles.logoText, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }]}>
                 Qaraj
               </Text>
             </View>
-            <View style={styles.headerRight}>
-              <Image
-                source={require('@/assets/images/groupmotors-logo.jpg')}
-                style={styles.gmLogoImage}
-                contentFit="contain"
-              />
-              <TouchableOpacity
-                onPress={() => router.push('/notifications')}
-                style={[styles.bellBtn, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)' }]}
-              >
-                <Bell size={20} color={theme === 'dark' ? '#FFF' : colors.text} />
-                {unreadCount > 0 && (
-                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={() => router.push('/notifications')}
+              style={[styles.bellBtn, { backgroundColor: colors.primary }]}
+            >
+              <Bell size={20} color="#FFF" />
+              {unreadCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: colors.primary }]}>
+                  <Text style={[styles.badgeText, { color: colors.primary }]}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
         </ImageBackground>
 
@@ -380,9 +374,7 @@ const styles = StyleSheet.create({
   logoIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 18,
   },
   logoText: {
     fontSize: 22,
@@ -411,22 +403,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 10,
     fontWeight: '700',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  gmLogo: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  gmLogoImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
   },
 
   // Greeting below hero
