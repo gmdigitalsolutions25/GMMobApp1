@@ -29,6 +29,8 @@ import {
   Trash2,
   Clock,
   Wrench,
+  Search,
+  CheckCircle,
 } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import { useAlert } from '@/components/CustomAlert';
@@ -347,6 +349,32 @@ function VehicleHeroCard({ vehicle, colors, t, appointments, onEdit, onDelete, o
 /* ─── EMPTY STATE ─── */
 
 function EmptyGarage({ colors, t, onAdd }: any) {
+  const { user } = useApp();
+  const [requestSent, setRequestSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const createRequestMutation = trpc.vehicleRequests.create.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        setRequestSent(true);
+      }
+    },
+  });
+
+  const handleFindMyVehicle = () => {
+    if (!user?.phone) return;
+    setSending(true);
+    createRequestMutation.mutate(
+      {
+        phone: user.phone,
+        customerName: user.firstName
+          ? `${user.lastName || ''} ${user.firstName}`.trim()
+          : undefined,
+      },
+      { onSettled: () => setSending(false) }
+    );
+  };
+
   return (
     <View style={styles.emptyContainer}>
       <Car size={64} color={colors.textTertiary} />
@@ -354,11 +382,39 @@ function EmptyGarage({ colors, t, onAdd }: any) {
         {t('vehicles.noVehicles') || 'Qarajınız boşdur'}
       </Text>
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-        {t('vehicles.addFirst') || 'İlk avtomobilinizi əlavə edin'}
+        {t('vehicles.noVehiclesHint') || 'Sizin adınıza qeydiyyatdan keçmiş nəqliyyat vasitəsi tapılmadı.'}
+      </Text>
+
+      {/* Find my vehicle request button */}
+      {requestSent || createRequestMutation.data?.alreadyRequested ? (
+        <View style={styles.requestSentContainer}>
+          <CheckCircle size={20} color={colors.success || '#22c55e'} />
+          <Text style={[styles.requestSentText, { color: colors.success || '#22c55e' }]}>
+            {t('vehicles.requestSent') || 'Sorğunuz qəbul edildi. Tezliklə sizinlə əlaqə saxlanılacaq.'}
+          </Text>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={[styles.findVehicleBtn, { backgroundColor: colors.warning || '#f59e0b' }]}
+          onPress={handleFindMyVehicle}
+          disabled={sending}
+        >
+          <Search size={18} color="#FFF" />
+          <Text style={styles.emptyBtnText}>
+            {sending
+              ? (t('common.loading') || 'Gözləyin...')
+              : (t('vehicles.findMyVehicle') || 'Avtomobilimi tap')}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Manual add option */}
+      <Text style={[styles.orText, { color: colors.textSecondary }]}>
+        {t('common.or') || 'və ya'}
       </Text>
       <TouchableOpacity style={[styles.emptyBtn, { backgroundColor: colors.primary }]} onPress={onAdd}>
         <Plus size={18} color="#FFF" />
-        <Text style={styles.emptyBtnText}>{t('vehicles.addVehicle') || 'Əlavə et'}</Text>
+        <Text style={styles.emptyBtnText}>{t('vehicles.addManually') || 'Əl ilə əlavə et'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -533,7 +589,7 @@ const styles = StyleSheet.create({
   // Empty
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 100, gap: 12 },
   emptyTitle: { fontSize: 20, fontWeight: '700' },
-  emptySubtitle: { fontSize: 14 },
+  emptySubtitle: { fontSize: 14, textAlign: 'center', paddingHorizontal: 20 },
   emptyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -541,7 +597,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 24,
-    marginTop: 8,
+    marginTop: 4,
   },
   emptyBtnText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
+  findVehicleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 24,
+    marginTop: 12,
+  },
+  requestSentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: 12,
+  },
+  requestSentText: {
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'center',
+  },
+  orText: {
+    fontSize: 13,
+    marginTop: 8,
+  },
 });

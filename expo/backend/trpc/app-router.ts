@@ -24,6 +24,7 @@ import { sendPushProcedure } from "./routes/push-tokens/send/route";
 import { deletePushTokenProcedure } from "./routes/push-tokens/delete/route";
 import { listBrandsWithModelsProcedure, listModelsByBrandProcedure } from "./routes/brands-models/route";
 import { syncVehiclesProcedure } from "./routes/dwh/sync-vehicles/route";
+import { createVehicleRequestProcedure } from "./routes/vehicle-requests/create/route";
 // Monitoring routes
 import { listErrorsProcedure, errorStatsProcedure, resolveErrorProcedure } from "./routes/monitoring/errors/route";
 import { submitBugReportProcedure, listBugReportsProcedure, updateBugReportStatusProcedure, logClientErrorProcedure } from "./routes/monitoring/bug-reports/route";
@@ -75,6 +76,9 @@ export const appRouter = createTRPCRouter({
   }),
   dwh: createTRPCRouter({
     syncVehicles: syncVehiclesProcedure,
+  }),
+  vehicleRequests: createTRPCRouter({
+    create: createVehicleRequestProcedure,
   }),
   monitoring: createTRPCRouter({
     errors: createTRPCRouter({

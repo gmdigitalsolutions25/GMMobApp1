@@ -375,6 +375,35 @@ export const models = pgTable(
   })
 );
 
+// ── Vehicle Requests ──────────────────────────────────────────────────────────
+
+export const vehicleRequestStatusEnum = pgEnum('vehicle_request_status', [
+  'pending', 'resolved', 'rejected',
+]);
+
+export const vehicleRequests = pgTable(
+  'vehicle_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    phone: varchar('phone', { length: 20 }).notNull(),
+    customerName: varchar('customer_name', { length: 200 }),
+    message: text('message'),
+    status: vehicleRequestStatusEnum('status').default('pending').notNull(),
+    resolvedAt: timestamp('resolved_at'),
+    resolvedBy: varchar('resolved_by', { length: 100 }),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index('vehicle_requests_user_idx').on(table.userId),
+    statusIdx: index('vehicle_requests_status_idx').on(table.status),
+    createdIdx: index('vehicle_requests_created_idx').on(table.createdAt),
+  })
+);
+
 // ── Type Exports ───────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -398,3 +427,5 @@ export type Brand = typeof brands.$inferSelect;
 export type NewBrand = typeof brands.$inferInsert;
 export type Model = typeof models.$inferSelect;
 export type NewModel = typeof models.$inferInsert;
+export type VehicleRequest = typeof vehicleRequests.$inferSelect;
+export type NewVehicleRequest = typeof vehicleRequests.$inferInsert;
