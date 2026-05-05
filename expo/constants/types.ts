@@ -30,6 +30,9 @@ export interface Vehicle {
   photos: VehiclePhoto[];
   mileage?: number;
   color?: string;
+  isGmBrand?: boolean;
+  customBrand?: string;
+  source?: string;
   createdAt: string;
 }
 
