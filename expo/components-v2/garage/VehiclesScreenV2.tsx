@@ -38,7 +38,9 @@ import { useTranslation } from 'react-i18next';
 import { ColorsV2 } from '@/hooks/useDesignV2';
 import { trpc } from '@/lib/trpc';
 import { getCarModelImage, FALLBACK_CAR_IMAGE } from '@/constants/carImages';
+import { isGmBrand } from '@/constants/gm-brands';
 import ThinRingGauge from './ThinRingGauge';
+import GmBadge from './GmBadge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = 16;
@@ -207,6 +209,9 @@ function getHealthGauges(vehicle: any, t: any) {
 /* ─── VEHICLE HERO CARD ─── */
 
 function VehicleHeroCard({ vehicle, colors, t, appointments, onEdit, onDelete, onBook, onPhoto }: any) {
+  // Determine if this is a GM-brand vehicle (full features) or "Other" (simplified)
+  const vehicleIsGm = vehicle.isGmBrand !== false && isGmBrand(vehicle.brand);
+
   // Resolve car image: user photo > carImages catalog > fallback
   const hasUserPhoto = vehicle.photos && vehicle.photos.length > 0;
   const primaryPhoto = hasUserPhoto
@@ -219,7 +224,7 @@ function VehicleHeroCard({ vehicle, colors, t, appointments, onEdit, onDelete, o
   const catalogImage = getCarModelImage(vehicle.brand, vehicle.model);
   const heroImageUri = userPhotoUri || catalogImage?.uri || FALLBACK_CAR_IMAGE;
 
-  const gauges = getHealthGauges(vehicle, t);
+  const gauges = vehicleIsGm ? getHealthGauges(vehicle, t) : [];
 
   // Check for upcoming appointments
   const hasUpcoming = appointments.some(
@@ -248,8 +253,10 @@ function VehicleHeroCard({ vehicle, colors, t, appointments, onEdit, onDelete, o
             style={styles.heroGradient}
           />
 
-          {/* Edit / Delete buttons */}
+          {/* GM Badge + Edit / Delete buttons */}
           <View style={styles.heroActions}>
+            {vehicleIsGm && <GmBadge />}
+            <View style={{ flex: 1 }} />
             <TouchableOpacity onPress={onEdit} style={styles.heroIconBtn}>
               <Edit2 size={16} color="#FFF" />
             </TouchableOpacity>
@@ -270,78 +277,94 @@ function VehicleHeroCard({ vehicle, colors, t, appointments, onEdit, onDelete, o
         </View>
       </TouchableOpacity>
 
-      {/* ── Health Gauges (Option D: Thin Rings Row) ── */}
-      <View style={styles.gaugesSection}>
-        <Text style={[styles.gaugesSectionTitle, { color: colors.textSecondary }]}>
-          {t('health.title') || 'HEALTH GAUGES'}
-        </Text>
+      {/* ── Health Gauges (Option D: Thin Rings Row) — GM brands only ── */}
+      {vehicleIsGm && (
+        <View style={styles.gaugesSection}>
+          <Text style={[styles.gaugesSectionTitle, { color: colors.textSecondary }]}>
+            {t('health.title') || 'HEALTH GAUGES'}
+          </Text>
 
-        <View style={styles.gaugesRow}>
-          {gauges.map((g, i) => (
-            <ThinRingGauge
-              key={i}
-              percent={g.percent}
-              label={g.label}
-              detail={g.detail}
-              size={RING_SIZE}
-              strokeWidth={5}
-              labelColor={colors.text}
-              detailColor={colors.textSecondary}
-              trackColor={colors.border}
-            />
-          ))}
+          <View style={styles.gaugesRow}>
+            {gauges.map((g, i) => (
+              <ThinRingGauge
+                key={i}
+                percent={g.percent}
+                label={g.label}
+                detail={g.detail}
+                size={RING_SIZE}
+                strokeWidth={5}
+                labelColor={colors.text}
+                detailColor={colors.textSecondary}
+                trackColor={colors.border}
+              />
+            ))}
+          </View>
         </View>
-      </View>
+      )}
 
-      {/* ── Divider ── */}
-      <View style={[styles.divider, { backgroundColor: colors.border }]} />
+      {/* Simplified info for non-GM vehicles */}
+      {!vehicleIsGm && (
+        <View style={styles.otherBrandInfo}>
+          <Text style={[styles.otherBrandMileage, { color: colors.textSecondary }]}>
+            {vehicle.mileage ? `Yürüş: ${vehicle.mileage.toLocaleString()} km` : ''}
+          </Text>
+        </View>
+      )}
 
-      {/* ── Next Service + Book ── */}
-      <View style={styles.nextServiceRow}>
-        <View style={styles.nextServiceInfo}>
-          <View style={styles.nextServiceLine}>
-            <Clock size={14} color={colors.textSecondary} />
-            <Text style={[styles.nextServiceLabel, { color: colors.text }]}>
-              {t('vehicles.nextServiceAt') || 'Növbəti servis:'}{' '}
-              <Text style={styles.nextServiceBold}>
-                {nextServiceKm.toLocaleString()} km
+      {/* ── Service sections — GM brands only ── */}
+      {vehicleIsGm && (
+        <>
+          {/* Divider */}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          {/* Next Service + Book */}
+          <View style={styles.nextServiceRow}>
+            <View style={styles.nextServiceInfo}>
+              <View style={styles.nextServiceLine}>
+                <Clock size={14} color={colors.textSecondary} />
+                <Text style={[styles.nextServiceLabel, { color: colors.text }]}>
+                  {t('vehicles.nextServiceAt') || 'Növbəti servis:'}{' '}
+                  <Text style={styles.nextServiceBold}>
+                    {nextServiceKm.toLocaleString()} km
+                  </Text>
+                </Text>
+              </View>
+              <Text style={[styles.nextServiceRemaining, { color: colors.textSecondary }]}>
+                {remainingKm.toLocaleString()} km {t('vehicles.remaining') || 'qalıb'}
               </Text>
+              {/* Progress bar */}
+              <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${Math.min(100, Math.max(5, ((10000 - remainingKm) / 10000) * 100))}%`,
+                      backgroundColor: remainingKm > 3000 ? colors.success : remainingKm > 1000 ? colors.warning : colors.error,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[styles.bookBtn, { backgroundColor: colors.primary }]}
+              onPress={onBook}
+            >
+              <Text style={styles.bookBtnText}>{t('vehicles.book') || 'Yaz'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Recommended Services */}
+          <View style={[styles.recommendedRow, { borderTopColor: colors.border }]}>
+            <Wrench size={13} color={colors.primary} />
+            <Text style={[styles.recommendedLabel, { color: colors.textSecondary }]}>
+              {t('vehicles.recommended') || 'Tövsiyə:'}{' '}
+            </Text>
+            <Text style={[styles.recommendedList, { color: colors.text }]} numberOfLines={1}>
+              {t('vehicles.oilChange') || 'Yağ dəyişimi'}, {t('vehicles.filterReplacement') || 'Filtr'}
             </Text>
           </View>
-          <Text style={[styles.nextServiceRemaining, { color: colors.textSecondary }]}>
-            {remainingKm.toLocaleString()} km {t('vehicles.remaining') || 'qalıb'}
-          </Text>
-          {/* Progress bar */}
-          <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
-            <View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: `${Math.min(100, Math.max(5, ((10000 - remainingKm) / 10000) * 100))}%`,
-                  backgroundColor: remainingKm > 3000 ? colors.success : remainingKm > 1000 ? colors.warning : colors.error,
-                },
-              ]}
-            />
-          </View>
-        </View>
-        <TouchableOpacity
-          style={[styles.bookBtn, { backgroundColor: colors.primary }]}
-          onPress={onBook}
-        >
-          <Text style={styles.bookBtnText}>{t('vehicles.book') || 'Yaz'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Recommended Services ── */}
-      <View style={[styles.recommendedRow, { borderTopColor: colors.border }]}>
-        <Wrench size={13} color={colors.primary} />
-        <Text style={[styles.recommendedLabel, { color: colors.textSecondary }]}>
-          {t('vehicles.recommended') || 'Tövsiyə:'}{' '}
-        </Text>
-        <Text style={[styles.recommendedList, { color: colors.text }]} numberOfLines={1}>
-          {t('vehicles.oilChange') || 'Yağ dəyişimi'}, {t('vehicles.filterReplacement') || 'Filtr'}
-        </Text>
-      </View>
+        </>
+      )}
     </View>
   );
 }
@@ -471,8 +494,10 @@ const styles = StyleSheet.create({
   heroActions: {
     position: 'absolute',
     top: 10,
+    left: 10,
     right: 10,
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   heroIconBtn: {
@@ -626,5 +651,15 @@ const styles = StyleSheet.create({
   orText: {
     fontSize: 13,
     marginTop: 8,
+  },
+
+  // Other brand simplified card
+  otherBrandInfo: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  otherBrandMileage: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

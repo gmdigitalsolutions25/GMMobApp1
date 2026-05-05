@@ -27,6 +27,7 @@ import {
   FALLBACK_CAR_IMAGE,
   type CarImageEntry,
 } from '@/constants/carImages';
+import { OTHER_BRAND_KEY, OTHER_BRAND_LABEL, isGmBrand } from '@/constants/gm-brands';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const THUMB_SIZE = (SCREEN_WIDTH - 40 - 20 * 2 - 12) / 3; // 3 columns inside modal with padding
@@ -190,11 +191,13 @@ export default function AddVehicleScreen() {
   const insets = useSafeAreaInsets();
 
   const [brand, setBrand] = useState<string>('');
+  const [customBrand, setCustomBrand] = useState<string>('');
   const [model, setModel] = useState<string>('');
   const [year, setYear] = useState<string>('');
   const [vin, setVin] = useState<string>('');
   const [licensePlate, setLicensePlate] = useState<string>('');
   const [mileage, setMileage] = useState<string>('');
+  const isOtherBrand = brand === OTHER_BRAND_KEY;
 
   const formatVin = (value: string) => {
     // VIN: only uppercase A-Z (excluding I, O, Q) and 0-9, max 17 characters
@@ -252,11 +255,19 @@ export default function AddVehicleScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { brands: carBrands, getModels } = useBrandsModels();
-  const availableModels = brand ? getModels(brand) : [];
+  // Append "Digər (Other)" at the bottom of the brand list
+  const brandsWithOther = [
+    ...carBrands,
+    { value: OTHER_BRAND_KEY, label: OTHER_BRAND_LABEL },
+  ];
+  const availableModels = (brand && brand !== OTHER_BRAND_KEY) ? getModels(brand) : [];
 
   const handleSelectBrand = (value: string) => {
     setBrand(value);
     setModel('');
+    if (value !== OTHER_BRAND_KEY) {
+      setCustomBrand('');
+    }
     if (errors.brand) {
       setErrors((prev) => ({ ...prev, brand: '' }));
     }
@@ -291,7 +302,10 @@ export default function AddVehicleScreen() {
     if (!brand) {
       newErrors.brand = t('addVehicle.brandRequired');
     }
-    if (!model) {
+    if (isOtherBrand && !customBrand.trim()) {
+      newErrors.customBrand = t('addVehicle.customBrandRequired', { defaultValue: 'Brend adını daxil edin' });
+    }
+    if (!isOtherBrand && !model) {
       newErrors.model = t('addVehicle.modelRequired');
     }
     if (vin && vin.length !== 17) {
@@ -317,15 +331,22 @@ export default function AddVehicleScreen() {
           },
         ]
       : [];
+
+    const finalBrand = isOtherBrand ? customBrand.trim() : brand;
+    const finalModel = isOtherBrand ? (model || 'N/A') : model;
+    const gmBrand = isOtherBrand ? false : isGmBrand(brand);
+
     await addVehicle({
-      brand,
-      model,
+      brand: finalBrand,
+      model: finalModel,
       year: year ? parseInt(year, 10) : new Date().getFullYear(),
       vin: vin || '',
       licensePlate: licensePlate || '',
       mileage: mileage ? parseInt(mileage, 10) : undefined,
       photos,
-      primaryPhotoId: photos[0]?.id,
+      isGmBrand: gmBrand,
+      customBrand: isOtherBrand ? customBrand.trim() : undefined,
+      source: 'user',
     });
     router.back();
   };
@@ -359,35 +380,87 @@ export default function AddVehicleScreen() {
             onPress={() => setShowBrandPicker(true)}
           >
             <Text style={[styles.inputText, { color: brand ? colors.text : colors.textSecondary }]}>
-              {brand || 'e.g., Toyota'}
+              {isOtherBrand ? OTHER_BRAND_LABEL : (brand || 'e.g., Toyota')}
             </Text>
             <ChevronDown size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           {errors.brand && <Text style={styles.errorText}>{errors.brand}</Text>}
         </View>
 
-        <View style={styles.formGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            {t('vehicles.model')} <Text style={{ color: colors.primary }}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.input,
-              styles.picker,
-              { backgroundColor: colors.surface, borderColor: model ? colors.primary : colors.border },
-              !brand && { opacity: 0.5 },
-              errors.model && { borderColor: '#EF4444' },
-            ]}
-            onPress={() => brand && setShowModelPicker(true)}
-            disabled={!brand}
-          >
-            <Text style={[styles.inputText, { color: model ? colors.text : colors.textSecondary }]}>
-              {!brand ? t('addVehicle.selectBrandFirst') : model || t('addVehicle.selectModel')}
+        {/* Custom brand name input — shown only when "Digər" is selected */}
+        {isOtherBrand && (
+          <View style={styles.formGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>
+              {t('addVehicle.customBrandName', { defaultValue: 'Brend adı' })} <Text style={{ color: colors.primary }}>*</Text>
             </Text>
-            <ChevronDown size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          {errors.model && <Text style={styles.errorText}>{errors.model}</Text>}
-        </View>
+            <TextInput
+              style={[
+                styles.input,
+                styles.textInput,
+                { backgroundColor: colors.surface, color: colors.text, borderColor: customBrand ? colors.primary : colors.border },
+                errors.customBrand && { borderColor: '#EF4444' },
+              ]}
+              placeholder={t('addVehicle.customBrandPlaceholder', { defaultValue: 'Məs., Honda, BMW, Mercedes...' })}
+              placeholderTextColor={colors.textSecondary}
+              value={customBrand}
+              onChangeText={(text) => {
+                setCustomBrand(text);
+                if (errors.customBrand) setErrors((prev) => ({ ...prev, customBrand: '' }));
+              }}
+              autoCapitalize="words"
+              maxLength={50}
+            />
+            {errors.customBrand && <Text style={styles.errorText}>{errors.customBrand}</Text>}
+          </View>
+        )}
+
+        {/* Model picker — hidden for "Other" brand, shown for GM brands */}
+        {!isOtherBrand && (
+          <View style={styles.formGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>
+              {t('vehicles.model')} <Text style={{ color: colors.primary }}>*</Text>
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.input,
+                styles.picker,
+                { backgroundColor: colors.surface, borderColor: model ? colors.primary : colors.border },
+                !brand && { opacity: 0.5 },
+                errors.model && { borderColor: '#EF4444' },
+              ]}
+              onPress={() => brand && setShowModelPicker(true)}
+              disabled={!brand}
+            >
+              <Text style={[styles.inputText, { color: model ? colors.text : colors.textSecondary }]}>
+                {!brand ? t('addVehicle.selectBrandFirst') : model || t('addVehicle.selectModel')}
+              </Text>
+              <ChevronDown size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            {errors.model && <Text style={styles.errorText}>{errors.model}</Text>}
+          </View>
+        )}
+
+        {/* Free-text model input for "Other" brand */}
+        {isOtherBrand && (
+          <View style={styles.formGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>
+              {t('vehicles.model')}
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                styles.textInput,
+                { backgroundColor: colors.surface, color: colors.text, borderColor: model ? colors.primary : colors.border },
+              ]}
+              placeholder={t('addVehicle.modelPlaceholder', { defaultValue: 'Məs., Civic, X5, C-Class...' })}
+              placeholderTextColor={colors.textSecondary}
+              value={model}
+              onChangeText={setModel}
+              autoCapitalize="words"
+              maxLength={50}
+            />
+          </View>
+        )}
 
         <View style={styles.formGroup}>
           <Text style={[styles.label, { color: colors.text }]}>{t('vehicles.year')}</Text>
@@ -553,7 +626,7 @@ export default function AddVehicleScreen() {
         visible={showBrandPicker}
         onClose={() => setShowBrandPicker(false)}
         title={t('addVehicle.selectBrand')}
-        options={carBrands}
+        options={brandsWithOther}
         onSelect={handleSelectBrand}
         selectedValue={brand}
         colors={colors}

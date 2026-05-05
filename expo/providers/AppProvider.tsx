@@ -143,6 +143,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
         color: v.color,
         photos: v.photos || [],
         primaryPhoto: v.primaryPhoto,
+        isGmBrand: v.isGmBrand !== false,
+        customBrand: v.customBrand || undefined,
+        source: v.source || 'user',
         createdAt: v.createdAt,
       }));
 

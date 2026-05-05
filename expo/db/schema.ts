@@ -92,6 +92,8 @@ export const vehicles = pgTable(
     color: varchar('color', { length: 50 }),
     crmVehicleId: varchar('crm_vehicle_id', { length: 50 }),
     source: varchar('source', { length: 20 }).default('user'),
+    isGmBrand: boolean('is_gm_brand').notNull().default(true),
+    customBrand: varchar('custom_brand', { length: 100 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
