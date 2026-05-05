@@ -15,11 +15,13 @@ const resources = {
         error: 'Error',
         success: 'Success',
         confirm: 'Confirm',
+        continue: 'Continue',
         back: 'Back',
         next: 'Next',
         done: 'Done',
         close: 'Close',
         seeAll: 'See All',
+        or: 'or',
       },
       welcome: {
         title: 'Welcome to Qaraj',
@@ -574,7 +576,7 @@ const resources = {
   az: {
     translation: {
       common: {
-        cancel: 'Ləğv et',
+        cancel: 'Geri',
         save: 'Yadda saxla',
         delete: 'Sil',
         edit: 'Redaktə et',
@@ -584,11 +586,13 @@ const resources = {
         error: 'Xəta',
         success: 'Uğurlu',
         confirm: 'Təsdiq et',
+        continue: 'Davam et',
         back: 'Geri',
         next: 'Növbəti',
         done: 'Hazır',
         close: 'Bağla',
         seeAll: 'Hamısı',
+        or: 'və ya',
       },
       welcome: {
         title: 'Qaraj-a xoş gəlmisiniz',
@@ -834,7 +838,7 @@ const resources = {
         tapToSetName: 'Adınızı təyin etmək üçün toxunun',
         errorUpdateProfile: 'Xəta',
         errorUpdateProfileMessage: 'Şəkil seçilə bilmədi. Yenidən cəhd edin.',
-        cancel: 'Ləğv et',
+        cancel: 'Geri',
         enterYourName: 'Adınızı daxil edin',
         save: 'Yadda saxla',
         // v2 Profile screen keys
@@ -1152,11 +1156,13 @@ const resources = {
         error: 'Ошибка',
         success: 'Успешно',
         confirm: 'Подтвердить',
+        continue: 'Продолжить',
         back: 'Назад',
         next: 'Далее',
         done: 'Готово',
         close: 'Закрыть',
         seeAll: 'Все',
+        or: 'или',
       },
       welcome: {
         title: 'Добро пожаловать в Qaraj',

@@ -5,8 +5,8 @@
  *   1. Receive phone number (from login)
  *   2. Look up customer_no in `clients` table by mobile_phone_no or phone_no
  *   3. Safety check: if phone maps to >5 distinct customer_nos, skip (data quality issue)
- *   4. Fetch all vehicles from `stg_vehicles` by customer_no
- *   5. For each vehicle, upsert into `vehicles` table (dedup by VIN or crm_vehicle_id)
+ *   4. Fetch all vehicles from `clientdata.vehicles` by customer_no
+ *   5. For each vehicle, upsert into `vehicles` table (dedup by VIN globally)
  *   6. Link crm_customer_id on the user record
  *   7. Enrich user name from DWH if missing
  *   8. Return the list of synced vehicles
@@ -118,12 +118,14 @@ export const syncVehiclesProcedure = publicProcedure
       const stgVehicles: any[] = Array.isArray(stgVehiclesResult) ? stgVehiclesResult : (stgVehiclesResult as any).rows || [];
 
       if (stgVehicles.length === 0) {
-        // stg_vehicles is empty or no vehicles for this customer — not an error
+        // clientdata.vehicles is empty or no vehicles for this customer — not an error
         console.log(`[dwh.syncVehicles] Phone ${input.phone}: found ${customerNos.length} customer(s), 0 DWH vehicles`);
         return { synced: 0, vehicles: [], error: null };
       }
 
       // 7. Upsert each vehicle into our vehicles table
+      //    DEDUP STRATEGY: Check by VIN globally (not per-user) since VIN is unique worldwide
+      //    This prevents duplicates even if the vehicle was previously synced by bulk SQL script
       const syncedVehicles: any[] = [];
       let syncCount = 0;
 
@@ -132,36 +134,51 @@ export const syncVehiclesProcedure = publicProcedure
         const modelName = sv.model || sv.model_code || 'Unknown';
         const vin = (sv.vin || '').trim();
         const licensePlate = (sv.license_no || '').trim();
-        const year = parseInt(sv.prod_year) || new Date().getFullYear();
-        const mileage = parseInt(sv.mileage) || null;
+        // prod_year may be a Date object, ISO string like "2008-01-01", or just "2008"
+        const prodYearRaw = sv.prod_year;
+        let year: number;
+        if (prodYearRaw instanceof Date) {
+          year = prodYearRaw.getFullYear();
+        } else if (typeof prodYearRaw === 'string' && prodYearRaw.includes('-')) {
+          year = new Date(prodYearRaw).getFullYear();
+        } else {
+          year = parseInt(prodYearRaw) || new Date().getFullYear();
+        }
+        const mileage = typeof sv.mileage === 'number' ? sv.mileage : (parseInt(sv.mileage) || null);
         const crmVehicleId = sv.model_no || sv.model_code || null;
 
-        // Dedup: check if vehicle already exists by VIN or crm_vehicle_id
-        let existingVehicle = null;
-
-        if (vin && vin.length >= 5) {
-          existingVehicle = await db.query.vehicles.findFirst({
-            where: and(
-              eq(vehicles.userId, user.id),
-              eq(vehicles.vin, vin),
-            ),
+        // Skip vehicles without a usable VIN
+        if (!vin || vin.length < 5) {
+          syncedVehicles.push({
+            id: null,
+            brand: brandName,
+            model: modelName,
+            year,
+            action: 'skipped_no_vin',
           });
+          continue;
         }
 
-        if (!existingVehicle && crmVehicleId) {
-          existingVehicle = await db.query.vehicles.findFirst({
-            where: and(
-              eq(vehicles.userId, user.id),
-              eq(vehicles.crmVehicleId, crmVehicleId),
-            ),
-          });
-        }
+        // DEDUP: Check if vehicle already exists by VIN (globally, not per-user)
+        // VIN is a worldwide unique identifier — if it exists for ANY user, don't insert again
+        const existingVehicle = await db.query.vehicles.findFirst({
+          where: eq(vehicles.vin, vin),
+        });
 
         if (existingVehicle) {
-          // Update mileage if DWH has newer data
+          // Vehicle exists — update mileage if DWH has newer data, and ensure ownership
+          const updates: any = {};
           if (mileage && (!existingVehicle.mileage || mileage > existingVehicle.mileage)) {
+            updates.mileage = mileage;
+          }
+          // If vehicle belongs to a different user, reassign to current user (ownership transfer)
+          if (existingVehicle.userId !== user.id) {
+            updates.userId = user.id;
+          }
+          if (Object.keys(updates).length > 0) {
+            updates.updatedAt = new Date();
             await db.update(vehicles)
-              .set({ mileage, updatedAt: new Date() })
+              .set(updates)
               .where(eq(vehicles.id, existingVehicle.id));
           }
           syncedVehicles.push({
