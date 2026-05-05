@@ -223,7 +223,7 @@ export default function OnboardingScreen() {
       case 0: return true;
       case 1: return firstName.trim().length >= 2 && lastName.trim().length >= 2;
       case 2: return true; // Car info is optional
-      case 3: return true; // Mileage & service are optional
+      case 3: return selectedMileage !== null && selectedLastService !== null; // Both required
       default: return false;
     }
   };
