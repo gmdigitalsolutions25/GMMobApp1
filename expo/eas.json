@@ -12,7 +12,8 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000"
+        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000",
+        "EXPO_PUBLIC_DESIGN_V2": "true"
       }
     },
     "preview": {
@@ -23,20 +24,8 @@
         "autoIncrement": true
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000"
-      }
-    },
-    "preview-v2": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
-        "autoIncrement": true
-      },
-      "env": {
         "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000",
-        "EXPO_PUBLIC_DESIGN_V2": "true",
-        "EXPO_PUBLIC_BUILD_DATE": "2026-05-02"
+        "EXPO_PUBLIC_DESIGN_V2": "true"
       }
     },
     "production": {
@@ -47,7 +36,8 @@
       },
       "env": {
         "EXPO_NO_TELEMETRY": "1",
-        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000"
+        "EXPO_PUBLIC_API_BASE_URL": "http://91.107.161.67:3000",
+        "EXPO_PUBLIC_DESIGN_V2": "true"
       }
     }
   },
