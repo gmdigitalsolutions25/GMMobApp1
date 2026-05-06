@@ -77,6 +77,7 @@ export default function PinLoginScreen() {
   const verifyPinMutation = trpc.auth.verifyPin.useMutation();
   const refreshTokenMutation = trpc.auth.refreshToken.useMutation();
   const sendOtpMutation = trpc.auth.sendOtp.useMutation();
+  const verifyOtpMutation = trpc.auth.verifyOtp.useMutation();
   const resetPinMutation = trpc.auth.resetPin.useMutation();
   const registerPushTokenMutation = trpc.pushTokens.register.useMutation();
 
@@ -290,12 +291,35 @@ export default function PinLoginScreen() {
       otpRefs.current[index + 1]?.focus();
     }
 
-    // When all 6 digits entered, move to new PIN step
+    // When all 6 digits entered, verify OTP on server first
     if (newOtp.every(digit => digit !== '')) {
-      setResetStep('newPin');
-      setNewPin(['', '', '', '']);
-      setResetError(null);
-      setTimeout(() => newPinRefs.current[0]?.focus(), 300);
+      verifyOtpOnServer(newOtp.join(''));
+    }
+  };
+
+  // Verify OTP with server before moving to new PIN step
+  const verifyOtpOnServer = async (code: string) => {
+    setIsLoading(true);
+    setResetError(null);
+    try {
+      const result = await verifyOtpMutation.mutateAsync({ phone, code });
+      if (result.success) {
+        setResetStep('newPin');
+        setNewPin(['', '', '', '']);
+        setResetError(null);
+        setTimeout(() => newPinRefs.current[0]?.focus(), 300);
+      } else {
+        setResetError((result as any).message || t('auth.invalidOtp'));
+        setOtpCode(['', '', '', '', '', '']);
+        otpRefs.current[0]?.focus();
+      }
+    } catch (e: any) {
+      const isNetworkError = /network|fetch|timeout|ECONNREFUSED/i.test(e?.message || '');
+      setResetError(isNetworkError ? t('auth.networkError') : (e?.message || t('auth.invalidOtp')));
+      setOtpCode(['', '', '', '', '', '']);
+      otpRefs.current[0]?.focus();
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -322,9 +346,16 @@ export default function PinLoginScreen() {
     if (updated.every(digit => digit !== '')) {
       setIsLoading(true);
       try {
+        const otp = otpCode.join('');
+        if (!otp || otp.length !== 6) {
+          setResetError('OTP session expired. Please start over.');
+          setResetStep('none');
+          setIsLoading(false);
+          return;
+        }
         const result = await resetPinMutation.mutateAsync({
           phone,
-          otpCode: otpCode.join(''),
+          otpCode: otp,
           newPin: updated.join(''),
         });
         if (result.success && result.token && result.user) {
@@ -436,7 +467,8 @@ export default function PinLoginScreen() {
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -100}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}

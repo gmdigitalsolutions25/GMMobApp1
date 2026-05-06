@@ -56,7 +56,7 @@ export const resetPinProcedure = publicProcedure
 
       const phone = normalizePhone(input.phone);
 
-      // Verify OTP inline (same logic as verifyOtp but in one step)
+      // Check OTP — either already verified via verifyOtp endpoint, or verify inline
       const record = otpStore.get(phone);
       if (!record) {
         return {
@@ -65,32 +65,48 @@ export const resetPinProcedure = publicProcedure
         };
       }
 
-      if (Date.now() > record.expiresAt) {
+      // If OTP was already verified via verifyOtp endpoint, accept it
+      if ((record as any).verified) {
+        // Check if verification is still within 10 min window
+        const verifiedAt = (record as any).verifiedAt || 0;
+        if (Date.now() - verifiedAt > 10 * 60 * 1000) {
+          otpStore.delete(phone);
+          return {
+            success: false,
+            message: "OTP session expired. Please request a new one.",
+          };
+        }
+        // Verified — proceed to reset
         otpStore.delete(phone);
-        return {
-          success: false,
-          message: "OTP has expired. Please request a new one.",
-        };
-      }
+      } else {
+        // Verify inline (fallback for direct resetPin calls)
+        if (Date.now() > record.expiresAt) {
+          otpStore.delete(phone);
+          return {
+            success: false,
+            message: "OTP has expired. Please request a new one.",
+          };
+        }
 
-      record.attempts += 1;
-      if (record.attempts > 5) {
+        record.attempts += 1;
+        if (record.attempts > 5) {
+          otpStore.delete(phone);
+          return {
+            success: false,
+            message: "Too many failed attempts. Please request a new OTP.",
+          };
+        }
+
+        if (record.code !== input.otpCode) {
+          return {
+            success: false,
+            message: `Invalid OTP. ${5 - record.attempts} attempts remaining.`,
+          };
+        }
+
+        // OTP verified inline — clean up
         otpStore.delete(phone);
-        return {
-          success: false,
-          message: "Too many failed attempts. Please request a new OTP.",
-        };
       }
-
-      if (record.code !== input.otpCode) {
-        return {
-          success: false,
-          message: `Invalid OTP. ${5 - record.attempts} attempts remaining.`,
-        };
-      }
-
-      // OTP verified — clean up
-      otpStore.delete(phone);
 
       // Find the user
       const user = await db.query.users.findFirst({
