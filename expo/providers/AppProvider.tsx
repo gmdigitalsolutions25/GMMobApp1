@@ -177,16 +177,35 @@ export const [AppProvider, useApp] = createContextHook(() => {
         createdAt: r.createdAt,
       }));
 
+      // Update user with server profile (ensures onboardingCompleted, firstName etc. are fresh)
+      const serverUser: User = {
+        id: profile.user.id,
+        username: profile.user.username || '',
+        firstName: profile.user.firstName || undefined,
+        lastName: profile.user.lastName || undefined,
+        phone: profile.user.phone,
+        email: profile.user.email || undefined,
+        avatar: profile.user.avatar || undefined,
+        language: profile.user.language || 'en',
+        theme: profile.user.theme || 'dark',
+        monthlyMileage: profile.user.monthlyMileage || undefined,
+        lastServiceDate: profile.user.lastServiceDate || undefined,
+        preferredServiceCenter: profile.user.preferredServiceCenter || undefined,
+        onboardingCompleted: profile.user.onboardingCompleted ?? false,
+        createdAt: profile.user.createdAt,
+      };
+
       // Save to AsyncStorage (cache for offline access)
       await Promise.all([
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(serverUser)),
         AsyncStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(serverVehicles)),
         AsyncStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(serverAppointments)),
         AsyncStorage.setItem(STORAGE_KEYS.SERVICE_RECORDS, JSON.stringify(serverServiceRecords)),
       ]);
-
       // Update state
       setState(prev => ({
         ...prev,
+        user: serverUser,
         vehicles: serverVehicles,
         appointments: serverAppointments,
         serviceRecords: serverServiceRecords,
