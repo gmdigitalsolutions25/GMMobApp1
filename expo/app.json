@@ -27,6 +27,7 @@
         "backgroundColor": "#0A0E1E"
       },
       "package": "az.qaraj.app",
+      "softwareKeyboardLayoutMode": "adjustResize",
       "googleServicesFile": "./google-services.json",
       "versionCode": 71,
       "permissions": [

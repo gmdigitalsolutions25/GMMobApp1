@@ -19,7 +19,7 @@ import {
 import { useAlert } from '@/components/CustomAlert';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Fingerprint, LogOut, ArrowLeft, Wrench } from 'lucide-react-native';
+import { Wrench, Fingerprint, LogOut, ArrowLeft } from 'lucide-react-native';
 import { useApp } from '@/providers/AppProvider';
 import Colors from '@/constants/colors';
 import { useDesignV2, ColorsV2 } from '@/hooks/useDesignV2';
@@ -468,12 +468,13 @@ export default function PinLoginScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -100}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           bounces={false}
+          showsVerticalScrollIndicator={false}
         >
           {/* Logo */}
           <View style={[styles.logoRow, { marginTop: insets.top + 16 }]}>
@@ -680,9 +681,9 @@ const createStyles = (c: any, theme: 'light' | 'dark') => StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 40,
-    minHeight: '60%',
+    paddingTop: 32,
+    paddingBottom: 24,
+    minHeight: '55%',
     alignItems: 'center',
     // Glass effect
     shadowColor: '#000',
