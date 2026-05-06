@@ -51,7 +51,7 @@ export default function PinLoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn, signOut } = useApp();
   const { t } = useTranslation();
-  const { showInfo, showConfirm } = useAlert();
+  const { showSuccess, showConfirm } = useAlert();
   const { isV2, theme } = useDesignV2();
   const c = isV2 ? ColorsV2[theme] : (Colors[theme] || Colors.dark);
   const styles = createStyles(c, theme);
@@ -378,7 +378,7 @@ export default function PinLoginScreen() {
             await registerPushToken(result.user.phone, registerPushTokenMutation.mutateAsync);
           } catch (_) {}
 
-          showInfo(t('common.success'), t('auth.pinResetSuccess'));
+          showSuccess(t('common.success'), t('auth.pinResetSuccess'));
           const needsOnboarding = !result.user?.firstName;
           router.replace(needsOnboarding ? '/onboarding' : '/(tabs)/home');
         } else {
