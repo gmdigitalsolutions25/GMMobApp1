@@ -324,7 +324,7 @@ export default function PinLoginScreen() {
       try {
         const result = await resetPinMutation.mutateAsync({
           phone,
-          otp: otpCode.join(''),
+          otpCode: otpCode.join(''),
           newPin: updated.join(''),
         });
         if (result.success && result.token && result.user) {
