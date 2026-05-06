@@ -973,7 +973,7 @@ const resources = {
         health: 'Sağlamlıq',
         nextService: 'Növbəti Servis',
         quickActions: 'Sürətli Əməliyyatlar',
-        bookService: 'Servis Yaz',
+        bookService: 'Servis',
         diagnostics: 'Diaqnostika',
         history: 'Tarixçə',
         serviceTimeline: 'Servis Xətti',
