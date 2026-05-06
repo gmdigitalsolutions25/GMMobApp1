@@ -3,19 +3,24 @@
  *
  * Displays a small green pill with shield icon + "GM Servis" text.
  * On tap, shows a tooltip explaining the badge.
+ *
+ * NOTE: The tooltip uses a Portal-like approach (rendered outside the
+ * overflow:hidden hero container) via React Native's Modal to avoid clipping.
  */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StyleSheet,
   Animated,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { ShieldCheck } from 'lucide-react-native';
 
-const TOOLTIP_DURATION = 3000; // Auto-hide after 3 seconds
+const TOOLTIP_DURATION = 4000; // Auto-hide after 4 seconds
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface GmBadgeProps {
@@ -26,14 +31,23 @@ export default function GmBadge({
   tooltipText = 'Bu avtomobil Groupmotors servis şəbəkəsində qeydiyyatdadır. Tam diaqnostika və servis tarixçəsi mövcuddur.',
 }: GmBadgeProps) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [badgeLayout, setBadgeLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const badgeRef = useRef<View>(null);
+
+  const measureBadge = useCallback(() => {
+    badgeRef.current?.measureInWindow((x, y, width, height) => {
+      setBadgeLayout({ x, y, width, height });
+    });
+  }, []);
 
   const handlePress = () => {
     if (showTooltip) {
       hideTooltip();
       return;
     }
+    measureBadge();
     setShowTooltip(true);
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -58,8 +72,13 @@ export default function GmBadge({
     }
   };
 
+  // Position tooltip below the badge, aligned to left edge
+  const tooltipTop = badgeLayout.y + badgeLayout.height + 8;
+  const tooltipLeft = Math.max(12, badgeLayout.x);
+  const tooltipWidth = Math.min(SCREEN_WIDTH - 32, 280);
+
   return (
-    <View style={styles.container}>
+    <View ref={badgeRef} style={styles.container}>
       <TouchableOpacity
         style={styles.badge}
         onPress={handlePress}
@@ -70,19 +89,39 @@ export default function GmBadge({
         <Text style={styles.badgeText}>GM Servis</Text>
       </TouchableOpacity>
 
-      {showTooltip && (
-        <Animated.View style={[styles.tooltip, { opacity: fadeAnim }]}>
-          <Text style={styles.tooltipText}>{tooltipText}</Text>
-          <View style={styles.tooltipArrow} />
-        </Animated.View>
-      )}
+      {/* Tooltip rendered as transparent Modal to escape overflow:hidden */}
+      <Modal
+        visible={showTooltip}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={hideTooltip}
+      >
+        <TouchableWithoutFeedback onPress={hideTooltip}>
+          <View style={styles.modalOverlay}>
+            <Animated.View
+              style={[
+                styles.tooltip,
+                {
+                  opacity: fadeAnim,
+                  top: tooltipTop,
+                  left: tooltipLeft,
+                  width: tooltipWidth,
+                },
+              ]}
+            >
+              <View style={styles.tooltipArrow} />
+              <Text style={styles.tooltipText}>{tooltipText}</Text>
+            </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
     zIndex: 100,
   },
   badge: {
@@ -100,30 +139,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   tooltip: {
     position: 'absolute',
-    top: 28,
-    right: 0,
-    width: Math.min(SCREEN_WIDTH - 80, 260),
     backgroundColor: '#1e293b', // slate-800
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
   },
   tooltipText: {
     color: '#e2e8f0', // slate-200
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 18,
   },
   tooltipArrow: {
     position: 'absolute',
     top: -6,
-    right: 16,
+    left: 20,
     width: 0,
     height: 0,
     borderLeftWidth: 6,
