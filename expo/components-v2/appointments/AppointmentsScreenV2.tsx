@@ -92,11 +92,11 @@ export default function AppointmentsScreenV2() {
   ];
 
   const serviceTypes = [
-    { name: t('home.oilChangeName'), duration: '~30-45 min', description: t('home.oilChangeDesc') },
-    { name: t('home.fullInspectionName'), duration: '~60-90 min', description: t('home.fullInspectionDesc') },
-    { name: t('home.brakeServiceName'), duration: '~90-120 min', description: t('home.brakeServiceDesc') },
-    { name: t('home.tireServiceName'), duration: '~45-60 min', description: t('home.tireServiceDesc') },
-    { name: t('appointments.filterReplacement'), duration: '~25 min', description: t('appointments.filterReplacementDesc') },
+    { name: t('home.oilChangeName'), duration: t('appointments.duration', { time: '30-45' }), description: t('home.oilChangeDesc') },
+    { name: t('home.fullInspectionName'), duration: t('appointments.duration', { time: '60-90' }), description: t('home.fullInspectionDesc') },
+    { name: t('home.brakeServiceName'), duration: t('appointments.duration', { time: '90-120' }), description: t('home.brakeServiceDesc') },
+    { name: t('home.tireServiceName'), duration: t('appointments.duration', { time: '45-60' }), description: t('home.tireServiceDesc') },
+    { name: t('appointments.filterReplacement'), duration: t('appointments.duration', { time: '25' }), description: t('appointments.filterReplacementDesc') },
   ];
 
   // Time slots: 09:00 – 17:00

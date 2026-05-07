@@ -232,6 +232,7 @@ const resources = {
         fillRequiredFields: 'Please fill in all required fields.',
         filterReplacement: 'Filter Replacement',
         filterReplacementDesc: 'Air & cabin filter service',
+        duration: '~{{time}} min',
         // v2 Appointments screen keys
         title: 'Appointments',
         new: 'New Appointment',
@@ -803,6 +804,7 @@ const resources = {
         fillRequiredFields: 'Bütün tələb olunan sahələri doldurun.',
         filterReplacement: 'Filtr Dəyişdirilməsi',
         filterReplacementDesc: 'Hava və kabin filtr xidməti',
+        duration: '~{{time}} dəqiqə',
         // v2 Appointments screen keys
         title: 'Təyinatlar',
         new: 'Yeni Təyinat',
@@ -1373,6 +1375,7 @@ const resources = {
         fillRequiredFields: 'Заполните все обязательные поля.',
         filterReplacement: 'Замена Фильтра',
         filterReplacementDesc: 'Обслуживание воздушного и салонного фильтра',
+        duration: '~{{time}} мин',
         // v2 Appointments screen keys
         title: 'Записи',
         new: 'Новая Запись',
