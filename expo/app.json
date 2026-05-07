@@ -29,7 +29,7 @@
       "package": "az.qaraj.app",
       "softwareKeyboardLayoutMode": "adjustResize",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 71,
+      "versionCode": 72,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
