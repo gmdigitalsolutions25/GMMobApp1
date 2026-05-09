@@ -804,7 +804,7 @@ const resources = {
         fillRequiredFields: 'Bütün tələb olunan sahələri doldurun.',
         filterReplacement: 'Filtr Dəyişdirilməsi',
         filterReplacementDesc: 'Hava və kabin filtr xidməti',
-        duration: '~{{time}} dəqiqə',
+        duration: '~{{time}} dəq',
         // v2 Appointments screen keys
         title: 'Təyinatlar',
         new: 'Yeni Təyinat',
