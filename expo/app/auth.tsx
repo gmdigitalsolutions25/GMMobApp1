@@ -294,8 +294,8 @@ export default function AuthScreen() {
       }
     }
 
-    // Check if onboarding is needed
-    if (isFirstTime || (!appUser?.onboardingCompleted && !appUser?.firstName)) {
+    // Check if onboarding is needed — firstName is the single gate
+    if (isFirstTime || !serverUser.firstName) {
       router.replace('/onboarding');
     } else {
       router.replace('/(tabs)/home');
@@ -305,7 +305,7 @@ export default function AuthScreen() {
   // ── Biometric Prompt Handlers ─────────────────────────────────────────────
   const handleEnableBiometric = async () => {
     await setBiometricEnabled(true);
-    if (!appUser?.onboardingCompleted && !appUser?.firstName) {
+    if (!appUser?.firstName) {
       router.replace('/onboarding');
     } else {
       router.replace('/(tabs)/home');
@@ -314,7 +314,7 @@ export default function AuthScreen() {
 
   const handleSkipBiometric = async () => {
     await setBiometricEnabled(false);
-    if (!appUser?.onboardingCompleted && !appUser?.firstName) {
+    if (!appUser?.firstName) {
       router.replace('/onboarding');
     } else {
       router.replace('/(tabs)/home');

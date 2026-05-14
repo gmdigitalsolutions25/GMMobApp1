@@ -143,6 +143,10 @@ const resources = {
         remaining: 'remaining',
         recommended: 'Recommended',
         addFirst: 'Add your first vehicle',
+        noVehiclesHint: 'No vehicles found linked to your phone number.',
+        findMyVehicle: 'Find My Vehicle',
+        addManually: 'Add Manually',
+        requestSent: 'Your request has been received. We will contact you shortly.',
       },
       services: {
         serviceHistory: 'Service History',
@@ -715,6 +719,10 @@ const resources = {
         remaining: 'qalıb',
         recommended: 'Tövsiyə olunan',
         addFirst: 'İlk avtomobilinizi əlavə edin',
+        noVehiclesHint: 'Telefon nömrənizə bağlı avtomobil tapılmadı.',
+        findMyVehicle: 'Avtomobilimi tap',
+        addManually: 'Əl ilə əlavə et',
+        requestSent: 'Sorğunuz qəbul edildi. Tezliklə sizinlə əlaqə saxlanılacaq.',
       },
       services: {
         serviceHistory: 'Xidmət tarixçəsi',
@@ -1286,6 +1294,10 @@ const resources = {
         remaining: 'осталось',
         recommended: 'Рекомендуемые',
         addFirst: 'Добавьте первый автомобиль',
+        noVehiclesHint: 'Автомобили, привязанные к вашему номеру, не найдены.',
+        findMyVehicle: 'Найти мой автомобиль',
+        addManually: 'Добавить вручную',
+        requestSent: 'Ваш запрос принят. Мы свяжемся с вами в ближайшее время.',
       },
       services: {
         serviceHistory: 'История обслуживания',

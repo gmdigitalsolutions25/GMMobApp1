@@ -215,7 +215,8 @@ function RootLayoutNav() {
         case 'none':
           // Fresh session — check if onboarding profile is complete
           if (user) {
-            if (!user.onboardingCompleted && !user.firstName) {
+            if (!user.firstName) {
+              // No name = onboarding never finished, regardless of flag
               router.replace('/onboarding');
             } else {
               router.replace(`/(tabs)/${defaultStartScreen}`);
