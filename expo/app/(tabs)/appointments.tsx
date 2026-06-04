@@ -891,15 +891,15 @@ function AppointmentsScreenV1() {
           onPress={() => setShowSuccessModal(false)}
         >
           <View style={[styles.successModal, { backgroundColor: colors.surface }]}>
-            <View style={[styles.successIcon, { backgroundColor: `${colors.success}20` }]}>
-              <CheckCircle size={48} color={colors.success} />
+            <View style={[styles.successIcon, { backgroundColor: `${colors.warning || '#f59e0b'}20` }]}>
+              <Clock size={48} color={colors.warning || '#f59e0b'} />
             </View>
-            <Text style={[styles.successTitle, { color: colors.text }]}>{t('appointments.appointmentBooked')}</Text>
+            <Text style={[styles.successTitle, { color: colors.text }]}>{t('appointments.appointmentPending')}</Text>
             <Text style={[styles.successMessage, { color: colors.textSecondary }]}>
-              {t('appointments.appointmentBookedDesc')}
+              {t('appointments.appointmentPendingDesc')}
             </Text>
             <Text style={[styles.successDetails, { color: colors.textTertiary }]}>
-              {t('appointments.appointmentBookedDetails')}
+              {t('appointments.appointmentPendingDetails')}
             </Text>
             <TouchableOpacity
               style={[styles.successButton, { backgroundColor: colors.primary }]}
