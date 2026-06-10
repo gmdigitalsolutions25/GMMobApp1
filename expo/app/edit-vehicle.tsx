@@ -121,11 +121,17 @@ export default function EditVehicleScreen() {
     return `${result.slice(0, 2)}-${result.slice(2, 4)}-${result.slice(4, 7)}`;
   });
   const [mileage, setMileage] = useState<string>(vehicle?.mileage?.toString() || '');
+  const [driveType, setDriveType] = useState<string>(vehicle?.driveType || '');
+  const [fuelType, setFuelType] = useState<string>(vehicle?.fuelType || '');
+  const [engineType, setEngineType] = useState<string>(vehicle?.engineType || '');
   const [photos, setPhotos] = useState<VehiclePhoto[]>(vehicle?.photos || []);
 
   const [showBrandPicker, setShowBrandPicker] = useState<boolean>(false);
   const [showModelPicker, setShowModelPicker] = useState<boolean>(false);
   const [showYearPicker, setShowYearPicker] = useState<boolean>(false);
+  const [showDriveTypePicker, setShowDriveTypePicker] = useState<boolean>(false);
+  const [showFuelTypePicker, setShowFuelTypePicker] = useState<boolean>(false);
+  const [showEngineTypePicker, setShowEngineTypePicker] = useState<boolean>(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -246,6 +252,9 @@ export default function EditVehicleScreen() {
     const newErrors: Record<string, string> = {};
     if (!brand) newErrors.brand = t('addVehicle.brandRequired');
     if (!model) newErrors.model = t('addVehicle.modelRequired');
+    if (!driveType) newErrors.driveType = t('vehicles.selectDriveType');
+    if (!fuelType) newErrors.fuelType = t('vehicles.selectFuelType');
+    if (!engineType) newErrors.engineType = t('vehicles.selectEngineType');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -260,6 +269,9 @@ export default function EditVehicleScreen() {
       vin: vin || '',
       licensePlate: licensePlate || '',
       mileage: mileage ? parseInt(mileage, 10) : vehicle?.mileage,
+      driveType: driveType as any,
+      fuelType: fuelType as any,
+      engineType: engineType as any,
       photos,
       primaryPhotoId: photos.find(p => p.isPrimary)?.id || vehicle?.primaryPhotoId,
     });
@@ -457,6 +469,55 @@ export default function EditVehicleScreen() {
             />
           </View>
         </View>
+
+        {/* Vehicle Specs */}
+        <View style={styles.formGroup}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            {t('vehicles.driveType')} <Text style={{ color: colors.primary }}>*</Text>
+          </Text>
+          <TouchableOpacity
+            style={[styles.input, { borderColor: driveType ? colors.primary : colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+            onPress={() => setShowDriveTypePicker(true)}
+          >
+            <Text style={{ color: driveType ? colors.text : colors.textSecondary, fontSize: 16 }}>
+              {driveType || t('vehicles.selectDriveType')}
+            </Text>
+            <ChevronDown size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          {errors.driveType && <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.driveType}</Text>}
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            {t('vehicles.fuelType')} <Text style={{ color: colors.primary }}>*</Text>
+          </Text>
+          <TouchableOpacity
+            style={[styles.input, { borderColor: fuelType ? colors.primary : colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+            onPress={() => setShowFuelTypePicker(true)}
+          >
+            <Text style={{ color: fuelType ? colors.text : colors.textSecondary, fontSize: 16 }}>
+              {fuelType ? t(`vehicles.fuelOptions.${fuelType}`) : t('vehicles.selectFuelType')}
+            </Text>
+            <ChevronDown size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          {errors.fuelType && <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.fuelType}</Text>}
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            {t('vehicles.engineType')} <Text style={{ color: colors.primary }}>*</Text>
+          </Text>
+          <TouchableOpacity
+            style={[styles.input, { borderColor: engineType ? colors.primary : colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+            onPress={() => setShowEngineTypePicker(true)}
+          >
+            <Text style={{ color: engineType ? colors.text : colors.textSecondary, fontSize: 16 }}>
+              {engineType || t('vehicles.selectEngineType')}
+            </Text>
+            <ChevronDown size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          {errors.engineType && <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.engineType}</Text>}
+        </View>
       </ScrollView>
 
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom + 16 }]}>
@@ -499,6 +560,52 @@ export default function EditVehicleScreen() {
         options={carYears}
         onSelect={setYear}
         selectedValue={year}
+        colors={colors}
+      />
+      <PickerModal
+        visible={showDriveTypePicker}
+        onClose={() => setShowDriveTypePicker(false)}
+        title={t('vehicles.driveType')}
+        options={[
+          { value: '2WD', label: '2WD' },
+          { value: '4WD', label: '4WD' },
+        ]}
+        onSelect={(v) => { setDriveType(v); if (errors.driveType) setErrors((p) => ({ ...p, driveType: '' })); }}
+        selectedValue={driveType}
+        colors={colors}
+      />
+      <PickerModal
+        visible={showFuelTypePicker}
+        onClose={() => setShowFuelTypePicker(false)}
+        title={t('vehicles.fuelType')}
+        options={[
+          { value: 'benzin', label: t('vehicles.fuelOptions.benzin') },
+          { value: 'diesel', label: t('vehicles.fuelOptions.diesel') },
+          { value: 'hybrid', label: t('vehicles.fuelOptions.hybrid') },
+        ]}
+        onSelect={(v) => { setFuelType(v); if (errors.fuelType) setErrors((p) => ({ ...p, fuelType: '' })); }}
+        selectedValue={fuelType}
+        colors={colors}
+      />
+      <PickerModal
+        visible={showEngineTypePicker}
+        onClose={() => setShowEngineTypePicker(false)}
+        title={t('vehicles.engineType')}
+        options={[
+          { value: '1.5L', label: '1.5L' },
+          { value: '1.6L', label: '1.6L' },
+          { value: '1.8L', label: '1.8L' },
+          { value: '2.0L', label: '2.0L' },
+          { value: '2.4L', label: '2.4L' },
+          { value: '2.5L', label: '2.5L' },
+          { value: '2.7L', label: '2.7L' },
+          { value: '2.8L', label: '2.8L' },
+          { value: '3.3L', label: '3.3L' },
+          { value: '3.5L', label: '3.5L' },
+          { value: '4.0L', label: '4.0L' },
+        ]}
+        onSelect={(v) => { setEngineType(v); if (errors.engineType) setErrors((p) => ({ ...p, engineType: '' })); }}
+        selectedValue={engineType}
         colors={colors}
       />
     </View>

@@ -273,6 +273,11 @@ function VehicleHeroCard({ vehicle, colors, t, appointments, onEdit, onDelete, o
             <Text style={styles.heroDetail}>
               {vehicle.year} · {vehicle.licensePlate || 'N/A'} · {vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : '—'}
             </Text>
+            {(vehicle.driveType || vehicle.fuelType || vehicle.engineType) && (
+              <Text style={[styles.heroDetail, { marginTop: 2, opacity: 0.85 }]}>
+                {[vehicle.engineType, vehicle.fuelType ? t(`vehicles.fuelOptions.${vehicle.fuelType}`) : '', vehicle.driveType].filter(Boolean).join(' · ')}
+              </Text>
+            )}
           </View>
         </View>
       </TouchableOpacity>

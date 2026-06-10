@@ -45,6 +45,11 @@ export const serviceTypeEnum = pgEnum('service_type', [
   'inspection',
   'other',
 ]);
+export const driveTypeEnum = pgEnum('drive_type', ['2WD', '4WD']);
+export const fuelTypeEnum = pgEnum('fuel_type', ['benzin', 'diesel', 'hybrid']);
+export const engineTypeEnum = pgEnum('engine_type', [
+  '1.5L', '1.6L', '1.8L', '2.0L', '2.4L', '2.5L', '2.7L', '2.8L', '3.3L', '3.5L', '4.0L',
+]);
 
 // ── Users ──────────────────────────────────────────────────────────────────────
 
@@ -92,6 +97,9 @@ export const vehicles = pgTable(
     color: varchar('color', { length: 50 }),
     crmVehicleId: varchar('crm_vehicle_id', { length: 50 }),
     source: varchar('source', { length: 20 }).default('user'),
+    driveType: driveTypeEnum('drive_type'),
+    fuelType: fuelTypeEnum('fuel_type'),
+    engineType: engineTypeEnum('engine_type'),
     isGmBrand: boolean('is_gm_brand').notNull().default(true),
     customBrand: varchar('custom_brand', { length: 100 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),

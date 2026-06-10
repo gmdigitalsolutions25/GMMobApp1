@@ -30,6 +30,9 @@ export interface Vehicle {
   photos: VehiclePhoto[];
   mileage?: number;
   color?: string;
+  driveType?: '2WD' | '4WD';
+  fuelType?: 'benzin' | 'diesel' | 'hybrid';
+  engineType?: '1.5L' | '1.6L' | '1.8L' | '2.0L' | '2.4L' | '2.5L' | '2.7L' | '2.8L' | '3.3L' | '3.5L' | '4.0L';
   isGmBrand?: boolean;
   customBrand?: string;
   source?: string;

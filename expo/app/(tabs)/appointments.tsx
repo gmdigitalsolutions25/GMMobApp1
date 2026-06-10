@@ -426,6 +426,11 @@ function AppointmentsScreenV1() {
                 <Text style={[styles.vehiclePreviewPlate, { color: colors.primary }]}>
                   {t('appointments.plate')} {selectedVehicle.licensePlate}
                 </Text>
+                {(selectedVehicle.driveType || selectedVehicle.fuelType || selectedVehicle.engineType) && (
+                  <Text style={[styles.vehiclePreviewPlate, { color: colors.textSecondary, marginTop: 4 }]}>
+                    {[selectedVehicle.engineType, selectedVehicle.fuelType ? t(`vehicles.fuelOptions.${selectedVehicle.fuelType}`) : '', selectedVehicle.driveType].filter(Boolean).join(' · ')}
+                  </Text>
+                )}
               </View>
             )}
 
