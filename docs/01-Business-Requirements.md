@@ -1,7 +1,7 @@
 # Qaraj GM — Business Requirements Document (BRD)
 
-**Version:** 2.0
-**Date:** April 29, 2026
+**Version:** 3.0
+**Date:** June 10, 2026
 **Author:** Manus (AI CTO) for Group Motors / Qaraj GM
 **Status:** Active — Pre-Production Testing
 
@@ -89,6 +89,8 @@ The phone number is the **primary identity key** for all users. No email or user
 | VEH-04 | User can edit vehicle details | Must Have | Implemented |
 | VEH-05 | User can delete a vehicle (cascades to photos, appointments, service records) | Must Have | Implemented |
 | VEH-06 | Vehicles are retrieved by phone number (user identity) | Must Have | Implemented |
+| VEH-12 | Vehicles are synced from CRM/DWH (`clientdata.vehicles`) automatically | Must Have | Implemented |
+| VEH-13 | Users can submit a "Find My Vehicle" request if their car is missing | Must Have | Implemented |
 | VEH-07 | VIN is indexed for future cross-referencing with OEM databases | Should Have | Implemented |
 | VEH-08 | VIN validation: 17 alphanumeric characters, no I/O/Q | Must Have | Implemented |
 | VEH-09 | License plate format enforcement: Azerbaijan NN-CC-NNN pattern | Must Have | Implemented |
@@ -112,6 +114,7 @@ The phone number is the **primary identity key** for all users. No email or user
 | APT-01 | User can book a service appointment selecting: vehicle, service center, service types, date, time, notes | Must Have | Implemented |
 | APT-02 | Appointments are limited to working hours: 9:00 AM – 5:00 PM | Must Have | Implemented |
 | APT-03 | Appointment statuses: pending, confirmed, completed, cancelled | Must Have | Implemented |
+| APT-07 | Appointments show "Pending Approval" (max 1h SLA) after booking | Must Have | Implemented |
 | APT-04 | User can view their appointment history | Must Have | Implemented |
 | APT-05 | User or admin can update appointment status | Must Have | Implemented |
 | APT-06 | Appointments are linked to both user and vehicle | Must Have | Implemented |
@@ -160,6 +163,7 @@ The phone number is the **primary identity key** for all users. No email or user
 | UP-04 | User can change PIN | Must Have | Implemented |
 | UP-05 | Profile page shows current app version | Must Have | Implemented |
 | UP-06 | Profile hydration from server on login (sync local state with DB) | Must Have | Implemented |
+| UP-07 | Strict onboarding gate: users without a first name are forced to onboarding | Must Have | Implemented |
 
 ---
 
@@ -202,8 +206,7 @@ The phone number is the **primary identity key** for all users. No email or user
 |----|-------------|
 | MOB-01 | Android APK distributed via EAS Build (Expo Application Services) |
 | MOB-02 | iOS TestFlight distribution (planned) |
-| MOB-03 | Kill switch: APK expires 7 days after build date (testing phase) |
-| MOB-04 | Minimum Android version: API 24 (Android 7.0) |
+| MOB-03 | Kill switch: APK expires 7 days after build date (testing phase) | Must Have | Removed |d version: API 24 (Android 7.0) |
 | MOB-05 | Offline-friendly: cached data available when network is unavailable |
 | MOB-06 | Semantic versioning: MAJOR.MINOR.PATCH with sequential versionCode |
 
@@ -310,7 +313,7 @@ The minimum viable product is accepted when:
 7. The APK installs and runs on Android 7.0+ devices
 8. Push notifications are delivered to registered devices
 9. Car model images load correctly for all 109 models
-10. The kill switch blocks expired builds after 7 days
+10. The onboarding gate strictly prevents access without a completed profile
 
 ---
 
@@ -320,6 +323,7 @@ The minimum viable product is accepted when:
 |---------|------|---------|
 | 1.0 | April 25, 2026 | Initial BRD — Honda and Toyota focus |
 | 2.0 | April 29, 2026 | Updated to 7 brands (109 models), added push notification requirements, car image hosting, versioning, error handling, FCM dependency |
+| 3.0 | June 10, 2026 | Updated to v1.3.70: added DWH vehicle sync, Find My Vehicle flow, pending approval appointments, strict onboarding gate, removed kill switch |
 
 ---
 

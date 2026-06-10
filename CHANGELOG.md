@@ -6,6 +6,44 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 
 ---
 
+## v1.3.70 (versionCode 74-75) — June 10, 2026
+
+### Added
+- **Pending Approval Flow** — After booking an appointment, users now see a "Pending Approval" (Təsdiq Gözlənilir) screen with a 1-hour SLA message instead of instant confirmation.
+- **Missing i18n Keys** — Added `noVehiclesHint`, `findMyVehicle`, `addManually`, and `requestSent` to EN/AZ/RU translations for the V2 garage empty state.
+
+### Fixed
+- **Onboarding Gate Bypass** — Fixed a bug where users who quit mid-auth could bypass onboarding on restart. The gate now strictly checks for `!user.firstName` instead of relying on the `onboardingCompleted` flag.
+- **Service Duration Labels** — Shortened Azerbaijani service duration labels from "dəqiqə" to "dəq" for better UI fit.
+
+### Removed
+- **Kill Switch** — Removed the 7-day expiration kill switch from the app layout and components. The app no longer blocks users after 7 days.
+
+---
+
+## v1.3.67 (versionCode 71-73) — June 10, 2026
+
+### Added
+- **"Find My Vehicle" Flow** — Added a back-office request flow for users who cannot find their vehicle. Submits a request to `vehicleRequests.create` with their phone number.
+- **In-App Notification Sync** — Notifications now sync read-state with AsyncStorage.
+
+### Fixed
+- **PIN Reset Flow** — Fixed crash during PIN reset (verifyOtp → newPin step).
+- **Keyboard Overlap** — Fixed PIN input fields being hidden by the keyboard using `adjustResize`.
+- **Onboarding Loop** — Fixed issue where successful login looped back to onboarding by ensuring `hydrateFromServer` syncs the profile correctly.
+- **Tooltip Clipping** — Fixed GM badge tooltip clipping by moving it to a Modal portal.
+- **Service Label** — Changed "Servis Yaz" to "Servis" in the UI.
+- **Header/Logo/Bell** — Fixed V2 HomeScreen issues including wrong header icon, missing text shadow, transparent bell background, and duplicate logo placement.
+- **Push Token Endpoint** — Fixed push token registration endpoint.
+- **Thin-Ring Gauges** — Updated gauge UI to use thin rings.
+
+### Changed
+- **DWH Sync Source** — DWH vehicle sync now reads from `clientdata.vehicles` instead of `public.vehicles` as the source of truth.
+- **Build Profiles** — Removed `preview-v2` profile. All builds (`preview` and `production`) now use the V2 design by default (`EXPO_PUBLIC_DESIGN_V2=true`).
+- **Database Schema** — Added `crm_vehicle_id` and unique index on VIN.
+
+---
+
 ## v1.2.8 (versionCode 42) — May 1, 2026
 
 ### Fixed
@@ -292,3 +330,4 @@ The format follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATC
 ---
 
 *This changelog is maintained in the Qaraj GM project repository.*
+repository.*

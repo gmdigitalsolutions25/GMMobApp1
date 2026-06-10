@@ -1,7 +1,7 @@
 # Qaraj GM — Technical Architecture Document (TAD)
 
-**Version:** 2.0
-**Date:** April 29, 2026
+**Version:** 3.0
+**Date:** June 10, 2026
 **Author:** Manus (AI CTO) for Group Motors / Qaraj GM
 **Status:** Active — Pre-Production Testing
 
@@ -162,8 +162,9 @@ The database uses PostgreSQL hosted on Neon, managed via Drizzle ORM. The schema
 
 | Table | Purpose | Key Relations | Key Fields |
 |-------|---------|---------------|------------|
-| `users` | Customer identity and preferences | Phone (unique index) | phone, name, pinHash, language, theme |
-| `vehicles` | Registered vehicles | → users (cascade delete) | vin, licensePlate, brand, model, year, mileage |
+| `users` | Customer identity and preferences | Phone (unique index) | phone, name, pinHash, language, theme, crmCustomerId |
+| `vehicles` | Registered vehicles | → users (cascade delete) | vin (unique index), licensePlate, brand, model, year, mileage, crmVehicleId, source |
+| `vehicle_requests` | "Find My Vehicle" requests | → users | phone, customerName, message, status |
 | `vehicle_photos` | Vehicle images | → vehicles (cascade delete) | uri, isPrimary |
 | `service_centers` | Group Motors locations | Standalone reference | name, address, phone, coordinates, rating |
 | `appointments` | Service bookings | → users, → vehicles, → service_centers | status, date, time, serviceTypes |
@@ -199,13 +200,15 @@ The API is organized as a tRPC router with the following route groups:
 | `auth` | sendOtp, verifyOtp, setPin, verifyPin, resetPin | User authentication flow |
 | `users` | getFullProfile, updateProfile, getByPhone | User management |
 | `vehicles` | create, list, update, delete | Vehicle CRUD |
+| `vehicleRequests` | create | "Find My Vehicle" flow |
+| `dwh` | syncVehicles | DWH vehicle sync |
 | `vehiclePhotos` | upload, list, setPrimary, delete | Vehicle photo management |
 | `appointments` | create, list, updateStatus | Service booking |
 | `serviceRecords` | create, listByVehicle | Service history |
 | `serviceCenters` | list, getById | Service center directory |
 | `spareParts` | search | AI-powered parts advisory |
 | `brandsModels` | list, byBrand | Brand/model catalog |
-| `pushTokens` | register, send | Push notification management |
+| `pushTokens` | register, send, delete | Push notification management |
 | `monitoring.errors` | list, create, resolve | Error tracking |
 | `monitoring.bugs` | list, create, update | Bug reporting |
 | `monitoring.health` | live, summary | System health |
@@ -294,7 +297,7 @@ Mobile builds use EAS Build (Expo Application Services) triggered via CLI or Git
 | 5 | Build: `eas build --platform android --profile preview --non-interactive` |
 | 6 | Distribute APK via EAS build page URL |
 
-**Kill Switch:** The app checks `EXPO_PUBLIC_BUILD_DATE` on launch. If the build is older than 7 days, the app blocks execution and demands an update. This prevents stale test builds from remaining in circulation.
+**Kill Switch:** The 7-day expiration kill switch has been removed. The app no longer blocks users based on build date.
 
 ### 9.3 Versioning Strategy
 
@@ -356,6 +359,7 @@ Push notifications are delivered via Expo's Push API at `https://exp.host/--/api
 |---------|------|---------|
 | 1.0 | April 25, 2026 | Initial TAD — Expo SDK 52, 2 brands |
 | 2.0 | April 29, 2026 | Updated to SDK 54, 7 brands, car image architecture, push notification architecture, versioning strategy, branching strategy, cleartext HTTP config, error handling improvements |
+| 3.0 | June 10, 2026 | Updated to v1.3.70: added DWH sync architecture, vehicle requests, removed kill switch, updated DB schema |
 
 ---
 

@@ -1,7 +1,7 @@
 # Qaraj GM — API Reference Document
 
-**Version:** 2.0
-**Date:** April 29, 2026
+**Version:** 3.0
+**Date:** June 10, 2026
 **Author:** Manus (AI CTO) for Group Motors / Qaraj GM
 **Status:** Active — Pre-Production Testing
 
@@ -346,7 +346,52 @@ Deletes a vehicle and all associated photos, appointments, and service records (
 
 ---
 
-## 5. Brands and Models Endpoints (`brandsModels.*`)
+## 5. DWH and Vehicle Requests Endpoints
+
+### 5.1 `dwh.syncVehicles` (Mutation)
+
+Syncs vehicles from the CRM/DWH (`clientdata.vehicles`) to the app database (`public.vehicles`) for a specific user.
+
+**Input:**
+```json
+{
+  "phone": "994501234567"
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Synced 2 vehicles",
+  "count": 2
+}
+```
+
+### 5.2 `vehicleRequests.create` (Mutation)
+
+Submits a "Find My Vehicle" request for users who cannot find their vehicle in the app.
+
+**Input:**
+```json
+{
+  "phone": "994501234567",
+  "customerName": "Elnur Hasanov",
+  "message": "My 2024 Camry is missing"
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Request submitted successfully"
+}
+```
+
+---
+
+## 6. Brands and Models Endpoints (`brandsModels.*`)
 
 ### 5.1 `brandsModels.list` (Query)
 
@@ -397,7 +442,7 @@ Returns models for a specific brand.
 
 ---
 
-## 6. Appointment Endpoints (`appointments.*`)
+## 7. Appointment Endpoints (`appointments.*`)
 
 *Requires JWT Authentication*
 
@@ -487,7 +532,7 @@ Cancels an existing appointment.
 
 ---
 
-## 7. Service Center Endpoints (`serviceCenters.*`)
+## 8. Service Center Endpoints (`serviceCenters.*`)
 
 ### 7.1 `serviceCenters.list` (Query)
 
@@ -516,7 +561,7 @@ Lists all available Group Motors service centers.
 
 ---
 
-## 8. AI Endpoints (`spareParts.*`)
+## 9. AI Endpoints (`spareParts.*`)
 
 ### 8.1 `spareParts.search` (Mutation)
 
@@ -557,9 +602,9 @@ Queries the OpenAI-powered spare parts advisor. Uses `gpt-4.1-mini` with structu
 
 ---
 
-## 9. Push Token Endpoints (`pushTokens.*`)
+## 10. Push Token Endpoints (`pushTokens.*`)
 
-### 9.1 `pushTokens.register` (Mutation)
+### 10.1 `pushTokens.register` (Mutation)
 
 Registers an Expo Push Token for a user's device. Called automatically after successful authentication.
 
@@ -582,7 +627,7 @@ Registers an Expo Push Token for a user's device. Called automatically after suc
 
 **Notes:** If a token already exists for the same phone + platform combination, it is updated (upsert behavior).
 
-### 9.2 `pushTokens.send` (Mutation)
+### 10.2 `pushTokens.send` (Mutation)
 
 Sends a push notification to a specific user by phone number. Admin endpoint.
 
@@ -610,11 +655,29 @@ Sends a push notification to a specific user by phone number. Admin endpoint.
 
 **Notes:** Requires `x-api-key` header. Sends to all active push tokens for the specified phone number. Uses the Expo Push API for delivery.
 
+### 10.3 `pushTokens.delete` (Mutation)
+
+Deletes a push token for a user's device (e.g., on logout).
+
+**Input:**
+```json
+{
+  "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+}
+```
+
+**Output:**
+```json
+{
+  "success": true
+}
+```
+
 ---
 
-## 10. Monitoring Endpoints (`monitoring.*`)
+## 11. Monitoring Endpoints (`monitoring.*`)
 
-### 10.1 Error Tracking
+### 11.1 Error Tracking
 
 **`monitoring.errors.list` (Query)** — Lists all error logs, sorted by most recent.
 
@@ -635,7 +698,7 @@ Sends a push notification to a specific user by phone number. Admin endpoint.
 
 **`monitoring.errors.resolve` (Mutation)** — Marks an error as resolved.
 
-### 10.2 Bug Reports
+### 11.2 Bug Reports
 
 **`monitoring.bugs.list` (Query)** — Lists all bug reports.
 
@@ -654,7 +717,7 @@ Sends a push notification to a specific user by phone number. Admin endpoint.
 
 **`monitoring.bugs.update` (Mutation)** — Updates bug report status or assignment.
 
-### 10.3 System Health
+### 11.3 System Health
 
 **`monitoring.health.live` (Query)** — Returns current system health status.
 
@@ -670,9 +733,9 @@ Sends a push notification to a specific user by phone number. Admin endpoint.
 
 ---
 
-## 11. Static File Endpoints
+## 12. Static File Endpoints
 
-### 11.1 Car Model Images
+### 12.1 Car Model Images
 
 **URL Pattern:** `http://91.107.161.67:3000/static/cars/{brand}/{model}.webp`
 
@@ -683,7 +746,7 @@ Sends a push notification to a specific user by phone number. Admin endpoint.
 
 **Details:** 109 images total, 800px wide WebP format, 45–144 KB each. Brand names are lowercase, model names are lowercase with spaces replaced by hyphens.
 
-### 11.2 Monitoring Dashboard
+### 12.2 Monitoring Dashboard
 
 **URL:** `http://91.107.161.67:3000/monitoring`
 
@@ -691,12 +754,13 @@ Sends a push notification to a specific user by phone number. Admin endpoint.
 
 ---
 
-## 12. Version History
+## 13. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | April 25, 2026 | Initial API Reference |
 | 2.0 | April 29, 2026 | Added brandsModels, pushTokens, users endpoints; added static file endpoints; updated auth phone format; added resetPin; corrected monitoring route names |
+| 3.0 | June 10, 2026 | Added dwh.syncVehicles, vehicleRequests.create, pushTokens.delete; updated section numbering |
 
 ---
 
